@@ -1,0 +1,23 @@
+---
+# Put here defaults variables for role
+
+## haproxy.cfg.j2 ##
+max_conn: 4096
+haproxy_ulimit: 65536
+stats_timeout: '30s'
+run_as_daemon: 'daemon'
+ca_base: '/certs'
+crt_base: '/certs/private'
+retries: 3
+timeout_connect: 5000
+timeout_client: 300000
+timeout_server: 300000
+verne_node_pem: 'vmq-node.pem'
+ca_certs: 'ca.crt'
+vernemq_frontend_port: 30005
+vernemq_insecure_frontend_port: 30006
+verne_port: 1883
+
+## haproxy.service.j2 ##
+ha_proxy_config: '/etc/haproxy/haproxy.cfg'
+ha_proxy_default: '/etc/default/haproxy'

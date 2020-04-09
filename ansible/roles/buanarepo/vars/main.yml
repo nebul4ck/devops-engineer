@@ -1,0 +1,46 @@
+---
+### Private repositories ###
+buanarepo_pro_port: 8080
+buanarepo_pro_main_full_path_apt_source: deb https://{{ buanarepo_pro_main }}:{{ buanarepo_pro_port }}/ubuntu xenial {{ repo_type_main }}
+buanarepo_pro_restricted_full_path_apt_source: deb https://{{ buanarepo_pro_restricted }}:{{ buanarepo_pro_port }}/ubuntu xenial {{ repo_type_restricted }}
+buanarepo_dev_main_full_path_apt_source: deb https://{{ buanarepo_dev_main }}/ubuntu xenial {{ repo_type_main }}
+buanarepo_dev_restricted_full_path_apt_source: deb https://{{ buanarepo_dev_restricted }}/ubuntu xenial {{ repo_type_restricted }}
+
+### Buanarepo-Dev
+buanarepo_dev_main: 'buanarepo-dev-main.es'
+buanarepo_dev_restricted: 'buanarepo-dev-main.es'
+buanarepo_dev_key: ''
+buanarepo_pro_main: 'buanarepo-main.es'
+buanarepo_pro_restricted: 'buanarepo-restricted.es'
+buanarepo_pro_key: ''
+repo_type_main: 'main'
+repo_type_restricted: 'restricted'
+
+### Templates ###
+buanarepo_dev_main_template: '00buanarepo-dev-main'
+buanarepo_dev_restricted_template: '00buanarepo-dev-restricted'
+buanarepo_pro_main_template: '00buanarepo-pro-main'
+buanarepo_pro_restricted_template: '00buanarepo-pro-restricted'
+
+### Ubuntu Key repository ###
+ubuntu_key_repository: 'keyserver.ubuntu.com'
+
+### Dev certs ###
+# Main
+buanarepo_dev_ca_main_crt: 'buanaCA-main.crt'
+buanarepo_dev_client_main_crt: 'buanAPTclient-main.crt'
+buanarepo_dev_client_main_key: 'buanAPTclient-main.key'
+# Restricted
+buanarepo_dev_ca_restricted_crt: 'buanaCA-restricted.crt'
+buanarepo_dev_client_restricted_crt: 'buanAPTclient-restricted.crt'
+buanarepo_dev_client_restricted_key: 'buanAPTclient-restricted.key'
+
+### Pro certs ###
+# Main
+buanarepo_pro_ca_main_crt: 'buanaCA-main.crt'
+buanarepo_pro_client_main_crt: 'buanAPTclient-main.crt'
+buanarepo_pro_client_main_key: 'buanAPTclient-main.key'
+# Restricted
+buanarepo_pro_ca_restricted_crt: 'buanaCA-restricted.crt'
+buanarepo_pro_client_restricted_crt: 'buanAPTclient-restricted.crt'
+buanarepo_pro_client_restricted_key: 'buanAPTclient-restricted.key'

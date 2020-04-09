@@ -1,0 +1,14 @@
+---
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml
+  vars:
+    service: '{{ spark_worker_service }}'
+  tags: systemd
+
+# Copy SSH-PUB-KEY in current ansible managed host
+- include_tasks: utils/copySsh.yml
+  vars:
+    tenant: '{{ tenant_name }}'
+    user: '{{ spark_user }}'
+    group: '{{ spark_group }}'
+  tags: copySsh

@@ -1,0 +1,25 @@
+[Unit]
+Description=Cerebro Panel
+Documentation=https://github.com/lmenezes/cerebro
+
+Requires=elasticsearch.service
+
+[Service]
+Type=simple
+User={{ cerebro_user|default('cerebro') }}
+Group={{ cerebro_group|default('cerebro') }}
+
+Environment=PID_DIR={{ cerebro_pid_dir }}
+
+ExecStart={{ cerebro_base }}/bin/cerebro -Dhttp.port={{ cerebro_port|default(9999) }} -Dconfig.file={{ cerebro_conf_file }}
+ExecStop=kill `cat ${PID_DIR}/cerebro.pid`
+
+WorkingDirectory={{ cerebro_base }}
+RuntimeDirectory=cerebro
+
+StandardOutput=journal
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
+Also=elasticsearch.service

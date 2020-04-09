@@ -1,0 +1,22 @@
+[Unit]
+Description=Kibana
+ 
+[Service]
+Type=simple
+User={{ kibana_user|default('kibana') }}
+Group={{ kibana_group|default('kibana') }}
+# Load env vars from /etc/default/ and /etc/sysconfig/ if they exist.
+# Prefixing the path with '-' makes it try to load, but if the file doesn't
+# exist, it continues onward.
+EnvironmentFile=-{{ kibana_default_conf|default('/etc/default/kibana') }}
+EnvironmentFile=-{{ kibana_sysconfig_dir|default('/etc/sysconfig/kibana') }}
+Environment=PID_DIR={{ kibana_pid_dir|default('/var/run/kibana') }}
+ExecStart=/usr/share/kibana/bin/kibana "-c {{ kibana_conf_file|default('/etc/kibana/kibana.yml') }}"
+ExecStop=kill `cat ${PID_DIR}/kibana.pid`
+ExecStopPost=/bin/rm ${PID_DIR}/kibana.pid
+Restart=always
+WorkingDirectory=/
+RuntimeDirectory=kibana
+
+[Install]
+WantedBy=multi-user.target

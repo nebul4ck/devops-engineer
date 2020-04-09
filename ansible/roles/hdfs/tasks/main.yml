@@ -1,0 +1,40 @@
+---
+# Main playbook to install and configure Hadoop Distributed File System.
+
+- name: Install Hadoop Distributed File System.
+  apt:
+    name: hdfs
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: '{{ cache_valid_time|default(3600) }}'
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+- name: Set password for HDFS user.
+  user:
+    name: '{{ hdfs_user }}'
+    password: '{{ hdfs_user_password }}'
+
+- name: Configure HDFS common Settings.
+  template:
+    src: '{{ item }}.j2'
+    dest: '{{ hdfs_conf_dir }}/{{ item }}'
+  with_items:
+    - core-site.xml
+    - hdfs-site.xml
+    - log4j.properties
+    - slaves
+
+- include_tasks: namenode.yml
+  when: (namenode is defined) and (namenode)
+  tags: commonHdfsSettings,namenode
+
+- include_tasks: secondarynamenode.yml
+  when: (namenode is defined) and (namenode)
+  tags: commonHdfsSettings,namenode,secondarynamenode
+
+- include_tasks: datanode.yml
+  when: (datanode is defined) and (datanode)
+  tags: commonHdfsSettings,datanode

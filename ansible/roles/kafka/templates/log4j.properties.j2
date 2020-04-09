@@ -1,0 +1,177 @@
+log4j.rootLogger=kafkaFileAppender
+
+# Logging level
+kafka.kafkaAppender.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.kafkaFileAppender.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.stdout.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.controller.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.state.change.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.cleaner.Threshold={{ kafka_log_level|default('INFO') }}
+kafka.network.Request.Threshold={{ kafka_log_level|default('INFO') }}
+
+# Global config
+kafka.logs.dir={{ kafka_log_dir }}
+kafka.hostname={{ ansible_hostname }}
+
+# Logs files names
+kafka.server.log.file=kafka-server-${kafka.hostname}.log
+kafka.controller.log.file=kafka-controller-${kafka.hostname}.log
+kafka.state.log.file=kafka-state-change-${kafka.hostname}.log
+kafka.cleaner.log.file=kafka-log-cleaner-${kafka.hostname}.log
+kafka.request.log.file=kafka-request-${kafka.hostname}.log
+kafka.stdout.log.file=kafka-server-${kafka.hostname}.log
+
+#
+# File Appender
+#
+
+#log4j.logger.kafka=${kafka.kafkaFileAppender.Threshold}, kafkaFileAppender
+log4j.logger.kafka=${kafka.kafkaFileAppender.Threshold}, kafkaFileAppender
+log4j.appender.kafkaFileAppender=org.apache.log4j.FileAppender
+log4j.appender.kafkaFileAppender.Threshold=${kafka.kafkaFileAppender.Threshold}
+log4j.appender.kafkaFileAppender.File=${kafka.logs.dir}/${kafka.server.log.file}
+log4j.appender.kafkaFileAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.kafkaFileAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+#
+# File Appender Controller
+#
+log4j.logger.kafka.controller=${kafka.controller.Threshold}, FAcontrollerAppender
+log4j.additivity.kafka.controller=false
+log4j.appender.FAcontrollerAppender=org.apache.log4j.FileAppender
+log4j.appender.FAcontrollerAppender.Threshold=${kafka.controller.Threshold}
+log4j.appender.FAcontrollerAppender.File=${kafka.logs.dir}/${kafka.controller.log.file}
+log4j.appender.FAcontrollerAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.FAcontrollerAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+#
+# File Appender stateChangeAppender to rootLogger to get log file output
+#
+log4j.logger.state.change.logger=${kafka.state.change.Threshold}, FAstateChangeAppender
+log4j.additivity.state.change.logger=false
+log4j.appender.FAstateChangeAppender=org.apache.log4j.FileAppender
+log4j.appender.FAstateChangeAppender.Threshold=${kafka.state.change.Threshold}
+log4j.appender.FAstateChangeAppender.File=${kafka.logs.dir}/${kafka.state.log.file}
+log4j.appender.FAstateChangeAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.FAstateChangeAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+#
+# File Appender cleanerAppender to rootLogger to get log file output
+#
+log4j.logger.kafka.log.LogCleaner=${kafka.cleaner.Threshold}, FAcleanerAppender
+log4j.additivity.kafka.log.LogCleaner=false
+log4j.appender.FAcleanerAppender=org.apache.log4j.FileAppender
+log4j.appender.FAcleanerAppender.Threshold=${kafka.cleaner.Threshold}
+log4j.appender.FAcleanerAppender.File=${kafka.logs.dir}/${kafka.cleaner.log.file}
+log4j.appender.FAcleanerAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.FAcleanerAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+
+
+#
+# File Appender requestAppender to rootLogger to get log file output
+#
+log4j.logger.kafka.network.RequestChannel$=${kafka.network.Request.Threshold}, FArequestAppender
+log4j.additivity.kafka.network.RequestChannel$=false
+log4j.logger.kafka.request.logger=${kafka.network.Request.Threshold}, FArequestAppender
+log4j.additivity.kafka.request.logger=false
+log4j.appender.FArequestAppender=org.apache.log4j.FileAppender
+log4j.appender.FArequestAppender.Threshold=${kafka.network.Request.Threshold}
+log4j.appender.FArequestAppender.File=${kafka.logs.dir}/${kafka.request.log.file}
+log4j.appender.FArequestAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.FArequestAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+
+
+
+########################################
+
+#
+# Add kafkaAppender to rootLogger to get log file output
+#
+#log4j.logger.kafka=${kafka.kafkaAppender.Threshold}, kafkaAppender
+#log4j.logger.kafka=${kafka.kafkaAppender.Threshold}, kafkaAppender
+log4j.appender.kafkaAppender=org.apache.log4j.RollingFileAppender
+log4j.appender.kafkaAppender.Threshold=${kafka.kafkaAppender.Threshold}
+#log4j.appender.kafkaAppender.DatePattern='.'yyyy-MM-dd-HH
+log4j.appender.kafkaAppender.File=${kafka.logs.dir}/${kafka.server.log.file}
+log4j.appender.kafkaAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.kafkaAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.kafkaAppender.MaxFileSize=100MB
+log4j.appender.kafkaAppender.MaxBackupIndex=3
+
+#
+# Add stdout to rootLogger to get log file output
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+
+#
+# Add controllerAppender to rootLogger to get log file output
+#
+#log4j.logger.kafka.controller=${kafka.controller.Threshold}, controllerAppender
+log4j.additivity.kafka.controller=false
+log4j.appender.controllerAppender=org.apache.log4j.RollingFileAppender
+log4j.appender.controllerAppender.Threshold=${kafka.controller.Threshold}
+#log4j.appender.controllerAppender.DatePattern='.'yyyy-MM-dd-HH
+log4j.appender.controllerAppender.File=${kafka.logs.dir}/${kafka.controller.log.file}
+log4j.appender.controllerAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.controllerAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.controllerAppender.MaxFileSize=100MB
+log4j.appender.controllerAppender.MaxBackupIndex=3
+
+#
+# Add stateChangeAppender to rootLogger to get log file output
+#
+#log4j.logger.state.change.logger=${kafka.state.change.Threshold}, stateChangeAppender
+log4j.additivity.state.change.logger=false
+log4j.appender.stateChangeAppender=org.apache.log4j.RollingFileAppender
+log4j.appender.stateChangeAppender.Threshold=${kafka.state.change.Threshold}
+#log4j.appender.stateChangeAppender.DatePattern='.'yyyy-MM-dd-HH
+log4j.appender.stateChangeAppender.File=${kafka.logs.dir}/${kafka.state.log.file}
+log4j.appender.stateChangeAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.stateChangeAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stateChangeAppender.MaxFileSize=100MB
+log4j.appender.stateChangeAppender.MaxBackupIndex=3
+
+#
+# Add cleanerAppender to rootLogger to get log file output
+#
+#log4j.logger.kafka.log.LogCleaner=${kafka.cleaner.Threshold}, cleanerAppender
+log4j.additivity.kafka.log.LogCleaner=false
+log4j.appender.cleanerAppender=org.apache.log4j.RollingFileAppender
+log4j.appender.cleanerAppender.Threshold=${kafka.cleaner.Threshold}
+#log4j.appender.cleanerAppender.DatePattern='.'yyyy-MM-dd-HH
+log4j.appender.cleanerAppender.File=${kafka.logs.dir}/${kafka.cleaner.log.file}
+log4j.appender.cleanerAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.cleanerAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.cleanerAppender.MaxFileSize=100MB
+log4j.appender.cleanerAppender.MaxBackupIndex=3
+
+#
+# Add requestAppender to rootLogger to get log file output
+#
+#log4j.logger.kafka.network.RequestChannel$=${kafka.network.Request.Threshold}, requestAppender
+log4j.additivity.kafka.network.RequestChannel$=false
+log4j.logger.kafka.request.logger=${kafka.network.Request.Threshold}, requestAppender
+log4j.additivity.kafka.request.logger=false
+#log4j.appender.requestAppender=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.requestAppender=org.apache.log4j.RollingFileAppender
+log4j.appender.requestAppender.Threshold=${kafka.network.Request.Threshold}
+#log4j.appender.requestAppender.DatePattern='.'yyyy-MM-dd-HH
+log4j.appender.requestAppender.File=${kafka.logs.dir}/${kafka.request.log.file}
+log4j.appender.requestAppender.layout=org.apache.log4j.PatternLayout
+log4j.appender.requestAppender.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.requestAppender.MaxFileSize=100MB
+log4j.appender.requestAppender.MaxBackupIndex=3
+
+# Other logs
+
+#log4j.logger.kafka.producer.async.DefaultEventHandler=DEBUG, kafkaAppender
+#log4j.logger.kafka.client.ClientUtils=DEBUG, kafkaAppender
+#log4j.logger.kafka.perf=DEBUG, kafkaAppender
+#log4j.logger.kafka.perf.ProducerPerformance$ProducerThread=DEBUG, kafkaAppender
+#log4j.logger.org.I0Itec.zkclient.ZkClient=DEBUG
+#log4j.logger.kafka.network.Processor=TRACE, requestAppender
+#log4j.logger.kafka.server.KafkaApis=TRACE, requestAppender
+#log4j.additivity.kafka.server.KafkaApis=false

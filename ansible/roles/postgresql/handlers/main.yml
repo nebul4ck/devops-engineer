@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ postgresql_service }}
+  systemd:
+    name: '{{ postgresql_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ postgresql_service }}
+  systemd:
+    name: '{{ postgresql_service }}'
+    state: restarted
+
+- name: stop {{ postgresql_service }}
+  systemd:
+    name: '{{ postgresql_service }}'
+    state: stopped
+
+- name: reload {{ postgresql_service }}
+  systemd:
+    name: '{{ postgresql_service }}'
+    state: reloaded

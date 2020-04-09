@@ -1,0 +1,11 @@
+APT::Acquire::https "true";
+
+Acquire::https::{{ buanarepo_pro_restricted }} {
+  Verify-Peer "false";
+  Verify-Host "false";
+
+  CaInfo "{{ buanarepo_restricted_certs_base }}/{{ buanarepo_pro_ca_restricted_crt }}";
+
+  SslCert "{{ buanarepo_restricted_certs_base }}/{{ buanarepo_pro_client_restricted_crt }}";
+  SslKey  "{{ buanarepo_restricted_certs_base }}/{{ buanarepo_pro_client_restricted_key }}";
+};

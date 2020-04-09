@@ -1,0 +1,74 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "S3BucketName",
+        "ParameterValue": "ansible-repo"
+    },
+    {
+        "ParameterKey": "S3EncryptionProto",
+        "ParameterValue": "AES256"
+    },
+    {
+        "ParameterKey": "S3PublicAccess",
+        "ParameterValue": "Private"
+    },
+    {
+        "ParameterKey": "S3DeletionPolicy",
+        "ParameterValue": "Delete"
+    },
+    {
+        "ParameterKey": "S3EnableVersioning",
+        "ParameterValue": "Enabled"
+    },
+    {
+        "ParameterKey": "S3Lifecycle",
+        "ParameterValue": "Disabled"
+    },
+    {
+        "ParameterKey": "S3NumDaysAbortIncompleteMultipartUpload",
+        "ParameterValue": "7"
+    },
+    {
+        "ParameterKey": "S3NumDaysFirstTransitionsCurrentObject",
+        "ParameterValue": "90"
+    },
+    {
+        "ParameterKey": "S3FirstTransitionsCurrentObjectStorageClass",
+        "ParameterValue": "STANDARD_IA"
+    },
+    {
+        "ParameterKey": "S3NumDaysSecondTransitionsCurrentObject",
+        "ParameterValue": "180"
+    },
+    {
+        "ParameterKey": "S3SecondTransitionsCurrentObjectStorageClass",
+        "ParameterValue": "GLACIER"
+    },
+    {
+        "ParameterKey": "S3FullExpirationCurrentObjectInDays",
+        "ParameterValue": "360"
+    },
+    {
+        "ParameterKey": "S3NumDaysFirstTransitionsNonCurrentObject",
+        "ParameterValue": "90"
+    },
+    {
+        "ParameterKey": "S3FirstTransitionsNonCurrentObjectStorageClass",
+        "ParameterValue": "STANDARD_IA"
+    },
+    {
+        "ParameterKey": "S3NumDaysSecondTransitionsNonCurrentObject",
+        "ParameterValue": "180"
+    },
+    {
+        "ParameterKey": "S3SecondTransitionsNonCurrentObjectStorageClass",
+        "ParameterValue": "GLACIER"
+    },
+    {
+        "ParameterKey": "S3FullExpirationNonCurrentObjectInDays",
+        "ParameterValue": "360"
+    }
+]

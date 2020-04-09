@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+<!-- NAMENODE -->
+
+	<property>
+		<name>dfs.namenode.name.dir</name>
+		<value>file://{{ hdfs_namenode_name_dir }}</value>	
+		<description>Path del filesystem donde el namenode almacenará los metadatos.</description>
+	</property>
+
+	<property>
+		<name>dfs.nameservices</name>
+		<value>{{ hdfs_dfs_nameservices }}</value>
+		<description> Comma-separated list of nameservices.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.name.dir.restore</name>
+		<value>{{ hdfs_dfs_namenode_name_dir_restore|default('true') }}</value>
+		<description>Set to true to enable NameNode to attempt recovering a previously failed dfs.namenode.name.dir. When enabled, a recovery of any failed directory is attempted during checkpoint.</description>
+	</property>
+
+	<property>
+		<name>dfs.blocksize</name>
+		<value>{{ hdfs_dfs_blocksize|default(268435456) }}</value>
+		<description>HDFS blocksize of 256MB for large file-systems.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.handler.count</name>
+		<value>{{ hdfs_dfs_namenode_handler_count|default(100) }}</value>
+		<description>More NameNode server threads to handle RPCs from large number of DataNodes.</description>
+	</property>
+ 
+	<property>
+		<name>dfs.namenode.http-address</name>
+		<value>{{ hdfs_namenode }}:{{ hdfs_dfs_namenode_http_address_port|default(50070) }}</value>
+	</property>
+
+	<property>
+		<name>dfs.replication</name>
+		<value>{{ hdfs_dfs_replication|default(1) }}</value>
+		<description>Valor por defecto para replicar bloques HDFS</description>
+	</property>
+
+	<property>
+		<name>dfs.image.compress</name>
+		<value>{{ hdfs_dfs_image_compress|default('false') }}</value>
+		<description>Should the dfs image be compressed?</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.support.allow.format</name>
+		<value>{{ hdfs_dfs_namenode_support_allow_format|default('true') }}</value>
+		<description>Does HDFS namenode allow itself to be formatted? You may consider setting this to false for any production cluster, to avoid any possibility of formatting a running DFS.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.startup.delay.block.deletion.sec</name>
+		<value>{{ hdfs_dfs_namenode_startup_delay_block_deletion_sec|default(3600) }}</value>
+		<description>The delay in seconds at which we will pause the blocks deletion after Namenode startup. By default it's disabled. In the case a directory has large number of directories and files are deleted, suggested delay is one hour to give the administrator enough time to notice large number of pending deletion blocks and take corrective action.</description>
+	</property>
+
+	<property>
+		<name>dfs.datanode.du.reserved</name>
+		<value>{{ hdfs_dfs_datanode_du_reserved|default(5368709120) }}</value>
+		<description>(5GB) - Reserved space in bytes per volume. Always leave this much space free for non dfs use.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.datanode.registration.ip-hostname-check</name>
+		<value>{{ hdfs_dfs_namenode_datanode_registration_ip_hostname_check|default('false') }}</value>
+	</property>
+
+<!-- SECONDARYNAMENODE -->
+
+	<property>
+		<name>dfs.namenode.checkpoint.dir</name>
+		<value>file://{{ hdfs_dfs_namenode_checkpoint_dir }}</value>
+		<description>Determines where on the local filesystem the DFS secondary name node should store the temporary images to merge. If this is a comma-delimited list of directories then the image is replicated in all of the directories for redundancy. Es recomendable añadir otro path (file:///undir,file:///otrodir) siempre y cuando estén en discos diferentes.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.checkpoint.period</name>
+		<value>{{ hdfs_dfs_namenode_checkpoint_period|default(3600) }}</value>
+		<description>The number of seconds between two periodic checkpoints.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.checkpoint.txns</name>
+		<value>{{ hdfs_dfs_namenode_checkpoint_txns|default(1000000) }}</value>
+		<description>The Secondary NameNode or CheckpointNode will create a checkpoint of the namespace every 'dfs.namenode.checkpoint.txns' transactions, regardless of whether 'dfs.namenode.checkpoint.period' has expired.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.checkpoint.max-retries</name>
+		<value>{{ hdfs_dfs_namenode_checkpoint_max_retries|default(6) }}</value>
+		<description>The SecondaryNameNode retries failed checkpointing. If the failure occurs while loading fsimage or replaying edits, the number of retries is limited by this variable.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.num.checkpoints.retained</name>
+		<value>{{ hdfs_dfs_namenode_num_checkpoints_retained|default(3) }}</value>
+		<description>The number of image checkpoint files (fsimage_*) that will be retained by the NameNode and Secondary NameNode in their storage directories. All edit logs (stored on edits_* files) necessary to recover an up-to-date namespace from the oldest retained checkpoint will also be retained.</description>
+	</property>
+
+	<property>
+		<name>dfs.namenode.secondary.http-address</name>
+		<value>{{ hdfs_namenode }}:{{ hdfs_dfs_namenode_secondary_http_address_port|default(50090) }}</value>
+	</property>
+ 
+	<property>
+		<name>dfs.namenode.secondary.https-address</name>
+		<value>{{ hdfs_namenode }}:{{ hdfs_dfs_namenode_secondary_https_address_port|default(50091) }}</value>
+	</property>
+
+<!-- DATANODE -->
+
+{% for host in groups['all'] %}{% if hostvars[host]['datanode']|default(false) %}
+	<property>
+		<name>dfs.datanode.address</name>
+		<value>{{ host }}:{{ hdfs_dfs_datanode_address_port|default(50010) }}</value>
+	</property>
+
+	<property>
+		<name>dfs.datanode.http.address</name>
+		<value>{{ host }}:{{ hdfs_dfs_datanode_http_address_port|default(50075) }}</value>
+	</property>
+
+	<property>
+		<name>dfs.datanode.ipc.address</name>
+		<value>{{ host }}:{{ hdfs_dfs_datanode_ipc_address|default(50020) }}</value>
+	</property>
+{% endif %}{% endfor %}
+
+	<property>
+		<name>dfs.datanode.handler.count</name>
+		<value>{{ hdfs_dfs_datanode_handler_count|default(10) }}</value>
+		<description>The number of server threads for the datanode.</description>
+	</property>
+
+	<property>
+		<name>dfs.datanode.data.dir</name>
+		<value>file://{{ hdfs_datanode_base_dir }}</value>
+		<description>If this is a comma-delimited list of directories, then data will be stored in all named directories, typically on different devices</description>
+	</property>
+
+	<property>
+		<name>dfs.client.block.write.replace-datanode-on-failure.enable</name>
+		<value>{{ hdfs_dfs_client_block_write_replace_datanode_on_failure_enable|default('false') }}</value>
+		<description>If there is a datanode/network failure in the write pipeline, DFSClient will try to remove the failed datanode from the pipeline and then continue writing with the remaining datanodes. As a result, the number of datanodes in the pipeline is decreased. The feature is to add new datanodes to the pipeline. This is a site-wide property to enable/disable the feature. When the cluster size is extremely small, e.g. 3 nodes or less, cluster administrators may want to set the policy to NEVER in the default configuration file or disable this feature. Otherwise, users may experience an unusually high rate of pipeline failures since it is impossible to find new datanodes for replacement. See also dfs.client.block.write.replace-datanode-on-failure.policy</description>
+	</property>
+
+	<property>
+		<name>dfs.client.block.write.replace-datanode-on-failure.policy</name>
+		<value>{{ hdfs_dfs_client_block_write_replace_datanode_on_failure_policy|default('NEVER') }}</value>
+		<description>This property is used only if the value of dfs.client.block.write.replace-datanode-on-failure.enable is true. ALWAYS: always add a new datanode when an existing datanode is removed. NEVER: never add a new datanode. DEFAULT: Let r be the replication number. Let n be the number of existing datanodes. Add a new datanode only if r is greater than or equal to 3 and either (1) floor(r/2) is greater than or equal to n; or (2) r is greater than n and the block is hflushed/appended. </description>
+	</property>
+
+	<property>
+		<name>dfs.datanode.max.locked.memory</name>
+		<value>{{ hdfs_dfs_datanode_max_locked_memory|default(512) }}</value>
+		<description>The amount of memory in bytes to use for caching of block replicas in memory on the datanode. The datanode's maximum locked memory soft ulimit (RLIMIT_MEMLOCK) must be set to at least this value, else the datanode will abort on startup. By default, this parameter is set to 0, which disables in-memory caching. If the native libraries are not available to the DataNode, this configuration has no effect.</description>
+	</property>
+
+<!-- Tunning For ElasticSearch HDFS Repository -->
+
+	<property>
+		<name>dfs.client.read.shortcircuit</name>
+		<value>{{ hdfs_dfs_client_read_shortcircuit|default('false') }}</value>
+	</property>
+
+	<property>
+		<name>dfs.domain.socket.path</name>
+		<value>{{ hdfs_dfs_domain_socket_path }}</value>
+	</property>
+
+<!-- Mas opciones de configuración en: https://hadoop.apache.org/docs/r2.7.1/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml -->
+
+</configuration>

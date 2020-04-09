@@ -1,0 +1,36 @@
+[Unit]
+Description=Broker Service
+Documentation=http://druid.io
+
+[Service]
+Type={{ druid_service_type|default('simple') }}
+
+User={{ druid_user|default('druid') }}
+Group={{ druid_group|default('druid') }}
+
+Environment='CLASSPATH={{ druid_base }}/lib/*:{{ druid_conf_base }}/_common:{{ druid_conf_base }}/broker'
+Environment='JMX=-Dcom.sun.management.jmxremote.port={{ broker_jmx_port|default(17072) }} -Dcom.sun.management.jmxremote.authenticate={{ broker_jmxremote_authenticate|default('false') }} -Dcom.sun.management.jmxremote.ssl={{ broker_jmxremote_ssl|default('false') }}'
+Environment='TMP={{ druid_tmp_base }}/broker'
+
+ExecStart=/usr/bin/java -server {{ broker_xmx|default('-Xmx1g') }} {{ broker_xms|default('-Xmx1g') }} -XX:NewSize={{ broker_newsize|default('256m') }} -XX:MaxNewSize={{ broker_max_newsize|default('256m') }} -XX:MaxDirectMemorySize={{ broker_maxdirectmemory_size|default('1g') }} -Duser.timezone={{ druid_timezone|default('UTC') }} -Dfile.encoding={{ druid_encoding|default('UTF-8') }} \
+			-Djava.io.tmpdir=${TMP} -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+			-Dorg.jboss.logging.provider=slf4j -Dnet.spy.log.LoggerImpl=net.spy.memcached.compat.log.SLF4JLogger \
+			-Dlog4j.shutdownCallbackRegistry=io.druid.common.config.Log4jShutdown -Dlog4j.shutdownHookEnabled=true \
+			-Dlog4j.configurationFile={{ druid_conf_base }}/broker/log4j2.xml \
+			-XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+PrintGCApplicationStoppedTime \
+			-XX:+PrintGCApplicationConcurrentTime -Xloggc:${TMP}/broker.gc.log -XX:+UseGCLogFileRotation \
+			-XX:NumberOfGCLogFiles={{ druid_number_of_gc_log_files|default(5) }} -XX:GCLogFileSize={{ druid_gc_log_file_size|default('10m') }} -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError \
+			-XX:HeapDumpPath=${TMP}/broker.hprof -XX:+PerfDisableSharedMem -XX:+UseConcMarkSweepGC -XX:-UseBiasedLocking \
+			-classpath ${CLASSPATH} io.druid.cli.Main server broker
+
+# SIGTERM signal is used to stop the Java process
+KillSignal={{ druid_kill_signal|default('SIGTERM') }}
+
+# Java process is never killed
+SendSIGKILL={{ druid_send_sig_kill|default('yes') }}
+OOMScoreAdjust={{ druid_oom_score_adjust|default(1000) }}
+Restart={{ druid_restart|default('on-failure') }}
+RestartSec={{ druid_restart_sec|default('2000ms') }}
+
+[Install]
+WantedBy=default.target

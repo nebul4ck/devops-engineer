@@ -1,0 +1,47 @@
+---
+# Main role to configure common system settings
+
+# This Play only is necessary until DNSmasq was take out.
+- name: Create the /etc/hosts file for DNS servers.
+  template:
+    src: dns-hosts.j2
+    dest: /etc/hosts
+  when: inventory_hostname in groups['streaming']
+
+- name: Create the /etc/hosts file for servers.
+  template:
+    src: hosts.j2
+    dest: /etc/hosts
+  when: inventory_hostname not in groups['streaming']
+
+- name: Include Kernel Playbook. This playbook will set all necessary kernel parameters.
+  include_tasks: kernel.yml
+  tags: kernel
+
+- name: Disable Transparent Huge Pages in current session.
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
+  ignore_errors: true
+
+- name: Disable Transparent Huge Pages during bootstrap.
+  template:
+    src: disable-transparent-hugepages.j2
+    dest: /etc/init.d/disable-transparent-hugepages
+    owner: root
+    group: root
+    mode: 0755
+  notify: disable thp
+
+- name: Configure Network Interfaces.
+  template:
+    src: interfaces.j2
+    dest: '/etc/network/interfaces'
+  notify: restart networking
+
+- name: Configure vim colour.
+  lineinfile:
+    path: '~/.vimrc'
+    state: present
+    create: yes
+    line: ':color desert'
+  become_user: 'tech'
+...

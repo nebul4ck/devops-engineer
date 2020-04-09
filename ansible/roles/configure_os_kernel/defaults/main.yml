@@ -1,0 +1,9 @@
+---
+# Values to setting Kernel parameters
+swappiness: 1
+file_max: 65536
+overcommit_memory: 1
+max_map_count: 262144
+
+# The follow command run a script that disable THP during the bootstrap
+disable_thp: update-rc.d disable-transparent-hugepages defaults

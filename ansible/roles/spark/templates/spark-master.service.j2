@@ -1,0 +1,21 @@
+[Unit]
+Description=Spark Master Service
+Documentation=http://spark.apache.org/
+
+[Service]
+Type=forking
+
+User={{ spark_user|default('spark') }}
+Group={{ spark_group|default('spark') }}
+
+ExecStart=/opt/spark/sbin/start-master.sh
+ExecStop=/opt/spark/sbin/stop-master.sh
+
+Restart=on-failure
+RestartSec=2000ms
+
+StandardOutput=journal
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

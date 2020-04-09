@@ -1,0 +1,42 @@
+---
+# log4j.properties
+spark_log_level: 'ERROR'
+spark_log_appender: 'FILE'
+spark_log_maxsize: 104857600
+spark_max_backup: 3
+
+# spark-default.conf
+spark_eventLog_enabled: 'false'
+spark_ui_port: 4040
+spark_worker_cleanup_enabled: 'true'
+spark_worker_cleanup_interval: 1800
+spark_worker_cleanup_appDataTtl: 86400
+spark_python_worker_memory: '512m'
+spark_driver_cores: 1
+spark_driver_maxResultSize: '128m'
+spark_driver_memory: '512m'
+spark_cores_max: 8
+spark_executor_memory: '512m'
+spark_executor_logs_rolling_maxRetainedFiles: 3
+spark_executor_logs_rolling_maxSize: 500000000
+spark_executor_logs_rolling_strategy: 'size'
+spark_executor_cores: 4
+spark_dynamicAllocation_enabled: 'true'
+spark_shuffle_service_enabled: 'true'
+spark_dynamicAllocation_minExecutors: 1
+spark_dynamicAllocation_maxExecutors: 1
+spark_dynamicAllocation_initialExecutors: 1
+spark_memory_fraction: 0_6
+spark_memory_storageFraction: 0_5
+
+# spark-env.sh
+spark_master_webui_port: 8086
+spark_worker_cores: 8
+spark_worker_memory: '1g'
+spark_jmx: '-Dcom.sun.management.jmxremote'
+spark_jmx_auth: 'false'
+spark_jxm_ssl: 'false'
+spark_jmx_port: 8005
+spark_worker_opts: '-Dspark.worker.cleanup.enabled={{ spark_worker_cleanup_enabled|default("true") }}
+-Dspark.worker.cleanup.interval={{ spark_worker_cleanup_interval|default(1800) }} -Dspark.worker.cleanup.appDataTtl={{ spark_worker_cleanup_appDataTtl|default(86400) }}'
+spark_daemon_memory: '256m'

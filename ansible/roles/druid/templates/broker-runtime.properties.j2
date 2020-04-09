@@ -1,0 +1,41 @@
+# Node Config
+druid.host={{ ansible_hostname }}
+druid.port={{ druid_broker_port|default(8082) }}
+druid.service={{ druid_broker_service }}
+
+# Query Configs
+druid.broker.balancer.type={{ broker_balancer_type|default('random') }}
+druid.broker.select.tier={{ broker_select_tier|default('highestPriority') }}
+druid.server.http.numThreads={{ broker_server_http_numThreads|default(36) }}
+druid.server.http.maxIdleTime={{ broker_server_http_maxIdleTime|default('PT5m') }}
+druid.server.http.defaultQueryTimeout={{ druid_server_http_defaultQueryTimeout|default(300000) }}
+druid.broker.http.numConnections={{ broker_http_numConnections|default(20) }}
+druid.broker.http.compressionCodec={{ broker_http_compressionCodec|default('gzip') }}
+druid.broker.http.readTimeout={{ broker_http_readTimeout|default('PT9M') }}
+druid.query.search.maxSearchLimit={{ broker_query_search_maxSearchLimit|default(1000) }}
+druid.query.segmentMetadata.defaultHistory={{ broker_query_segmentMetadata_defaultHistory|default('P1W') }}
+druid.query.segmentMetadata.defaultAnalysisTypes={{ broker_query_segmentMetadata_defaultAnalysisTypes|default('["cardinality", "interval", "minmax"]') }}'
+#druid.query.groupBy.maxIntermediateRows={{ broker_query_groupBy_maxIntermediateRows|default('') }}
+#druid.query.groupBy.maxResults={{ broker_query_groupBy_maxResults|default('') }}
+#druid.query.groupBy.defaultStrategy={{ broker_query_groupBy_defaultStrategy|default('') }}
+
+# Retry Policy
+druid.broker.retryPolicy.numTries={{ broker_retryPolicy_numTries|default(1) }}
+druid.processing.buffer.sizeBytes={{ broker_processing_buffer_sizeBytes|default(157286400) }}
+druid.processing.numMergeBuffers={{ broker_processing_numMergeBuffers|default(2) }}
+druid.processing.numThreads={{ broker_processing_numThreads|default(4) }}
+druid.processing.columnCache.sizeBytes={{ broker_processing_columnCache_sizeBytes|default(0) }}
+druid.processing.fifo={{ broker_processing_fifo|default('false') }}
+druid.processing.tmpDir={{ broker_processing_tmpDir|default('/tmp') }}
+
+
+# Query cache
+druid.broker.cache.useCache={{ broker_cache_useCache|default('false') }}
+druid.broker.cache.populateCache={{ broker_cache_populateCache|default('false') }}
+druid.broker.cache.unCacheable={{ broker_cache_unCacheable|default('[]') }}
+
+# Caching historical/broker.
+druid.cache.type={{ common_cache_type|default('local') }}
+druid.cache.sizeInBytes={{ common_cache_sizeInBytes|default(0) }}
+druid.cache.initialSize={{ common_cache_initialSize|default(500000) }}
+druid.cache.logEvictionCount={{ common_cache_logEvictionCount|default(0) }}

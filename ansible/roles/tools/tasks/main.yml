@@ -1,0 +1,4 @@
+---
+- name: Initializing access by SSH-KEY to remote hosts...
+  include_tasks: utils/accessbysshkey.yml
+  tags: accessbysshkey

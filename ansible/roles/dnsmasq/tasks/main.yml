@@ -1,0 +1,23 @@
+---
+# Main role to install and configure DNSmasq service.
+
+- name: Install DNSmasq service.
+  apt:
+    name: dnsmasq
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ dnsmasq_service }}'
+  tags: systemd
+  
+- name: Configure DNSmasq service.
+  template: 
+    src: '{{ dnsmasq_service }}.conf.j2'
+    dest: '{{ dnsmasq_conf_file }}'
+  notify: restart {{ dnsmasq_service }}

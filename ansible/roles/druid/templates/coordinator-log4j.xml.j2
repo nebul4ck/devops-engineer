@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ coordinator_log_status|default('WARN') }}">
+    <Appenders>
+        <File name="{{ coordinator_log_appender }}" fileName="{{ coordinator_log_filename|default('/tmp/coordinator.log') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ coordinator_log_level|default('info') }}">
+            <AppenderRef ref="{{ coordinator_log_appender }}"/>
+        </Root>
+    </Loggers>
+</Configuration>

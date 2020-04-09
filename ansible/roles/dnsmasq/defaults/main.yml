@@ -1,0 +1,4 @@
+---
+# Put here defaults variables for role
+dnsmasq_service: 'dnsmasq'
+dnsmasq_conf_file: '/etc/dnsmasq.conf'

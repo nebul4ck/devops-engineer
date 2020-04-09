@@ -1,0 +1,15 @@
+---
+# Global
+cerebro_port: 9999
+
+# application.conf.j2
+cerebro_rest_history_size: 50
+cerebro_user_auth: ''
+cerebro_pass_auth: ''
+
+# logback.xml.j2
+cerebro_log_appender: 'FILE'
+cerebro_log_maxsize: '100MB'
+cerebro_log_max_rotate: 3
+cerebro_total_sizecap: 500MB
+cerebro_log_level: 'INFO'

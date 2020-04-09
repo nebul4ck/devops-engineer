@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ logstash_service }}
+  systemd:
+    name: '{{ logstash_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ logstash_service }}
+  systemd:
+    name: '{{ logstash_service }}'
+    state: restarted
+
+- name: stop {{ logstash_service }}
+  systemd:
+    name: '{{ logstash_service }}'
+    state: stopped
+
+- name: reload {{ logstash_service }}
+  systemd:
+    name: '{{ logstash_service }}'
+    state: reloaded

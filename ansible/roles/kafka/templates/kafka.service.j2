@@ -1,0 +1,18 @@
+[Unit]
+Description=Kafka Service
+Documentation=https://kafka.apache.org/
+
+[Service]
+Type=forking
+User={{ kafka_user }}
+Group={{ kafka_group }}
+
+ExecStart={{ kafka_base }}/bin/kafka-server-start.sh -daemon {{ kafka_conf_dir }}/{{ kafka_conf_file }}
+ExecStop={{ kafka_base }}/bin/kafka-server-stop.sh
+
+Restart=on-failure
+RestartSec=5000ms
+
+
+[Install]
+WantedBy=default.target

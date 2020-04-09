@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# copy ssh-key
+#ssh-copy-id vagrant@192.168.33.10
+
+# Get vm name from /home/agonzalez/tmp/vagrant-ubu16. vm name = ubu16
+vm_id=$(basename $0|cut -d "-" -f2)
+
+logfile=/tmp/vagrant-$vm_id.log
+vm=/opt/Vagrant/$vm_id
+vm_domain=vagrant@192.168.33.10
+vm_repo=/git/
+base_repo=~/git/vagrant-repos
+
+exec &>> $logfile
+
+boot_vm() {
+    cd $vm
+    echo """[$(date "+%d-%m-%Y %H:%M:%Y")] - \
+initializing vagrant $vm_id virtual machine..."""
+    vagrant up
+}
+
+mount_and_pull_repos() {
+    cd $base_repo
+    sshfs $vm_domain:$vm_repo ./ && \
+    echo "ok - $base_repo mounted"
+
+    #echo "Pulling repositories..."
+    #for i in $(ls .);
+    #do
+        #cd "$i"; git pull; cd -;
+    #done    
+}
+
+desktop_notify() {
+    case $1 in
+    err)
+        notify-send "error while initializing $vm_id" \
+        -i xterm-color
+    ;;
+    ok)
+        notify-send "Vagrant $vm_id started!" \
+        -i virtualbox
+    ;;
+    esac
+}
+
+boot_vm
+
+if [ $? != 0 ];then
+    desktop_notify err
+    exit 1
+fi
+
+if mount_and_pull_repos;then
+    desktop_notify ok
+else
+    desktop_notify err
+    exit 1
+fi

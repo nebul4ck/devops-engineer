@@ -1,0 +1,79 @@
+---
+# This Playbook recives some variables: env_repo and type.
+
+# If remove_repo variable is true the current playbook will remove buanarepo older repositories.
+# - name: Remove Buanarepo older repositories in current managed host.
+#   include_tasks: remove-buanarepo.yml
+#   vars:
+#     env_repo_remove: '{{ env_repo }}'
+#   when: (remove_repo is defined) and (remove_repo)
+#   tags: remove-buanarepo
+
+- name: "Remove Buanarepo older repositories in {{ ansible_hostname }}."
+  block:
+
+    - name: "Find and remove directory."
+      include_tasks: findDelete.yml
+      vars:
+        directory: "{{ item }}"
+      with_items:
+        - "{{ buanarepo_main_certs_base }}"
+        - "{{ buanarepo_restricted_certs_base }}"
+
+    - name: Remove Buanarepo repositories.
+      apt_repository:
+        repo: '{{ item }}'
+        state: absent
+        update_cache: yes
+      with_items:
+        - '{{ buanarepo_pro_main_full_path_apt_source }}'
+        - '{{ buanarepo_pro_restricted_full_path_apt_source }}'
+        - '{{ buanarepo_dev_main_full_path_apt_source }}'
+        - '{{ buanarepo_dev_restricted_full_path_apt_source }}'
+      when: (env_repo is defined) and (env_repo == 'production' or env_repo == 'development')
+
+    - name: Check if exists APT-CONF files for Buanarepo repository.
+      block:
+        - name: Checking files...
+          stat:
+            path: '{{ buanarepo_apt_confd }}/{{ item }}'
+          register: aptConfFileStatus
+          with_items:
+            - '{{ buanarepo_dev_main_template }}'
+            - '{{ buanarepo_dev_restricted_template }}'
+            - '{{ buanarepo_pro_main_template }}' 
+            - '{{ buanarepo_pro_restricted_template }}'
+        - name: Removing APT-CONF files...
+          file:
+            path: '{{ buanarepo_apt_confd }}/{{ item.item }}'
+            state: absent
+          when: item.stat.exists
+          with_items:
+            - '{{ aptConfFileStatus.results }}'
+  when: (remove_repo is defined) and (remove_repo)
+
+
+# Add new Buanarepo repository.
+
+- name: Add Buanarepo repository.
+  block:
+    - name: "Add main production environment."
+      include_tasks: buanarepo-pro-main.yml
+      when: (env_repo and type is defined) and (env_repo == 'production') and (type == 'main')
+      tags: buanarepo-pro-main
+
+    - name: "Add restricted production environment."
+      include_tasks: buanarepo-pro-restricted.yml
+      when: (env_repo and type is defined) and (env_repo == 'production') and (type == 'restricted')
+      tags: buanarepo-pro-restricted
+
+    - name: "Add main development environment."
+      include_tasks: buanarepo-dev-main.yml
+      when: (env_repo and type is defined) and (env_repo == 'development') and (type == 'main')
+      tags: buanarepo-dev-main
+
+    - name: "Add restricted development environment."
+      include_tasks: buanarepo-dev-restricted.yml
+      when: (env_repo and type is defined) and (env_repo == 'development') and (type == 'restricted')
+      tags: buanarepo-dev-restricted
+  when: (add_repo is defined) and (add_repo)

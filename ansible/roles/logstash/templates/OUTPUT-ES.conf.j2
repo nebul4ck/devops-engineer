@@ -1,0 +1,19 @@
+output {
+
+	if [kafka_topic_id] == "<topic>"
+	{
+		elasticsearch {
+		index => "<topic>-%{+YYYY.MM.dd}"
+		hosts => {{ elasticsearch_cluster }}
+		codec => "json"
+                }
+	}
+	else if [kafka_topic_id] == "<topic>"
+	{
+                elasticsearch {
+                index => "<topic>-%{+YYYY.MM.dd}"
+                hosts => {{ elasticsearch_cluster }}
+                codec => "json"
+                }
+        }
+}

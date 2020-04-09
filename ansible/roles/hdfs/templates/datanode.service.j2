@@ -1,0 +1,16 @@
+[Unit]
+Description=HDFS - DataNode Service
+Documentation=https://https://hadoop.apache.org
+After=network.target
+
+[Service]
+Type={{ hdfs_systemd_type|default('forking') }}
+
+User={{ hdfs_user|default('hdfs') }}
+Group={{ hdfs_group|default('hdfs') }}
+
+ExecStart={{ hdfs_base_dir }}/sbin/hadoop-daemon.sh start {{ datanode_service|default('datanode') }}
+ExecStop={{ hdfs_base_dir }}/sbin/hadoop-daemon.sh stop {{ datanode_service|default('datanode') }}
+
+[Install]
+WantedBy=multi-user.target

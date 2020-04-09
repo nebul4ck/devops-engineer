@@ -1,0 +1,12 @@
+---
+# Put here defaults variables for role
+kafka_service: 'kafka'
+kafka_conf_file: 'server.properties'
+kafka_user: 'kafka'
+kafka_group: 'kafka'
+kafka_base: '/opt/kafka'
+kafka_conf_dir: '/opt/kafka/config'
+kafka_log_dir: '/var/log/kafka'
+kafka_store: '/opt/store/kafka'
+kafka_log_level: 'INFO'
+kafka_create_topics: '/usr/bin/kafka-create-topics'

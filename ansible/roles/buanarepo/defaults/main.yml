@@ -1,0 +1,8 @@
+---
+### Directories ###
+certs_base: '/opt/certs'
+buanarepo_certs_base: '{{ certs_base }}/buanarepo'
+buanarepo_main_certs_base: '{{ buanarepo_certs_base }}/main'
+buanarepo_restricted_certs_base: '{{ buanarepo_certs_base }}/restricted'
+buanarepo_apt_confd: '/etc/apt/apt.conf.d'
+

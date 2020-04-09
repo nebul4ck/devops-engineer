@@ -1,0 +1,84 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ druid_coordinator_service }}
+  systemd:
+    name: '{{ druid_coordinator_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ druid_coordinator_service }}
+  systemd:
+    name: '{{ druid_coordinator_service }}'
+    state: restarted
+
+- name: stop {{ druid_coordinator_service }}
+  systemd:
+    name: '{{ druid_coordinator_service }}'
+    state: stopped
+
+- name: start {{ druid_broker_service }}
+  systemd:
+    name: '{{ druid_broker_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ druid_broker_service }}
+  systemd:
+    name: '{{ druid_broker_service }}'
+    state: restarted
+
+- name: stop {{ druid_broker_service }}
+  systemd:
+    name: '{{ druid_broker_service }}'
+    state: stopped
+
+- name: start {{ druid_overlord_service }}
+  systemd:
+    name: '{{ druid_overlord_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ druid_overlord_service }}
+  systemd:
+    name: '{{ druid_overlord_service }}'
+    state: restarted
+
+- name: stop {{ druid_overlord_service }}
+  systemd:
+    name: '{{ druid_overlord_service }}'
+    state: stopped
+
+- name: start {{ druid_middlemanager_service }}
+  systemd:
+    name: '{{ druid_middlemanager_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ druid_middlemanager_service }}
+  systemd:
+    name: '{{ druid_middlemanager_service }}'
+    state: restarted
+
+- name: stop {{ druid_middlemanager_service }}
+  systemd:
+    name: '{{ druid_middlemanager_service }}'
+    state: stopped
+
+- name: start {{ druid_historical_service }}
+  systemd:
+    name: '{{ druid_historical_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ druid_historical_service }}
+  systemd:
+    name: '{{ druid_historical_service }}'
+    state: restarted
+
+- name: stop {{ druid_historical_service }}
+  systemd:
+    name: '{{ druid_historical_service }}'
+    state: stopped

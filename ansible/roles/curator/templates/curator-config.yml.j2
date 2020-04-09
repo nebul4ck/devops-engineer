@@ -1,0 +1,21 @@
+---
+client:
+  hosts:
+    - {{ elasticsearch_master }}
+  port: {{ elasticsearch_master_port|default(9200) }}
+  url_prefix:
+  use_ssl: {{ curator_use_ssl|default(False) }}
+  certificate: {{ curator_server_cert|default('') }}
+  client_cert: {{ curator_client_cert|default('') }}
+  client_key: {{ curator_client_key|default('') }}
+  ssl_no_validate: {{ curator_ssl_no_validate|default(False) }}
+  http_auth: {{ curator_http_auth|default('') }}
+  timeout: {{ curator_timeout|default(30) }}
+  master_only: {{ curator_master_only|default(True) }}
+
+logging:
+  loglevel: {{ curator_log_leve|default('INFO') }}
+  logfile: {{ curator_log_file|default('/opt/elasticsearch-curator/log/curator-actions.log') }}
+  logformat: {{ curator_log_format|default(default) }}
+  blacklist: {{ curator_blacklist|default("['elasticsearch', 'urllib3']") }}
+...

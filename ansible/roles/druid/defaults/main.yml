@@ -1,0 +1,64 @@
+---
+# SystemD
+druid_service_type: 'simple'
+druid_timezone: 'UTC'
+druid_encoding: 'UTF-8'
+druid_number_of_gc_log_files: 5
+druid_gc_log_file_size: '10m'
+druid_kill_signal: 'SIGTERM'
+druid_send_sig_kill: 'yes'
+druid_oom_score_adjust: 1000
+druid_restart: 'on-failure'
+druid_restart_sec: '2000ms'
+
+# Global
+druid_user: 'druid'
+druid_group: 'druid'
+druid_log_dir: '/var/log/druid'
+druid_base: '/opt/druid'
+druid_tmp_base: '{{ druid_base }}/tmp'
+druid_conf_base: '{{ druid_base }}/conf'
+common_conf_dir: '{{ druid_conf_base }}/_common'
+coordinator_conf_dir: '{{ druid_conf_base }}/coordinator'
+broker_conf_dir: '{{ druid_conf_base }}/broker'
+historical_conf_dir: '{{ druid_conf_base }}/historical'
+overlord_conf_dir: '{{ druid_conf_base }}/overlord'
+middlemanager_conf_dir: '{{ druid_conf_base }}/middleManager'
+druid_coordinator_service: 'coordinator'
+druid_broker_service: 'broker'
+druid_overlord_service: 'overlord'
+druid_middlemanager_service: 'middlemanager'
+druid_historical_service: 'historical'
+
+# Defaults _common properties
+druid_extensions_directory: '{{ druid_base }}/extensions'
+druid_extensions_hadoopDependenciesDir: '{{ druid_base }}/hadoop-dependencies'
+druid_extensions_searchCurrentClassloader: 'true'
+druid_extensions_addExtensionsToHadoopContainer: 'false'
+druid_zk_paths_base: '/druid'
+druid_zk_service_sessionTimeoutMs: 30000
+druid_zk_service_compress: 'true'
+druid_zk_service_acl: 'false'
+druid_emitter_http_flushMillis: 60000
+druid_emitter_http_flushCount: 500
+druid_emitter_http_maxBatchSize: 5191680
+druid_emitter_http_batchQueueSizeLimit: 50
+druid_emitter_http_minHttpTimeoutMillis: 0
+druid_metadata_storage_connector_createTables: 'true'
+druid_metadata_storage_tables_base: 'druid'
+druid_metadata_storage_tables_segments: 'druid_segments'
+druid_metadata_storage_tables_rules: 'druid_rules'
+druid_metadata_storage_tables_config: 'druid_config'
+druid_metadata_storage_tables_tasks: 'druid_tasks'
+druid_metadata_storage_tables_taskLog: 'druid_taskLog'
+druid_metadata_storage_tables_taskLock: 'druid_taskLock'
+druid_metadata_storage_tables_supervisors: 'druid_supervisors'
+druid_metadata_storage_tables_audit: 'druid_audit'
+druid_selectors_indexing_serviceName: 'overlord'
+druid_selectors_coordinator_serviceName: 'coordinator'
+druid_announcer_segmentsPerNode: 50
+druid_announcer_maxBytesPerNode: 524288
+druid_announcer_skipDimensionsAndMetrics: false
+druid_announcer_skipLoadSpec: false
+druid_javascript_enabled: true
+druid_indexing_doubleStorage: 'float'

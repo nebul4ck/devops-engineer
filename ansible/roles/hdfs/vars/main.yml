@@ -1,0 +1,43 @@
+---
+# The next variable is very important. The namenode will be formatted if the value i true. For upgrade action, set to false.
+hdfs_fresh_install: true
+
+# Global
+hdfs_user_password: ''
+hdfs_namenode_port: 54310
+hdfs_dfs_namenode_http_address_port: 50070
+hdfs_dfs_namenode_secondary_http_address_port: 50090
+hdfs_dfs_namenode_secondary_https_address_port: 50091
+hdfs_dfs_datanode_address_port: 50010
+hdfs_dfs_datanode_http_address_port: 50075
+hdfs_dfs_datanode_ipc_address: 50020
+
+# Core-site.xml
+hdfs_io_file_buffer_size: 131072
+
+# Hdfs-site.xml
+hdfs_namenode_name_dir: '{{ hdfs_store_base }}/namenode'
+hdfs_dfs_nameservices: 'hdfs_1'
+hdfs_dfs_namenode_name_dir_restore: 'true'
+hdfs_dfs_blocksize: 268435456
+hdfs_dfs_namenode_handler_count: 100
+hdfs_dfs_replication: 1
+hdfs_dfs_image_compress: 'false'
+hdfs_dfs_namenode_support_allow_format: 'true'
+hdfs_dfs_namenode_startup_delay_block_deletion_sec: 3600
+hdfs_dfs_datanode_du_reserved: 5368709120
+hdfs_dfs_namenode_datanode_registration_ip_hostname_check: 'false'
+hdfs_dfs_namenode_checkpoint_period: 3600
+hdfs_dfs_namenode_checkpoint_txns: 1000000
+hdfs_dfs_namenode_checkpoint_max_retries: 6
+hdfs_dfs_namenode_num_checkpoints_retained: 3
+hdfs_dfs_datanode_handler_count: 10
+hdfs_dfs_client_block_write_replace_datanode_on_failure_enable: 'false'
+hdfs_dfs_client_block_write_replace_datanode_on_failure_policy: 'NEVER'
+hdfs_dfs_datanode_max_locked_memory: 512
+hdfs_dfs_client_read_shortcircuit: 'false'
+
+# log4j.properties
+hdfs_log_level: 'WARN,FA'
+hdfs_log_maxfilesize: '100MB'
+hdfs_log_maxbackupindex: 3

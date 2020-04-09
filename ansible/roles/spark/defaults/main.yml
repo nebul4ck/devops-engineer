@@ -1,0 +1,11 @@
+---
+spark_user: 'spark'
+spark_user_password: 'w4nk1ng'
+spark_group: 'spark'
+spark_master_service: 'spark-master'
+spark_worker_service: 'spark-worker'
+spark_log_dir: '/var/log/spark'
+spark_tmp_dir : '/opt/spark/tmp'
+spark_conf_dir: '/opt/spark/conf'
+spark_hadoop_conf_dir: '/opt/spark/conf/hadoop'
+spark_worker_dir: '/opt/spark/workers'

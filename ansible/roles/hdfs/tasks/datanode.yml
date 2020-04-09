@@ -1,0 +1,14 @@
+---
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml
+  vars:
+    service: '{{ hdfs_datanode_service }}'
+  tags: systemd
+
+# Copy SSH-PUB-KEY in current ansible managed host
+- include_tasks: utils/copySsh.yml
+  vars:
+    tenant: '{{ tenant_name }}'
+    user: '{{ hdfs_user }}'
+    group: '{{ hdfs_group }}'
+  tags: copySsh

@@ -1,0 +1,18 @@
+---
+# coordinator.yml
+
+- name: Configure Druid-Coordinator service.
+  template: 
+    src: coordinator-runtime.properties.j2
+    dest: "{{ coordinator_conf_dir }}/runtime.properties"
+
+- name: Configure Coordinator log4j properties.
+  template:
+    src: coordinator-log4j.xml.j2
+    dest: "{{ coordinator_conf_dir }}/log4j2.xml"
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ druid_coordinator_service }}'
+  tags: systemd

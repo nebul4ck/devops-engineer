@@ -1,0 +1,20 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ mongodb_service }}
+  systemd:
+    name: '{{ mongodb_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ mongodb_service }}
+  systemd:
+    name: '{{ mongodb_service }}'
+    state: restarted
+
+- name: stop {{ mongodb_service }}
+  systemd:
+    name: '{{ mongodb_service }}'
+    state: stopped

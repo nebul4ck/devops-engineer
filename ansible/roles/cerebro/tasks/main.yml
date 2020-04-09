@@ -1,0 +1,28 @@
+---
+# Main role to install and configure Cerebro service.
+
+- name: Install Cerebro service.
+  apt:
+    name: cerebro
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ cerebro_service }}'
+  tags: systemd
+
+- name: Configure Cerebro service.
+  template: 
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: 'application.conf.j2', dest: '{{ cerebro_conf_file }}' }
+    - { src: 'logback.xml.j2', dest: '{{ cerebro_log4j_file }}' }
+    - { src: 'reference.conf.j2', dest: '{{ cerebro_reference_file }}' }

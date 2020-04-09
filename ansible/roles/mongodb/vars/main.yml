@@ -1,0 +1,15 @@
+---
+# mongog.service.j2
+mongodb_LimitFSIZE: 'infinity'
+mongodb_LimitCPU: 'infinity'
+mongodb_LimitAS: 'infinity'
+mongodb_LimitNOFILE: 64000
+mongodb_LimitNPROC: 64000
+mongodb_LimitMEMLOCK: 'infinity'
+mongodb_TasksMax: 'infinity'
+mongodb_TasksAccounting: 'false'
+
+# mongd.conf.j2
+mongodb_journal_enabled: 'true'
+mongodb_systemLog_destination: 'file'
+mongodb_logAppend_active: 'true'

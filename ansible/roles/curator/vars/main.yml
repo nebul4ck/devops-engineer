@@ -1,0 +1,15 @@
+---
+# curator.yml.j2
+curator_use_ssl: 'False'
+curator_server_cert: ''
+curator_client_cert: ''
+curator_client_key: ''
+curator_ssl_no_validate: 'False'
+curator_http_auth: ''
+curator_timeout: 60
+curator_master_only: 'True'
+
+# logging
+curator_log_leve: 'INFO'
+curator_log_format: 'default'
+curator_blacklist: "['elasticsearch', 'urllib3']"

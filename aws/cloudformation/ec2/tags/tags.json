@@ -1,0 +1,42 @@
+[
+    {
+        "Key" : "ApplicationID",
+        "Value" : "cf-compliance"
+    },
+    {
+        "Key" : "Compliance",
+        "Value" : "no"
+    },
+    {
+        "Key" : "CECO",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "Confidentiality",
+        "Value" : "no"
+    },
+    {
+        "Key" : "Role",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "Environment",
+        "Value" : "development"
+    },
+    {
+        "Key" : "StartTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "EndTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "Operation",
+        "Value" : "nblk"
+    },
+    {
+        "Key" : "SLA",
+        "Value" : "24x7"
+    }
+]

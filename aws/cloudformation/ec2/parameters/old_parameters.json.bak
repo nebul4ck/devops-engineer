@@ -1,0 +1,66 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "cf-compliance"
+    },
+    {
+        "ParameterKey": "EnvType",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "InstanceName",
+        "ParameterValue": "non-hardened"
+    },
+    {
+        "ParameterKey": "VolumeSize",
+        "ParameterValue": "10"
+    },
+    {
+        "ParameterKey": "VolumeType",
+        "ParameterValue": "gp2"
+    },
+    /*{
+        "ParameterKey": "SnapshotId",
+        "ParameterValue": "snap-056854445fdd94f79"
+    },*/
+    {
+        "ParameterKey": "IamInstanceProfile",
+        "ParameterValue": "cf-compliance-remoteS3AccessBucket-role"
+    },
+    {
+        "ParameterKey": "ImageId",
+        "ParameterValue": "ami-040ba9174949f6de4"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "SSHLocation",
+        "ParameterValue": "10.93.3.0/24"
+    },
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "cf-compliance"
+    },
+    /*{
+        "ParameterKey": "SecurityGroup",
+        "ParameterValue": "sg-049a32317d912553c"
+    },*/
+    {
+        "ParameterKey": "Subnet",
+        "ParameterValue": "subnet-0cb4c2bd47a1d7540"
+    },
+    /*{
+        "ParameterKey": "AvailabilityZone",
+        "ParameterValue": "eu-west-1a"
+    }*/
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-0187b094d0a4ca159"
+    },
+    {
+        "ParameterKey": "TagCommongSGPolicy",
+        "ParameterValue": "no"
+    }
+]

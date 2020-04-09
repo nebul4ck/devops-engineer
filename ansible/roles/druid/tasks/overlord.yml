@@ -1,0 +1,18 @@
+---
+# overlord.yml
+
+- name: Configure Druid-Overlord service.
+  template: 
+    src: overlord-runtime.properties.j2
+    dest: "{{ overlord_conf_dir }}/runtimes.properties"
+
+- name: Configure overlord log4j properties.
+  template:
+    src: overlord-log4j.xml.j2
+    dest: "{{ overlord_conf_dir }}/log4j2.xml"
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ druid_overlord_service }}'
+  tags: systemd

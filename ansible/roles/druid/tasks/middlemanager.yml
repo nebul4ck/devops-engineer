@@ -1,0 +1,18 @@
+---
+# middlemanager.yml
+
+- name: Configure Druid-Middlemanager service.
+  template: 
+    src: middlemanager-runtime.properties.j2
+    dest: "{{ middlemanager_conf_dir }}/runtimes.properties"
+
+- name: Configure middlemanager log4j properties.
+  template:
+    src: middlemanager-log4j.xml.j2
+    dest: "{{ middlemanager_conf_dir }}/log4j2.xml"
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ druid_middlemanager_service }}'
+  tags: systemd

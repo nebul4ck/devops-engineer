@@ -1,0 +1,17 @@
+[Unit]
+Description=Zookeeper Service
+Documentation=https://zookeeper.apache.org/
+
+[Service]
+Type={{ zookeeper_systemd_run_type|default('forking') }}
+User=zookeeper
+Group=zookeeper
+
+ExecStart=/opt/zookeeper/bin/zkServer.sh start
+ExecStop=/opt/zookeeper/bin/zkServer.sh stop
+
+Restart={{ restart_service|default('always') }}
+RestartSec={{ restart_sec|default('2000ms') }}
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,52 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ hdfs_namenode_service }}
+  systemd:
+    name: '{{ hdfs_namenode_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ hdfs_namenode_service }}
+  systemd:
+    name: '{{ hdfs_namenode_service }}'
+    state: restarted
+
+- name: stop {{ hdfs_namenode_service }}
+  systemd:
+    name: '{{ hdfs_namenode_service }}'
+    state: stopped
+
+- name: start {{ hdfs_secondarynamenode_service }}
+  systemd:
+    name: '{{ hdfs_secondarynamenode_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ hdfs_secondarynamenode_service }}
+  systemd:
+    name: '{{ hdfs_secondarynamenode_service }}'
+    state: restarted
+
+- name: stop {{ hdfs_secondarynamenode_service }}
+  systemd:
+    name: '{{ hdfs_secondarynamenode_service }}'
+    state: stopped
+
+- name: start {{ hdfs_datanode_service }}
+  systemd:
+    name: '{{ hdfs_datanode_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ hdfs_datanode_service }}
+  systemd:
+    name: '{{ hdfs_datanode_service }}'
+    state: restarted
+
+- name: stop {{ hdfs_datanode_service }}
+  systemd:
+    name: '{{ hdfs_datanode_service }}'
+    state: stopped

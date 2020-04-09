@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ common_log_status|default('WARN') }}">
+    <Appenders>
+        <Console name="Console" target="{{ common_log_target|default('SYSTEM_OUT') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ common_log_level|default('info')  }}">
+            <AppenderRef ref="{{ common_log_appender|default('Console') }}"/>
+        </Root>
+    </Loggers>
+</Configuration>

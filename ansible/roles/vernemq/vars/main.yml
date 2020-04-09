@@ -1,0 +1,202 @@
+---
+# Put here defaults variables for role
+
+## vernemq.conf.j2 ##
+# Max files opened by vernemq user
+no_file: 65536
+
+# Allow anonymous users to connect
+anonymous: 'off'
+
+# Allow new client connections even when a VerneMQ cluster is inconsistent.
+register_during_netsplit: 'on'
+
+# Allow message publishs even when a VerneMQ cluster is inconsistent.
+publish_during_netsplit: 'on'
+
+# Allow new subscriptions even when a VerneMQ cluster is inconsistent.
+subscribe_during_netsplit: 'on'
+
+# Allow clients to unsubscribe when a VerneMQ cluster is inconsistent.
+unsubscribe_during_netsplit: 'on'
+
+# Allows a client to logon multiple times using the same client id.
+multiple_sessions: 'on'
+
+# Queue deliver mode
+deliver_mode: balance
+
+# The maximum number of QoS 1 or 2 messages that can be in the process of being
+#transmitted simultaneously.
+inflight_messages: 20
+
+# The maximum number of messages to hold in the queue above
+#those messages that are currently in flight.
+online_messages: 1000
+
+# The maximum number of QoS 1 or 2 messages to hold in the offline queue.
+#Defaults to 1000. Set to -1 for no maximum (not recommended).
+offline_messages: 1000
+
+# This option sets the maximum MQTT size that VerneMQ will allow.
+message_size: 0
+
+# If a message is published with a QoS lower than the QoS of the subscription it is
+#delivered to, VerneMQ can upgrade the outgoing QoS.
+outgoing_qos: 'off'
+
+# listener.max_connections is an integer or 'infinity' defining
+#the maximum number of concurrent connections.
+max_connections: 10000
+
+# Set the nr of acceptors waiting to concurrently accept new connections.
+nr_of_acceptors: 10
+
+# listener.tcp.<name> is an IP address and TCP port that
+#the broker will bind to.
+tcp_default: '0.0.0.0:1883'
+
+# Set the mountpoint on the protocol level or on the listener level.
+mountpoint: 'off'
+
+# Enable the $SYSTree Reporter.
+systree: 'on'
+
+# The integer number of milliseconds between updates of the $SYS subscription hierarchy,
+#which provides status information about the broker.
+tree_interval: 20000
+
+# Enable the Graphite Reporter. Ensure to also configure a proper graphite.host.
+graphite: 'off'
+
+# The graphite server host name.
+graph_host: localhost
+
+# The tcp port of the graphite server.
+graph_port: 2003
+
+# The interval we push metrics to the graphite server in ms.
+graph_interval: 20000
+
+# Distribution policy for shared subscriptions.
+subscription_policy: prefer_local
+
+# File based authentication plugin.
+vmq_passwd: 'off'
+
+# File based authorization plugin.
+vmq_acl: 'off'
+
+# Lua based plugins.
+vmq_diversity: 'on'
+
+# Webhook based plugins.
+vmq_webhooks: 'off'
+
+# The VerneMQ bridge plugin.
+vmq_bridge: 'off'
+
+# Set the path to an access control list file.
+acl_file: '/etc/vernemq/vmq.acl'
+
+# set the acl reload interval in seconds, the value 0 disables
+#the automatic reloading of the acl file.
+acl_reload_interval: 10
+
+# Set the path to a password file.
+password_file: '/etc/vernemq/vmq.passwd'
+
+# set the password reload interval in seconds, the value 0
+#disables the automatic reloading of the password file.
+password_reload_interval: 10
+
+# Configure the vmq_diversity plugin script dir.
+script_dir: '/usr/share/vernemq/lua'
+
+# PosgreSQL auth enable|disable.
+auth_postgres: 'off'
+
+# PostgreSQL User.
+postgres_user: root
+
+# PostgreSQL default user password.
+postgres_password: password
+
+# Enable or disable VerneMQ data base.
+auth_mysql_enabled: 'off'
+
+# Enable or disable MongoDB data base.
+auth_mongodb: 'on'
+
+# MongoDB data base.
+mongodb_database: vmq_auth
+
+# MongoDB login.
+mongodb_login_diversity: mongodb
+
+# MongoDB password.
+mongodb_password_diversity: mongodb
+
+# MongoDB diversity data base.
+mongodb_database_diversity: diversity
+
+# Enable or disable Redis.
+auth_redis: 'off'
+
+# Redis password.
+redis_password: redis
+
+# VerneMQ log.
+log_console: file
+
+# VerneMQ log level.
+log_console_level: info
+
+# VerneMQ log file.
+log_console_file: '/var/log/vernemq/vernemq.log'
+
+# VerneMQ error log.
+log_error_file: '/var/log/vernemq/error.log'
+
+# Enable syslog.
+log_syslog: 'off'
+
+# Whether to enable the crash log.
+log_crash: 'on'
+
+# If the crash log is enabled, the file where its messages will
+#be written.
+log_crash_file: '/var/log/vernemq/crash.log'
+
+# Maximum size in bytes of individual messages in the crash log.
+maximum_message_size: 64KB
+
+# Maximum size of the crash log in bytes, before it is rotated.
+log_crash_size: 100MB
+
+# The schedule on which to rotate the crash log.
+crash_rotation: '$W4D9'
+
+# The number of rotated crash logs to keep. When set to
+#'current', only the current open log file is kept.
+crash_rotation_keep: 3
+
+# Cookie for distributed node communication.
+cookie: 'X4FTvk4SVW5tsEE1'
+
+# Sets the number of threads in async thread pool, valid range
+## is 0-1024.
+async_threads: 64
+
+# The number of concurrent ports/sockets Valid range is 1024-134217727.
+max_ports: 262144
+
+# This parameter defines the percentage of total server memory
+#to assign to LevelDB.
+maximum_memory_percent: 50
+
+
+## dnsmasq.service.j2 ##
+vernemq_systemd_run_type: 'forking'
+vernemq_pid_file: '/var/run/vernemq/vernemq.pid'
+limit_no_file: 65536

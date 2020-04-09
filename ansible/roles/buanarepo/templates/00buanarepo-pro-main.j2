@@ -1,0 +1,11 @@
+APT::Acquire::https "true";
+
+Acquire::https::{{ buanarepo_pro_main }} {
+  Verify-Peer "false";
+  Verify-Host "false";
+
+  CaInfo "{{ buanarepo_main_certs_base }}/{{ buanarepo_pro_ca_main_crt }}";
+
+  SslCert "{{ buanarepo_main_certs_base }}/{{ buanarepo_pro_client_main_crt }}";
+  SslKey  "{{ buanarepo_main_certs_base }}/{{ buanarepo_pro_client_main_key }}";
+};

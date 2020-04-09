@@ -1,0 +1,13 @@
+# Place your local configuration in /etc/mosquitto/conf.d/
+#
+# A full description of the configuration file is at
+# /usr/share/doc/mosquitto/examples/mosquitto.conf.example
+
+pid_file {{ mosquitto_pid_file }}
+
+persistence {{ mosquitto_data_persistence_boolean }}
+persistence_location {{ mosquitto_data_persistence_path }}
+
+log_dest file {{ mosquitto_log_file }}
+
+include_dir {{ mosquitto_custom_config }}

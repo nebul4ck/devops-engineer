@@ -1,0 +1,20 @@
+---
+
+influxdb_version: 1.6.*
+
+store_dir: /opt/store
+influxdb_store: /opt/store/influxdb
+influxdb_log_file: /var/log/influxdb/influxdb.log
+
+# influxdb global config
+
+influxdb_store_meta: /opt/store/influxdb/meta
+influxdb_store_data: /opt/store/influxdb/data
+influxdb_store_wal: /opt/store/influxdb/wal
+
+# influxdb logrotate
+logfile_backup: 3
+logfile_time: weekly
+logfile_size: 100M
+
+...

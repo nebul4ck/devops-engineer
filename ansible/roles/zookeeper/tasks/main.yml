@@ -1,0 +1,40 @@
+---
+# Main role to install and configure DNSmasq service.
+
+- name: Install Zookeeper service.
+  apt:
+    name: zookeeper
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ zk_service }}'
+  tags: systemd
+  
+- name: Configure Zookeeper log4j properties.
+  template: 
+    src: log4j.properties.j2
+    dest: "{{ log4j_properties }}"
+
+- name: Configure JVM.
+  template:
+    src: "java.env.j2"
+    dest: "{{ jvm_config }}"
+
+- name: Copy myid file.
+  template:
+    src: "myid.j2"
+    dest: "{{ myid_file }}"
+
+- name: Configure Zookeeper service.
+  template:
+    src: zoo.conf.j2
+    dest: "{{ zk_config }}"
+  notify: start {{ zk_service }}

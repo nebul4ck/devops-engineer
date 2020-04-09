@@ -1,0 +1,13 @@
+---
+# Connexion
+es_host: '{{ ansible_hostname }}'
+es_port: 9200
+
+es_user: 'elasticsearch'
+es_group: 'elasticsearch'
+elasticsearch_service: 'elasticsearch'
+es_conf_dir: '/etc/elasticsearch'
+es_data_dir: '/opt/store/elasticsearch/data'
+es_tmp_dir: '/opt/store/elasticsearch/tmp'
+es_log_dir: '/var/log/elasticsearch'
+es_pid_dir: '/var/run/elasticsearch'

@@ -1,0 +1,84 @@
+# Extensions
+druid.extensions.directory={{ common_extensions_directory|default('/opt/druid/extensions') }}
+druid.extensions.hadoopDependenciesDir={{ common_extensions_hadoopDependenciesDir|default('/opt/druid/hadoop-dependencies') }}
+druid.extensions.loadList={{ common_extensions_loadList }}
+druid.extensions.searchCurrentClassloader={{ common_extensions_searchCurrentClassloader|default('true') }}
+druid.extensions.addExtensionsToHadoopContainer={{ common_extensions_addExtensionsToHadoopContainer|default('false') }}
+
+# Modules
+druid.modules.excludeList=[]
+
+# Zookeeper
+druid.zk.service.host="{{ zookeeper_quorum }}"
+druid.zk.paths.base={{ common_zk_paths_base|default('/druid') }}
+druid.zk.service.sessionTimeoutMs={{ common_zk_service_sessionTimeoutMs|default(30000) }}
+druid.zk.service.compress={{ common_zk_service_compress|default('true') }}
+druid.zk.service.acl={{ common_zk_service_acl|default('false') }}
+
+# Exhibitor
+#Note that druid.zk.service.host is used as a backup in case an Exhibitor instance can't be contacted and therefore should still be set.
+#druid.exhibitor.service.hosts={{ common_exhibitor_service_hosts|default('['']') }}'
+#druid.exhibitor.service.port={{ common_exhibitor_service_port|default(8080) }}
+#druid.exhibitor.service.restUriPath={{ common_exhibitor_service_restUriPath|default('/exhibitor/v1/cluster/list') }}
+#druid.exhibitor.service.useSsl={{ common_exhibitor_service_useSsl|default('false') }}
+#druid.exhibitor.service.pollingMs={{ common_exhibitor_service_pollingMs|default(10000) }}
+
+# Logging
+druid.startup.logging.logProperties={{ common_startup_logging_logProperties|default('true') }}
+druid.request.logging.type={{ common_request_logging_type|default('noop') }}
+druid.monitoring.emissionPeriod={{ common_monitoring_emissionPeriod|default('PT1m') }}
+#druid.monitoring.monitors={{ common_monitoring_monitors }}
+druid.emitter={{ common_emitter|default('noop') }}
+druid.emitter.logging.loggerClass={{ common_emitter_logging_loggerClass|default('LoggingEmitter') }}
+druid.emitter.logging.logLevel={{ common_emitter_logging_logLevel|default('info') }}
+druid.emitter.http.flushMillis={{ common_emitter_http_flushMillis|default(60000) }}
+druid.emitter.http.flushCount={{ common_emitter_http_flushCount|default(500) }}
+druid.emitter.http.maxBatchSize={{ common_emitter_http_maxBatchSize|default(5191680) }}
+druid.emitter.http.batchQueueSizeLimit={{ common_emitter_http_batchQueueSizeLimit|default(50) }}
+druid.emitter.http.minHttpTimeoutMillis={{ common_emitter_http_minHttpTimeoutMillis|default(0) }}
+
+# Metadata Storage
+druid.metadata.storage.type={{ common_metadata_storage_type|default('postgresql') }}
+druid.metadata.storage.connector.connectURI={{ common_metadata_storage_connector_connectURI }}
+druid.metadata.storage.connector.user={{ common_metadata_storage_connector_user|default('druid') }}
+druid.metadata.storage.connector.password={{ common_metadata_storage_connector_password }}
+druid.metadata.storage.connector.createTables={{ common_metadata_storage_connector_createTables|default('true') }}
+druid.metadata.storage.tables.base={{ common_metadata_storage_tables_base|default('druid') }}
+druid.metadata.storage.tables.segments={{ common_metadata_storage_tables_segments|default('druid_segments') }}
+druid.metadata.storage.tables.rules={{ common_metadata_storage_tables_rules|default('druid_rules') }}
+druid.metadata.storage.tables.config={{ common_metadata_storage_tables_config|default('druid_config') }}
+druid.metadata.storage.tables.tasks={{ common_metadata_storage_tables_tasks|default('druid_tasks') }}
+druid.metadata.storage.tables.taskLog={{ common_metadata_storage_tables_taskLog|default('druid_taskLog') }}
+druid.metadata.storage.tables.taskLock={{ common_metadata_storage_tables_taskLock|default('druid_taskLock') }}
+druid.metadata.storage.tables.supervisors={{ common_metadata_storage_tables_supervisors|default('druid_supervisors') }}
+druid.metadata.storage.tables.audit={{ common_metadata_storage_tables_audit|default('druid_audit') }}
+
+# Deep Storage
+druid.storage.type={{ common_storage_type|default('local') }}
+druid.storage.storageDirectory={{ common_storage_storageDirectory }}
+
+# Caching historical/broker
+# Sets either in broker or historical if you want to used cache
+#groupBy v2 only supports caching on historical nodes
+druid.cache.type={{ common_cache_type|default('local') }}
+druid.cache.sizeInBytes={{ common_cache_sizeInBytes|default(0) }}
+druid.cache.initialSize={{ common_cache_initialSize|default(500000) }}
+druid.cache.logEvictionCount={{ common_cache_logEvictionCount|default(0) }}
+
+# Indexing Service Discovery
+druid.selectors.indexing.serviceName={{ common_selectors_indexing_serviceName|default('overlord') }}
+
+# Coordinator Discovery
+druid.selectors.coordinator.serviceName={{ common_selectors_coordinator_serviceName|default('coordinator') }}
+
+# Announcing Segments
+druid.announcer.segmentsPerNode={{ common_announcer_segmentsPerNode|default(50) }}
+druid.announcer.maxBytesPerNode={{ common_announcer_maxBytesPerNode|default(524288) }}
+druid.announcer.skipDimensionsAndMetrics={{ common_announcer_skipDimensionsAndMetrics|default('false') }}
+druid.announcer.skipLoadSpec={{ common_announcer_skipLoadSpec|default('false') }}
+
+# JavaScript
+druid.javascript.enabled={{ common_javascript_enabled|default('true') }}
+
+# Double Column storage
+druid.indexing.doubleStorage={{ common_indexing_doubleStorage|default('float') }}

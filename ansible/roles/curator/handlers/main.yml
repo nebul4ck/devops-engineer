@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ curator_service }}
+  systemd:
+    name: '{{ curator_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ curator_service }}
+  systemd:
+    name: '{{ curator_service }}'
+    state: restarted
+
+- name: stop {{ curator_service }}
+  systemd:
+    name: '{{ curator_service }}'
+    state: stopped
+
+- name: reload {{ curator_service }}
+  systemd:
+    name: '{{ curator_service }}'
+    state: reloaded

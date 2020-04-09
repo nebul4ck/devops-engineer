@@ -1,0 +1,4 @@
+---
+logstash_jvm_xmx: '1g'
+logstash_max_open_file: 16384
+logstash_nice: 19

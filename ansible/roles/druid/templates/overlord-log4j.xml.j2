@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ overlord_log_status|default('WARN') }}">
+    <Appenders>
+        <File name="{{ overlord_log_appender }}" fileName="{{ overlord_log_filename|default('/tmp/overlord.log') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ overlord_log_level|default('info') }}">
+            <AppenderRef ref="{{ overlord_log_appender }}"/>
+        </Root>
+    </Loggers>
+</Configuration>

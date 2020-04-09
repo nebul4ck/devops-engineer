@@ -1,0 +1,31 @@
+[Unit]
+Description=High-performance, schema-free document-oriented database
+After=network.target
+Documentation=https://docs.mongodb.org/manual
+
+[Service]
+User={{ mongodb_user|default('mongodb') }}
+Group={{ mongodb_group|default('mongodb') }}
+ExecStart=/usr/bin/mongod --config {{ mongodb_conf_file|default('/etc/mongod.conf') }}
+PIDFile={{ mongodb_pid_file|default('/var/run/mongodb/mongod.pid') }}
+# file size
+LimitFSIZE={{ mongodb_LimitFSIZE|default('infinity') }}
+# cpu time
+LimitCPU={{ mongodb_LimitCPU|default('infinity') }}
+# virtual memory size
+LimitAS={{ mongodb_LimitAS|default('infinity') }}
+# open files
+LimitNOFILE={{ mongodb_LimitNOFILE|default(64000) }}
+# processes/threads
+LimitNPROC={{ mongodb_LimitNPROC|default(64000) }}
+# locked memory
+LimitMEMLOCK={{ mongodb_LimitMEMLOCK|default('infinity') }}
+# total threads (user+kernel)
+TasksMax={{ mongodb_TasksMax|default('infinity') }}
+TasksAccounting={{ mongodb_TasksAccounting|default('false') }}
+
+# Recommended limits for for mongod as specified in
+# http://docs.mongodb.org/manual/reference/ulimit/#recommended-settings
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+---
+# elasticsearch.yml.j2
+es_bootstrap_memory_lock: 'true'
+es_discovery_zen_minimum_master_nodes: 1
+es_action_auto_create_index: 'true'
+
+# jvm.options.j2
+es_jvm_xmx: '-Xms3g'
+es_jvm_xms: '-Xmx3g'
+es_java_io_tmpdir: '{{ es_tmp_dir }}'
+
+# elasticsearch.service.j2
+es_no_file: 65536
+es_limit_mem_block: 'infinity'

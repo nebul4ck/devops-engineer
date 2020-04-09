@@ -1,0 +1,36 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ spark_master_service }}
+  systemd:
+    name: '{{ spark_master_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ spark_master_service }}
+  systemd:
+    name: '{{ spark_master_service }}'
+    state: restarted
+
+- name: stop {{ spark_master_service }}
+  systemd:
+    name: '{{ spark_master_service }}'
+    state: stopped
+
+- name: start {{ spark_worker_service }}
+  systemd:
+    name: '{{ spark_worker_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ spark_worker_service }}
+  systemd:
+    name: '{{ spark_worker_service }}'
+    state: restarted
+
+- name: stop {{ spark_worker_service }}
+  systemd:
+    name: '{{ spark_worker_service }}'
+    state: stopped

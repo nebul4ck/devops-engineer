@@ -1,0 +1,16 @@
+[Unit]
+Description=VerneMQ is a MQTT message broker
+
+[Service]
+Type={{ vernemq_systemd_run_type|default('forking') }}
+PIDFile={{ vernemq_pid_file|default('/var/run/vernemq/vernemq.pid') }}
+ExecStart=/usr/sbin/vernemq start
+ExecStop=/usr/sbin/vernemq stop
+User=vernemq
+EnvironmentFile=-/etc/default/vernemq
+RuntimeDirectory=vernemq
+
+LimitNOFILE={{ limit_no_file|default(65536) }}
+
+[Install]
+WantedBy=multi-user.target

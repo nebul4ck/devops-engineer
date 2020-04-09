@@ -1,0 +1,26 @@
+---
+
+- name: Ensure influxdb key repository is added.
+  become: yes
+  apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+
+- name: Ensure influxdb repository is added.
+  become: yes
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/ubuntu xenial stable"
+    state: present
+    update_cache: yes
+    validate_certs: no
+
+- name: Ensure influxdb server is installed
+  become: yes
+  apt:
+    name: "influxdb={{ influxdb_version }}"
+    state: present
+  notify:
+    - systemd daemon reload
+    - stop influxdb server
+
+...

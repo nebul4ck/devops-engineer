@@ -1,0 +1,15 @@
+---
+
+- name: Install Mosquitto
+  include_tasks: install.yml
+
+- name: Configure Mosquitto
+  include_tasks: configure.yml
+
+- name: Logrotate Mosquitto
+  include_tasks: logrotate.yml
+
+- name: Service Mosquitto
+  include_tasks: service.yml
+
+...

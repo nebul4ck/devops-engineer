@@ -1,0 +1,50 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "EnvType",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "InstanceName",
+        "ParameterValue": "goldenAMI-hardened"
+    },
+    {
+        "ParameterKey": "VolumeSize",
+        "ParameterValue": "10"
+    },
+    {
+        "ParameterKey": "VolumeType",
+        "ParameterValue": "gp2"
+    },
+    {
+        "ParameterKey": "IamInstanceProfile",
+        "ParameterValue": "AmazonSSMRoleForInstancesQuickSetup"
+    },
+    {
+        "ParameterKey": "ImageId",
+        "ParameterValue": "ami-06c8c90384ad398aa"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "SSHLocation",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "Subnet",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": ""
+    }
+]

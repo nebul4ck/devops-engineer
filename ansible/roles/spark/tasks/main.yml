@@ -1,0 +1,40 @@
+---
+# Main playbook to install and configure Spark Unified Analytics Engine for Big Data.
+
+- name: Install Spark Unified Analytics Engine for Big Data.
+  apt:
+    name: spark
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: '{{ cache_valid_time|default(3600) }}'
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+- name: Set password for Spark user.
+  user:
+    name: '{{ spark_user }}'
+    password: '{{ spark_user_password }}'
+
+- name: Configure Spark common Settings.
+  template:
+    src: '{{ item }}.j2'
+    dest: '{{ spark_conf_dir }}/{{ item }}'
+  with_items:
+    - spark-env.sh
+    - spark-defaults.conf
+    - log4j.properties
+    - slaves
+
+- include_tasks: masternode.yml
+  when: (hostvars[inventory_hostname]['masternode']|default(false))
+  tags: masternode
+
+# Aquí hacemos que include_tasks sea include_hosts, y metemos en una variable 'hosts' los hosts donde vamos a querer desplegar ese
+# playbook. La idea es que se invoque al playbook de master y este sepa que lo tiene que desplegar en un determiando hosts.
+# El problema llega cuando le toque el despliegue al master, habrá que controlar si ha sido ya ejecutado o no ese playbook.
+
+- include_tasks: workernode.yml
+  when: (workernode is defined) and (workernode)
+  tags: masternode,workernode

@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ dnsmasq_service }}
+  systemd:
+    name: '{{ dnsmasq_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ dnsmasq_service }}
+  systemd:
+    name: '{{ dnsmasq_service }}'
+    state: restarted
+
+- name: stop {{ dnsmasq_service }}
+  systemd:
+    name: '{{ dnsmasq_service }}'
+    state: stopped
+
+- name: reload {{ dnsmasq_service }}
+  systemd:
+    name: '{{ dnsmasq_service }}'
+    state: reloaded

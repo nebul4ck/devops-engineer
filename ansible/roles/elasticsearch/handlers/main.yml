@@ -1,0 +1,20 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ elasticsearch_service }}
+  systemd:
+    name: '{{ elasticsearch_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ elasticsearch_service }}
+  systemd:
+    name: '{{ elasticsearch_service }}'
+    state: restarted
+
+- name: stop {{ elasticsearch_service }}
+  systemd:
+    name: '{{ elasticsearch_service }}'
+    state: stopped

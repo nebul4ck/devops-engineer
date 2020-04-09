@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ cerebro_service }}
+  systemd:
+    name: '{{ cerebro_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ cerebro_service }}
+  systemd:
+    name: '{{ cerebro_service }}'
+    state: restarted
+
+- name: stop {{ cerebro_service }}
+  systemd:
+    name: '{{ cerebro_service }}'
+    state: stopped
+
+- name: reload {{ cerebro_service }}
+  systemd:
+    name: '{{ cerebro_service }}'
+    state: reloaded

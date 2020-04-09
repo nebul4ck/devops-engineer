@@ -1,0 +1,19 @@
+---
+postgresql_listen_addresses: '*'
+postgresql_max_connections: 100
+postgresql_ssl: 'on'
+postgresql_ssl_cert_file: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+postgresql_ssl_key_file: '/etc/ssl/private/ssl-cert-snakeoil.key'
+postgresql_shared_buffers: '128MB'
+postgresql_dynamic_shared_memory_type: posix
+postgresql_log_line_prefix: '%m [%p] %q%u@%d '
+postgresql_log_timezone: 'localtime'
+postgresql_cluster_name: '10/main'
+postgresql_datestyle: 'iso, dmy'
+postgresql_timezone: 'localtime'
+postgresql_lc_messages: 'es_ES.UTF-8'
+postgresql_lc_monetary: 'es_ES.UTF-8'
+postgresql_lc_numeric: 'es_ES.UTF-8'
+postgresql_lc_time: 'es_ES.UTF-8'
+postgresql_default_text_search_config: 'pg_catalog.spanish'
+postgresql_include_dir: 'conf.d'

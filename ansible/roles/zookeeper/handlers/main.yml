@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ zk_service }}
+  systemd:
+    name: '{{ zk_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ zk_service }}
+  systemd:
+    name: '{{ zk_service }}'
+    state: restarted
+
+- name: stop {{ zk_service }}
+  systemd:
+    name: '{{ zk_service }}'
+    state: stopped
+
+- name: reload {{ zk_service }}
+  systemd:
+    name: '{{ zk_service }}'
+    state: reloaded

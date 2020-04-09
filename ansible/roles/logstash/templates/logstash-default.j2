@@ -1,0 +1,13 @@
+###############################
+# Default settings for logstash
+###############################
+JAVACMD={{ java_bin|default('/usr/bin/java') }}
+LS_HEAP_SIZE="{{ logstash_jvm_xmx }}"
+LS_JAVA_OPTS="-Djava.io.tmpdir=$HOME"
+LS_PIDFILE={{ logstash_pid_file|default('/var/run/logstash.pid') }}
+LS_USER={{ logstash_user|default('logstash') }}
+LS_LOG_FILE={{ logstash_log_dir }}/{{ logstash_service }}.log
+LS_CONF_DIR={{ logstash_conf_dir|default('/etc/logstash/conf.d') }}
+LS_OPEN_FILES={{ logstash_max_open_file|default(16384) }}
+LS_NICE={{ logstash_nice|default(19) }}
+KILL_ON_STOP_TIMEOUT=0

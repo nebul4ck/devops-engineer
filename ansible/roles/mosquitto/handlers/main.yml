@@ -1,0 +1,32 @@
+---
+
+- name: reload mosquitto server
+  become: yes
+  service:
+    name: mosquitto
+    state: reloaded
+
+- name: restart mosquitto server
+  become: yes
+  service:
+    name: mosquitto
+    state: restarted
+
+- name: start mosquitto server
+  become: yes
+  service:
+    name: mosquitto
+    state: started
+
+- name: stop mosquitto server
+  become: yes
+  service:
+    name: mosquitto
+    state: stopped
+
+- name: systemd daemon reload
+  become: yes
+  systemd:
+    daemon_reload: yes
+
+...

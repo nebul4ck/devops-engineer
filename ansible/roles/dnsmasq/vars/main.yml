@@ -1,0 +1,7 @@
+---
+# Specifics variables for the common role
+local_only_domains: '//'
+
+## dnsmasq.service.j2 ##
+dnsmasq_systemd_run_type: 'forking'
+dnsmasq_pid_file: '/var/run/{{ dnsmasq_service }}/{{ dnsmasq_service }}.pid'

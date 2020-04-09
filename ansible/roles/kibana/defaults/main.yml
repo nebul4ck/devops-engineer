@@ -1,0 +1,12 @@
+---
+# Default settings
+kibana_service: 'kibana'
+kibana_user: 'kibana'
+kibana_group: 'kibana'
+kibana_default_conf: '/etc/default/kibana'
+kibana_sysconfig_dir: '/etc/sysconfig/kibana'
+kibana_pid_dir: '/var/run/kibana'
+kibana_pid_file: '{{ kibana_pid_dir }}/kibana.pid'
+kibana_conf_file: '/etc/kibana/kibana.yml'
+kibana_log_dir: '/var/log/kibana'
+kibana_log_file: '{{ kibana_log_dir }}/kibana.log'

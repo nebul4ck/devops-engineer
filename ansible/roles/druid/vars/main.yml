@@ -1,0 +1,146 @@
+---
+# Druid ports
+druid_broker_port: 8082
+druid_coordinator_port: 8084
+druid_historical_port: 8085
+druid_overlord_port: 8090
+druid_middlemanager_port: 8091
+
+# Common properties
+common_extensions_loadList: '["druid-kafka-indexing-service", "druid-hdfs-storage", "druid-histogram", "druid-datasketches", "druid-lookups-cached-global", "postgresql-metadata-storage"]'
+common_request_logging_type: 'noop'
+common_monitoring_emissionPeriod: 'PT1m'
+common_monitoring_monitors: '["com.metamx.metrics.SysMonitor","com.metamx.metrics.JvmMonitor"]'
+common_emitter: 'noop'
+common_emitter_logging_loggerClass: 'LoggingEmitter'
+common_emitter_logging_logLevel: 'info'
+common_startup_logging_logProperties: 'true'
+common_metadata_storage_type: 'postgresql'
+common_metadata_storage_connector_connectURI: jdbc:postgresql://{{ postgresql_host }}/druid
+common_metadata_storage_connector_user: '{{ postgresql_druid_user }}'
+common_metadata_storage_connector_password: '{{ postgresql_druid_pass }}'
+common_storage_type: 'hdfs'
+common_storage_storageDirectory: 'hdfs://{{ hdfs_namenode }}:{{ hdfs_namenode_port|default(54310) }}/druid/localStorage'
+common_indexer_logs_type: 'noop'
+common_indexer_logs_directory: 'hdfs://{{ hdfs_namenode }}:{{ hdfs_namenode_port|default(54310) }}/druid/indexing-logs'
+common_cache_type: 'local'
+common_cache_sizeInBytes: 0
+common_cache_initialSize: 500000
+common_cache_logEvictionCount: 0
+common_log_level: 'info'
+common_log_status: 'WARN'
+common_log_target: 'SYSTEM_OUT'
+common_log_appender: 'Console'
+
+# Coordinator properties
+coordinator_jmx_port: 17071
+coordinator_jmxremote_authenticate: 'false'
+coordinator_jmxremote_ssl: false
+coordinator_xmx: '-Xmx500m'
+coordinator_xms: '-Xms500m'
+coordinator_newsize: '256m'
+coordinator_max_newsize: '256m'
+coordinator_maxdirectmemory_size: '500m'
+coordinator_log_level: 'info'
+coordinator_log_status: 'WARN'
+coordinator_log_filename: '{{ druid_log_dir }}/coordinator.log'
+coordinator_log_appender: 'File'
+
+# Broker properties
+broker_processing_buffer_sizeBytes: 471859200
+broker_processing_numMergeBuffers: 1
+broker_processing_numThreads: 7
+broker_server_http_numThreads: 50
+broker_server_http_maxIdleTime: 'PT10m'
+broker_http_numConnections: 20
+broker_http_compressionCodec: 'gzip'
+broker_http_readTimeout: 'PT9M'
+broker_query_search_maxSearchLimit: 1000
+broker_processing_columnCache_sizeBytes: 0
+broker_processing_fifo: 'false'
+broker_processing_tmpDir: '{{ druid_tmp_base }}/broker'
+broker_cache_useCache: 'false'
+broker_cache_populateCache: 'false'
+broker_cache_unCacheable: '["groupBy", "select"]'
+broker_jmx_port: 17072
+broker_jmxremote_authenticate: 'false'
+broker_jmxremote_ssl: false
+broker_xmx: '-Xmx4g'
+broker_xms: '-Xmx4g'
+broker_newsize: '512m'
+broker_max_newsize: '512m'
+broker_maxdirectmemory_size: '3g'
+broker_log_level: 'info'
+broker_log_status: 'WARN'
+broker_log_filename: '{{ druid_log_dir }}/broker.log'
+broker_log_appender: 'File'
+
+# Historical properties
+historical_server_maxSize: 112742891520
+historical_segmentCache_locations: '[{"path":"{{ druid_base }}/store/indexCache","maxSize"\:{{ historical_server_maxSize }}}]'
+historical_segmentCache_deleteOnRemove: 'true'
+historical_segmentCache_dropSegmentDelayMillis: 30000
+historical_segmentCache_announceIntervalMillis: 5000
+historical_segmentCache_numBootstrapThreads: 8
+historical_server_http_numThreads: 50
+historical_server_http_maxIdleTime: 'PT10m'
+historical_server_http_defaultQueryTimeout: 200000
+historical_query_search_maxSearchLimit: 10000
+historical_processing_buffer_sizeBytes: 262144000
+historical_processing_numThreads: 8
+historical_processing_numMergeBuffers: 2
+historical_processing_columnCache_sizeBytes: 0
+historical_processing_fifo: 'false'
+historical_processing_tmpDir: '{{ druid_tmp_base }}/historical'
+historical_cache_useCache: 'true'
+historical_cache_populateCache: 'true'
+historical_cache_unCacheable: '[]'
+historical_jmx_port: 17073
+historical_jmxremote_authenticate: 'false'
+historical_jmxremote_ssl: false
+historical_xmx: '-Xmx8g'
+historical_xms: '-Xmx8g'
+historical_newsize: '512m'
+historical_max_newsize: '512m'
+historical_maxdirectmemory_size: '5g'
+historical_log_level: 'info'
+historical_log_status: 'WARN'
+historical_log_filename: '{{ druid_log_dir }}/historical.log'
+historical_log_appender: 'File'
+
+# Middlemanager properties
+middlemanager_indexer_runner_javaOptsArray: '["-Xmx150m", "-XX:+ExitOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/opt/druid/tmp/middlemanager/middlemanager.hprof","-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+PrintGCDetails", "-XX:+PrintGCTimeStamps", "-XX:MaxDirectMemorySize=1g"]'
+middlemanager_worker_capacity: 6
+middlemanager_peon_mode: 'remote'
+middlemanager_indexer_task_baseTaskDir: '{{ druid_base }}/persistent/task/'
+middlemanager_indexer_task_gracefulShutdownTimeout: 'PT5M'
+middlemanager_indexer_task_hadoopWorkingPath: '{{ druid_tmp_base }}/middlemanager'
+middlemanager_indexer_task_restoreTasksOnRestart: 'false'
+middlemanager_processing_buffer_sizeBytes: 157286400
+middlemanager_processing_numMergeBuffers: 1
+middlemanager_processing_numThreads: 2
+middlemanager_processing_tmpDir: '{{ druid_tmp_base }}/middlemanager'
+middlemanager_jmx_port: 17074
+middlemanager_jmxremote_authenticate: 'false'
+middlemanager_jmxremote_ssl: false
+middlemanager_xmx: '-Xmx64m'
+middlemanager_xms: '-Xmx64m'
+middlemanager_log_level: 'info'
+middlemanager_log_status: 'WARN'
+middlemanager_log_filename: '{{ druid_log_dir }}/middlemanager.log'
+middlemanager_log_appender: 'File'
+
+# Overlord properties
+overlord_indexer_runner_type: 'remote'
+overlord_processing_tmpDir: '{{ druid_tmp_base }}/overlord'
+overlord_jmx_port: 17075
+overlord_jmxremote_authenticate: 'false'
+overlord_jmxremote_ssl: false
+overlord_xmx: '-Xmx512m'
+overlord_xms: '-Xms128m'
+overlord_newsize: '128m'
+overlord_max_newsize: '256m'
+overlord_log_level: 'info'
+overlord_log_status: 'WARN'
+overlord_log_filename: '{{ druid_log_dir }}/overlord.log'
+overlord_log_appender: 'File'

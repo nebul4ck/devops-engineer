@@ -1,0 +1,30 @@
+---
+
+- name: ensure store data directory exist
+  become: yes
+  file:
+    path: "{{ store_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: ensure store data directory for influxdb exist
+  become: yes
+  file:
+    path: "{{ influxdb_store }}"
+    state: directory
+    owner: influxdb
+    group: influxdb
+    mode: 0755
+
+- name: setup global influxdb config
+  become: yes
+  template:
+    src: influxdb.conf.j2
+    dest: /etc/influxdb/influxdb.conf
+    owner: root
+    group: root
+    mode: 0644
+
+...

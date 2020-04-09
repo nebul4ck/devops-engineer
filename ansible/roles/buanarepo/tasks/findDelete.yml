@@ -1,0 +1,14 @@
+---
+# Find a directory and remove it.
+# This playbook needs a variable: directory to find and remove.
+
+- name: Check if exists {{ directory }}
+  stat:
+    path: '{{ directory }}'
+  register: dirCerts
+
+- name: Remove {{ directory }}
+  file:
+    path: '{{ directory }}'
+    state: absent
+  when: dirCerts.stat.exists

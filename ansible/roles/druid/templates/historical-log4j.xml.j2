@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ historical_log_status|default('WARN') }}">
+    <Appenders>
+        <File name="{{ historical_log_appender }}" fileName="{{ historical_log_filename|default('/tmp/historical.log') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ historical_log_level|default('info') }}">
+            <AppenderRef ref="{{ historical_log_appender }}"/>
+        </Root>
+    </Loggers>
+</Configuration>

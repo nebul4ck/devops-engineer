@@ -1,0 +1,23 @@
+[Unit]
+Documentation=https://mosquitto.org/man/mosquitto-8.html
+SourcePath=/etc/init.d/mosquitto
+Description=LSB: mosquitto MQTT v3.1 message broker
+Before=multi-user.target
+Before=multi-user.target
+Before=multi-user.target
+Before=graphical.target
+Before=shutdown.target
+After=remote-fs.target
+After=systemd-journald-dev-log.socket
+Conflicts=shutdown.target
+
+[Service]
+Type=forking
+Restart=on-failure
+TimeoutSec=5min
+IgnoreSIGPIPE=no
+KillMode=process
+PIDFile=/var/run/mosquitto.pid
+ExecStart=/etc/init.d/mosquitto start
+ExecStop=/etc/init.d/mosquitto stop
+ExecReload=/etc/init.d/mosquitto reload

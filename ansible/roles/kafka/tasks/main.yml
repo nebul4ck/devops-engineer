@@ -1,0 +1,29 @@
+---
+# Main role to install and configure Kafka service.
+
+- name: Install Kafka service.
+  apt:
+    name: kafka
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: '{{ cache_valid_time|default(3600) }}'
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ kafka_service }}'
+  tags: systemd
+
+- name: Configure Kafka service.
+  template: 
+    src: server.properties.j2
+    dest: '{{ kafka_conf_dir }}/server.properties'
+
+- name: Configure Kafka log4j properties.
+  template: 
+    src: log4j.properties.j2
+    dest: '{{ kafka_conf_dir }}/log4j.properties'

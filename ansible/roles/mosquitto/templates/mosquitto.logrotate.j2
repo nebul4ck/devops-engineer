@@ -1,0 +1,11 @@
+{{ mosquitto_log_file}} {
+	rotate {{ logfile_backup }}
+	{{ logfile_time }}
+	compress
+	size {{ logfile_size }}
+	nocreate
+	missingok
+	postrotate
+		/usr/bin/killall -HUP mosquitto
+	endscript
+}

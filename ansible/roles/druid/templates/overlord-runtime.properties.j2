@@ -1,0 +1,49 @@
+# Node Configs
+druid.host={{ ansible_hostname }}
+druid.port={{ druid_overlord_port|default(8090) }}
+druid.service={{ druid_overlord_service }}
+
+# Overlord config
+druid.indexer.runner.type={{ druid_indexer_runner_type|default('local') }}
+druid.indexer.storage.type={{ druid_indexer_storage_type|default('metadata') }}
+druid.indexer.storage.recentlyFinishedThreshold={{ druid_indexer_storage_recentlyFinishedThreshold|default('PT24H') }}
+druid.indexer.queue.startDelay={{ druid_indexer_queue_startDelay|default('PT1M') }}
+druid.indexer.queue.restartDelay={{ druid_indexer_queue_restartDelay|default('PT30S') }}
+druid.indexer.queue.storageSyncRate={{ druid_indexer_queue_storageSyncRate|default('PT1M') }}
+
+# Logging
+druid.indexer.logs.type={{ common_indexer_logs_type|default('noop') }}
+#druid.indexer.logs.directory={{ common_indexer_logs_directory|default('/tmp') }}
+
+# Automatically retain the task logs
+druid.indexer.logs.kill.enabled={{ druid_indexer_logs_kill_enabled|default('false') }}
+druid.indexer.logs.kill.initialDelay={{ druid_indexer_logs_kill_initialDelay|default(300000) }}
+druid.indexer.logs.kill.delay={{ druid_indexer_logs_kill_delay|default(21600000) }}
+
+# if the overlord is running in remote mode
+druid.indexer.runner.taskAssignmentTimeout={{ druid_indexer_runner_taskAssignmentTimeout|default('PT5M') }}
+#druid.indexer.runner.minWorkerVersion={{ druid_indexer_runner_minWorkerVersion|default('0') }}
+druid.indexer.runner.compressZnodes={{ druid_indexer_runner_compressZnodes|default('true') }}
+druid.indexer.runner.maxZnodeBytes={{ druid_indexer_runner_maxZnodeBytes|default(524288) }}
+druid.indexer.runner.taskCleanupTimeout={{ druid_indexer_runner_taskCleanupTimeout|default('PT15M') }}
+druid.indexer.runner.taskShutdownLinkTimeout={{ druid_indexer_runner_taskShutdownLinkTimeout|default('PT1M') }}
+druid.indexer.runner.pendingTasksRunnerNumThreads={{ druid_indexer_runner_pendingTasksRunnerNumThreads|default(20) }}
+druid.indexer.runner.maxRetriesBeforeBlacklist={{ druid_indexer_runner_maxRetriesBeforeBlacklist|default(5) }}
+druid.indexer.runner.workerBlackListBackoffTime={{ druid_indexer_runner_workerBlackListBackoffTime|default('PT15M') }}
+druid.indexer.runner.workerBlackListCleanupPeriod={{ druid_indexer_runner_workerBlackListCleanupPeriod|default('PT5M') }}
+druid.indexer.runner.maxPercentageBlacklistWorkers={{ druid_indexer_runner_maxPercentageBlacklistWorkers|default(20) }}
+
+# configs for autoscaling (When is enabled):
+#druid.indexer.autoscale.strategy={{ druid_indexer_autoscale_strategy|default('noop') }}
+#druid.indexer.autoscale.doAutoscale={{ druid_indexer_autoscale_doAutoscale|default('false') }}
+#druid.indexer.autoscale.provisionPeriod={{ druid_indexer_autoscale_provisionPeriod|default('PT1M') }}
+#druid.indexer.autoscale.terminatePeriod={{ druid_indexer_autoscale_terminatePeriod|default('PT5M') }}
+#druid.indexer.autoscale.originTime={{ druid_indexer_autoscale_originTime|default('2012-01-01T00:55:00.000Z') }}
+#druid.indexer.autoscale.workerIdleTimeout={{ druid_indexer_autoscale_workerIdleTimeout|default('PT90M') }}
+#druid.indexer.autoscale.maxScalingDuration={{ druid_indexer_autoscale_maxScalingDuration|default('PT15M') }}
+#druid.indexer.autoscale.numEventsToTrack={{ druid_indexer_autoscale_numEventsToTrack|default(10) }}
+#druid.indexer.autoscale.pendingTaskTimeout={{ druid_indexer_autoscale_pendingTaskTimeout|default('PT30S') }}
+#druid.indexer.autoscale.workerPort={{ druid_indexer_autoscale_workerPort|default(8080) }}
+
+# TMP Directory
+druid.processing.tmpDir={{ druid_overlord_processing_tmpDir|default('/tmp') }}

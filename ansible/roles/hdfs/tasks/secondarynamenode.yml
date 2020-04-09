@@ -1,0 +1,6 @@
+---
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml
+  vars:
+    service: '{{ hdfs_secondarynamenode_service }}'
+  tags: systemd

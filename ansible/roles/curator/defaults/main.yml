@@ -1,0 +1,8 @@
+---
+curator_service: 'curator'
+curator_base: '/opt/elasticsearch-curator'
+curator_conf_dir: '{{ curator_base }}/conf'
+curator_conf_file: '{{ curator_conf_dir }}/curator-config.yml'
+curator_tasks_file: '{{ curator_conf_dir }}/daily-actions.yml'
+curator_log_dir: '{{ curator_base }}/log'
+curator_log_file: '{{ curator_log_dir }}/curator-actions.log'

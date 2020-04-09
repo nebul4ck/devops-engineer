@@ -1,0 +1,22 @@
+[
+    {
+        "ParameterKey": "VPCId",
+        "ParameterValue": "vpc-014578107703ac0e3"
+    },
+    {
+        "ParameterKey": "RoleName",
+        "ParameterValue": "as-pro-orchestrator-flowlogsRole"
+    },
+    {
+        "ParameterKey": "PolicyName",
+        "ParameterValue": "as-pro-orchestrator"
+    },
+    {
+        "ParameterKey": "RetentionInDays",
+        "ParameterValue": 
+    },
+    {
+        "ParameterKey": "TrafficType",
+        "ParameterValue": "flowlogs-policy"
+    }
+]

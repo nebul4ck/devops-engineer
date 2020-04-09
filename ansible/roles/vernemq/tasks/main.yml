@@ -1,0 +1,32 @@
+---
+# Main role to install and configure DNSmasq service.
+
+- name: Install VerneMQ service.
+  apt:
+    name: vernemq
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ vernemq_service }}'
+  tags: systemd
+
+- name: Sets PAM limits for VerneMQ user.
+  pam_limits:
+    domain: vernemq
+    limit_type: '-'
+    limit_item: nofile
+    value: "{{ no_file|default(65536) }}"
+    comment: unlimited number open files for vernemq user
+
+- name: Configure VerneMQ service.
+  template: 
+    src: vernemq.conf.j2
+    dest: /etc/vernemq/vernemq.conf

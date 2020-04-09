@@ -1,0 +1,22 @@
+---
+- name: Install Kibana service.
+  apt:
+    name: kibana
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ kibana_service }}'
+  tags: systemd
+
+- name: Configure Kibana service.
+  template: 
+    src: '{{ kibana_service }}.yml.j2'
+    dest: '{{ kibana_conf_file }}'

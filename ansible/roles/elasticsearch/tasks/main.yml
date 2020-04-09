@@ -1,0 +1,32 @@
+---
+- name: Install ElasticSearch.
+  apt:
+    name: elasticsearch
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+- name: Configure ElasticSearch.
+  template:
+    src: '{{ elasticsearch_service }}.yml.j2'
+    dest: '{{ es_conf_dir }}/{{ elasticsearch_service }}.yml'
+
+- name: Configure JVM Options.
+  template:
+    src: 'jvm.options.j2'
+    dest: '{{ es_conf_dir }}/jvm.options'
+
+- name: Configure log4j.properties.
+  template:
+    src: 'log4j.properties.j2'
+    dest: '{{ es_conf_dir }}/log4j.properties'
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ elasticsearch_service }}'
+  tags: systemd

@@ -1,0 +1,32 @@
+---
+# Connexion
+redis_port: 6379
+
+# redis-server.conf.j2
+redis_daemon: 'yes'
+redis_tcp_backlog: 128
+# Close the connection after a client is idle for N seconds (0 to disable)
+redis_timeout: 0
+# A reasonable value for this option is 60 seconds.
+redis_tcp_keepalive: 0
+redis_log_level: 'warning'
+redis_databases: 16
+redis_rdbcompression: 'yes'
+redis_rdbchecksum: 'yes'
+redis_dbfilename: 'checkPoints.rdb'
+redis_maxclients: 1000
+redis_maxmemory: '500mb'
+redis_maxmemory_policy: 'allkeys-lru'
+redis_maxmemory_samples: 10
+redis_appendonly: 'yes'
+redis_appendfilename: 'latestChanges.aof'
+redis_appendfsync: 'everysec'
+redis_no_appendfsync_on_rewrite: 'no'
+redis_aof_load_truncated: 'yes'
+# Si se supera el 100% del tamaño base (tamaño de aof al reiniciar redis o tras el último rewrite)
+#se desencadena una nueva operación de reescritura del archivo
+redis_auto_aof_rewrite_percentage: 100
+# Si se supera el 100% del tamaño base pero sigue siendo inferior al tamaño aquí seteado,
+#no se producirá rewrite.
+redis_auto_aof_rewrite_min_size: '64mb'
+

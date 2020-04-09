@@ -1,0 +1,48 @@
+<configuration>
+
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
+
+    <appender name="{{ cerebro_log_appender|default('FILE') }}" class="ch.qos.logback.core.FileAppender">
+        <file>{{ cerebro_log_file }}</file>
+        <encoder>
+            <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%coloredLevel %logger{15} - %message%n%xException{5}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>{{ cerebro_log_file }}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- rollover weekly -->
+            <fileNamePattern>{{ cerebro_log_dir }}/cerebro-%d{yyyy-ww}.%i.log.gz</fileNamePattern>
+            <!-- each file should be at most 100MB, keep 3 weeks worth of history, but at most 500MB -->
+            <maxFileSize>{{ cerebro_log_maxsize|default('100MB') }}</maxFileSize>    
+            <maxHistory>{{ cerebro_log_max_rotate|default(3) }}</maxHistory>
+            <totalSizeCap>{{ cerebro_total_sizecap|default('500MB') }}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="play" level="{{ cerebro_log_level|default('INFO') }}"/>
+    <logger name="application" level="{{ cerebro_log_level|default('INFO') }}"/>
+
+    <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
+    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
+    <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
+
+    <root level="{{ cerebro_log_level|default('INFO') }}">
+<!--        <appender-ref ref="STDOUT"/>  -->
+        <appender-ref ref="FILE"/>
+<!--        <appender-ref ref="ROLLING" />    -->
+    </root>
+
+</configuration>

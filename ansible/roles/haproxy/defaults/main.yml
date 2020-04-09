@@ -1,0 +1,5 @@
+---
+# Put here defaults variables for role
+haproxy_user: 'haproxy'
+haproxy_group: 'haproxy'
+haproxy_service: 'haproxy'

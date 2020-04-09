@@ -1,0 +1,78 @@
+---
+
+- name: Set SSH daemon for permit root login...
+  become: yes
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin *'
+    line: 'PermitRootLogin yes'
+  tags: accessbysshkey
+
+- name: Restart SSH daemon...
+  become: yes
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: sshd
+  tags: accessbysshkey
+
+- name: Set root password login...
+  become: yes
+  user:
+    name: root
+    update_password: always
+    password: "{{ root_password | password_hash('sha512') }}"
+  tags: accessbysshkey
+
+- name: Check .ssh local directory...
+  delegate_to: localhost
+  file:
+    path: /home/{{ local_user }}/.ssh
+    state: directory
+    owner: '{{ local_user }}'
+    group: '{{ local_user }}'
+    mode: 0700
+  tags: accessbysshkey
+
+- name: Generate {{ local_user }}local  user RSA key.
+  delegate_to: localhost
+  become: yes
+  become_user: '{{ local_user }}'
+  command: ssh-keygen -q -t rsa -f /home/{{ local_user }}/.ssh/id_rsa -C '' -N ''
+  tags: accessbysshkey
+  ignore_errors: yes
+
+- name: Fetch {{ local_user }} local user RSA.
+  delegate_to: localhost
+  remote_user: tech
+  command: "cat /home/{{ local_user }}/.ssh/id_rsa.pub"
+  register: catrsa
+  tags: accessbysshkey
+
+- name: Set RSA...
+  set_fact:
+    user_id_rsa : "{{ catrsa.stdout }}"
+  tags: accessbysshkey
+
+- name: Create remote .ssh/ directory (if it does not exist)...
+  become: yes
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  tags: accessbysshkey
+
+- name: Copy local user SSH-KEY to root user account in the remotes hosts...
+  become: yes
+  lineinfile:
+    create: yes
+    state: present
+    regexp: '^ssh-rsa*'
+    path: /root/.ssh/authorized_keys
+    line: "{{ user_id_rsa }}"
+    mode: 0600
+    owner: root
+    group: root
+  tags: accessbysshkey

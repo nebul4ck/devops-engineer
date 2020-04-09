@@ -1,0 +1,11 @@
+---
+
+- name: setup systemctl
+  become: yes
+  copy:
+    src: mosquitto.service
+    dest: /lib/systemd/system/mosquitto.service
+  notify:
+    - systemd daemon reload
+
+...

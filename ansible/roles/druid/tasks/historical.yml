@@ -1,0 +1,18 @@
+---
+# historical.yml
+
+- name: Configure Druid-Historical service.
+  template: 
+    src: historical-runtime.properties.j2
+    dest: "{{ historical_conf_dir }}/runtimes.properties"
+
+- name: Configure Historical log4j properties.
+  template:
+    src: historical-log4j.xml.j2
+    dest: "{{ historical_conf_dir }}/log4j2.xml"
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ druid_historical_service }}'
+  tags: systemd

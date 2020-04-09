@@ -1,0 +1,22 @@
+---
+- name: Install MongoDB service.
+  apt:
+    name: mongodb-org-server
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: '{{ cache_valid_time|default(3600) }}'
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ mongodb_service }}'
+  tags: systemd
+
+- name: Configure MongoDB service.
+  template: 
+    src: '{{ mongodb_service }}.conf.j2'
+    dest: '{{ mongodb_conf_file }}'

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ middlemanager_log_status|default('WARN') }}">
+    <Appenders>
+        <File name="{{ middlemanager_log_appender }}" fileName="{{ middlemanager_log_filename|default('/tmp/middlemanager.log') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ middlemanager_log_level|default('info') }}">
+            <AppenderRef ref="{{ middlemanager_log_appender }}"/>
+        </Root>
+    </Loggers>
+</Configuration>

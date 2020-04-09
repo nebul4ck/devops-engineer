@@ -1,0 +1,9 @@
+{{ influxdb_log_file }} {
+    rotate {{ logfile_backup }}
+    {{ logfile_time }}
+    size {{ logfile_size }}
+    missingok
+    dateext
+    copytruncate
+    compress
+}

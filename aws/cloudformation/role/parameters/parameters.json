@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "EnvType",
+        "ParameterValue": "production"
+    },
+    {
+        "ParameterKey": "RoleName",
+        "ParameterValue": "AmazonSSMRoleForInstancesQuickSetup"
+    },
+    {
+        "ParameterKey": "ARNPolicy",
+        "ParameterValue": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
+]

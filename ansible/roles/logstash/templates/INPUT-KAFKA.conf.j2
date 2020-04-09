@@ -1,0 +1,20 @@
+linput {
+        kafka {
+                codec => "json"
+                group_id => "logstash"
+                zk_connect => "{{ zookeeper_quorum }}/kafka"
+		topic_id => "<topic>"
+#		decorate_events => "true"
+		type => "<topic>"
+		add_field => {"kafka_topic_id" => ""}
+        }
+        kafka {
+                codec => "json"
+                group_id => "logstash"
+                zk_connect => "{{ zookeeper_quorum }}/kafka"
+		topic_id => "<topic>"
+#		decorate_events => "true"
+		type => "<topic>"
+		add_field => {"kafka_topic_id" => ""}
+        }
+}

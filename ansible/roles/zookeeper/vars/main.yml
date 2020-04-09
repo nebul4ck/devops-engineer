@@ -1,0 +1,65 @@
+---
+## zoo.conf.j2 ##
+zk_config: '/opt/zookeeper/conf/zoo.cfg'
+
+# The number of milliseconds of each tick
+tick_time: 2000
+max_session_timeout: 160000
+# The number of ticks that the initial 
+# synchronization phase can take
+init_limit: 5
+# The number of ticks that can pass between 
+# sending a request and getting an acknowledgement
+sync_limit: 2
+# the directory where the snapshot is stored.
+# do not use /tmp for storage, /tmp here is just 
+# example sakes.
+data_dir: '/opt/store/zookeeper/snapshots'
+# Directorio donde se almacenarán los registros de zookeeper (volumen independiente)
+data_log_dir: '/opt/store/zookeeper/dataLog'
+# the port at which the clients will connect
+zookeeper_client_port: 2181
+# the port at which the peer will connect
+peer_port: 2888
+election_port: 3888
+# the maximum number of client connections.
+# increase this if you need to handle more clients
+max_client_cnxns: 60
+#
+# Be sure to read the maintenance section of the 
+# administrator guide before turning on autopurge.
+#
+# http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance
+#
+# The number of snapshots to retain in dataDir
+autopurge_snap_retain_count: 3
+# Purge task interval in hours
+# Set to "0" to disable auto purge feature
+autopurge_purge_interval: 1
+# El leader acepta conexiones
+leader_serves: yes
+
+
+## java.env.j2 ##
+jvm_config: '/opt/zookeeper/conf/java.env'
+jvm_xmx: '-Xmx1G'
+jvm_xms: '-Xms1G'
+
+
+## log4j.properties.j2 ##
+log4j_properties: '/opt/zookeeper/conf/log4j.properties'
+log_level: 'INFO'
+log_type: 'FILE'
+log_dir: '/var/log/zookeeper'
+log_max_size: '100MB'
+log_max_backup: 3
+
+
+## zookeeper.service.j2 ##
+zookeeper_systemd_run_type: 'forking'
+restart_service: 'always'
+restart_sec: '2000ms'
+
+## myid.j2 ##
+
+myid_file: '{{ data_dir }}/myid'

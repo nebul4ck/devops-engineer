@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ vernemq_service }}
+  systemd:
+    name: '{{ vernemq_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ vernemq_service }}
+  systemd:
+    name: '{{ vernemq_service }}'
+    state: restarted
+
+- name: stop {{ vernemq_service }}
+  systemd:
+    name: '{{ vernemq_service }}'
+    state: stopped
+
+- name: reload {{ vernemq_service }}
+  systemd:
+    name: '{{ vernemq_service }}'
+    state: reloaded

@@ -1,0 +1,42 @@
+---
+- name: Check if exists {{ certs_base }}
+  stat:
+    path: '{{ certs_base }}'
+  register: baseCerts
+
+- name: Remove {{ certs_base }}
+  file:
+    path: '{{ certs_base }}'
+    state: absent
+  when: baseCerts.stat.exists
+
+- name: Remove Buanarepo repositories.
+  apt_repository:
+    repo: '{{ item }}'
+    state: absent
+    update_cache: yes
+  with_items:
+    - '{{ buanarepo_pro_main_full_path_apt_source }}'
+    - '{{ buanarepo_pro_restricted_full_path_apt_source }}'
+    - '{{ buanarepo_dev_main_full_path_apt_source }}'
+    - '{{ buanarepo_dev_restricted_full_path_apt_source }}'
+  when: (env_repo_remove is defined) and (env_repo_remove == 'production' or env_repo_remove == 'development')
+
+- name: Check if exists APT-CONF files for Buanarepo repository.
+  block:
+    - name: Checking files...
+      stat:
+        path: '{{ buanarepo_apt_confd }}/{{ item }}'
+      register: aptConfFileStatus
+      with_items:
+        - '{{ buanarepo_dev_main_template }}'
+        - '{{ buanarepo_dev_restricted_template }}'
+        - '{{ buanarepo_pro_main_template }}' 
+        - '{{ buanarepo_pro_restricted_template }}'
+    - name: Removing APT-CONF files...
+      file:
+        path: '{{ buanarepo_apt_confd }}/{{ item.item }}'
+        state: absent
+      when: item.stat.exists
+      with_items:
+        - '{{ aptConfFileStatus.results }}'

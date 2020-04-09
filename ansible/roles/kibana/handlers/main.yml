@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ kibana_service }}
+  systemd:
+    name: '{{ kibana_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ kibana_service }}
+  systemd:
+    name: '{{ kibana_service }}'
+    state: restarted
+
+- name: stop {{ kibana_service }}
+  systemd:
+    name: '{{ kibana_service }}'
+    state: stopped
+
+- name: reload {{ kibana_service }}
+  systemd:
+    name: '{{ kibana_service }}'
+    state: reloaded

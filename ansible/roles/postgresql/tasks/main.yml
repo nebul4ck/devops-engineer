@@ -1,0 +1,48 @@
+---
+# Main role to install and configure PostgreSQL service.
+
+- name: Add a PostgreSQL signing key.
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main
+    state: present
+    filename: postgresql
+
+- name: Install PostgreSQL service.
+  apt:
+    name: postgresql-10
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: '{{ cache_valid_time|default(3600) }}'
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+- name: Configure PostgreSQL service.
+  template: src={{ item.src }} dest={{ postgresql_conf_dir }}/{{ item.dest }} mode=0644
+  with_items:
+    - { src: 'pg_hba.conf.j2', dest: 'pg_hba.conf' }
+    - { src: 'postgresql.conf.j2', dest: 'postgresql.conf' }
+
+# Workaround until a postinst debian file make it
+- name: Make PostgreSQL Store Directory.
+  file:
+    path: '{{ postgresql_data_directory }}'
+    state: directory
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+    mode: 0700
+
+- name: Move data from default PostgreSQL database directory to {{ postgresql_data_directory }}
+  shell: cp -r {{ postgresql_default_database_dir }}/* {{ postgresql_data_directory }}
+
+- name: Set attributes to {{ postgresql_data_directory }}
+  file:
+    path: '{{ postgresql_data_directory }}'
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+    recurse: yes

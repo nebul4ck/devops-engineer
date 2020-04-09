@@ -1,0 +1,31 @@
+# Use it for development environments
+# Help us to deploy, delete and get info about
+# cloudformation stacks
+#
+# ./multi-aws-cli.sh
+# │
+# ├── ec2
+# │   ├── cf-compliance-ec2-instance.yaml
+# │   ├── parameters
+# │   │   └── parameters.json
+# │   └── tags
+# │       └── tags.json
+# └── s3  
+#     ├── cf-compliance-s3-bucket.yaml
+#     ├── parameters
+#     │   └── parameters.json
+#     └── tags
+#         └── tags.json
+#
+# run it:
+#       $ ./multi-aws-cli.sh <profile> <account>
+#               <resource> <action>
+#----------------------------------------------#
+
+# Please, visit the AWS Best Practices if you are going to either create or edit any CloudFormation template:
+
+	https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/best-practices.html#organizingstacks
+
+# Example of templates:
+
+	https://github.com/awslabs/aws-cloudformation-templates/tree/master/aws

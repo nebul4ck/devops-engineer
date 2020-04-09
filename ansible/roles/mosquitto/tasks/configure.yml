@@ -1,0 +1,49 @@
+---
+
+- name: ensure store data directory exist
+  become: yes
+  file:
+    path: /opt/store
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: ensure store data directory for mosquitto exist
+  become: yes
+  file:
+    path: /opt/store/mosquitto
+    state: directory
+    owner: mosquitto
+    group: mosquitto
+    mode: 0755
+
+- name: setup global mosquitto config
+  become: yes
+  template:
+    src: mosquitto.conf.j2
+    dest: /etc/mosquitto/mosquitto.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: ensure custom config directory exist
+  become: yes
+  file:
+    path: /etc/mosquitto/conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - mosquitto_custom_config_exits
+
+- name: setup custom mosquitto config
+  become: yes
+  template:
+    src: custom.conf.j2
+    dest: /etc/mosquitto/conf.d/custom.conf
+  when:
+    - mosquitto_custom_config_exits
+
+...

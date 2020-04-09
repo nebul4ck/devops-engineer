@@ -1,0 +1,22 @@
+---
+
+mosquitto_version: 1.5.*
+
+# mosquitto global config
+mosquitto_pid_file: /var/run/mosquitto.pid
+mosquitto_data_persistence_boolean: true
+mosquitto_data_persistence_path: /opt/store/mosquitto/
+mosquitto_log_file: /var/log/mosquitto/mosquitto.log
+mosquitto_custom_config: /etc/mosquitto/conf.d
+
+# mosquitto custom config
+mosquitto_custom_config_exits: true
+
+mosquitto_queue_qos0_messages: true
+
+# mosquitto logrotate
+logfile_backup: 3
+logfile_time: weekly
+logfile_size: 100M
+
+...

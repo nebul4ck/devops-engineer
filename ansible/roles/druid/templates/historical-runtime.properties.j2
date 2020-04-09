@@ -1,0 +1,54 @@
+# Node config
+druid.host={{ ansible_hostname }}
+druid.port={{ druid_historical_port|default(8085) }}
+druid.service={{ druid_historical_service }}
+
+# General configuration
+druid.server.tier={{ historical_server_tier|default('_default_tier') }}
+druid.server.priority={{ historical_server_priority|default(0) }}
+
+# Storing Segments
+druid.segmentCache.locations={{ historical_segmentCache_locations }}
+druid.segmentCache.deleteOnRemove={{ historical_segmentCache_deleteOnRemove|default('true') }}
+druid.segmentCache.dropSegmentDelayMillis={{ historical_segmentCache_dropSegmentDelayMillis|default(30000) }}
+druid.segmentCache.announceIntervalMillis={{ historical_segmentCache_announceIntervalMillis|default(5000) }}
+druid.segmentCache.numBootstrapThreads={{ historical_segmentCache_numBootstrapThreads|default(8) }}
+druid.server.maxSize={{ historical_server_maxSize|default(21474836480) }}
+
+# Query Configs
+druid.server.http.numThreads={{ historical_server_http_numThreads|default(25) }}
+druid.server.http.maxIdleTime={{ historical_server_http_maxIdleTime|default('PT10m') }}
+druid.server.http.defaultQueryTimeout={{ historical_server_http_defaultQueryTimeout|default(300000) }}
+druid.query.search.maxSearchLimit={{ historical_query_search_maxSearchLimit|default(1000) }}
+
+# GroupBy queries
+# v1 version
+#druid.query.groupBy.maxIntermediateRows={{ historical_query_groupBy_maxIntermediateRows|default(50000) }}
+#druid.query.groupBy.maxResults={{ historical_query_groupBy_maxResults|default(500000) }}
+#druid.query.groupBy.singleThreaded={{ historical_query_groupBy_singleThreaded|default('false') }}
+# v2 version
+druid.query.groupBy.defaultStrategy={{ historical_query_groupBy_defaultStrategy|default('v2') }}
+druid.query.groupBy.bufferGrouperInitialBuckets={{ historical_query_groupBy_bufferGrouperInitialBuckets|default(0) }}
+druid.query.groupBy.bufferGrouperMaxLoadFactor={{ historical_query_groupBy_bufferGrouperMaxLoadFactor|default(0) }}
+druid.query.groupBy.maxMergingDictionarySize={{ historical_query_groupBy_maxMergingDictionarySize|default(100000000) }}
+druid.query.groupBy.maxOnDiskStorage={{ historical_query_groupBy_maxOnDiskStorage|default(0) }}
+druid.query.groupBy.singleThreaded={{ historical_query_groupBy_singleThreaded|default('false') }}
+
+druid.processing.buffer.sizeBytes={{ historical_processing_buffer_sizeBytes|default(262144000) }}
+druid.processing.numThreads={{ historical_processing_numThreads|default(4) }}
+druid.processing.numMergeBuffers={{ historical_processing_numMergeBuffers|default(2) }}
+druid.processing.columnCache.sizeBytes={{ historical_processing_columnCache_sizeBytes|default(0) }}
+druid.processing.fifo={{ historical_processing_fifo|default('false') }}
+druid.processing.tmpDir={{ historical_processing_tmpDir|default('/tmp') }}
+
+# Caching
+
+druid.historical.cache.useCache={{ historical_cache_useCache|default('false') }}
+druid.historical.cache.populateCache={{ historical_cache_populateCache|default('true') }}
+druid.historical.cache.unCacheable={{ historical_cache_unCacheable|default('[]') }}
+
+# Caching historical/broker
+druid.cache.type={{ common_cache_type|default('local') }}
+druid.cache.sizeInBytes={{ common_cache_sizeInBytes|default(0) }}
+druid.cache.initialSize={{ common_cache_initialSize|default(500000) }}
+druid.cache.logEvictionCount={{ common_cache_logEvictionCount|default(0) }}

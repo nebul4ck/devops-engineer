@@ -1,0 +1,18 @@
+---
+# Broker.yml
+
+- name: Configure Druid-Broker service.
+  template: 
+    src: broker-runtime.properties.j2
+    dest: "{{ broker_conf_dir }}/runtime.properties"
+
+- name: Configure Broker log4j properties.
+  template:
+    src: broker-log4j.xml.j2
+    dest: "{{ broker_conf_dir }}/log4j2.xml"
+
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ druid_broker_service }}'
+  tags: systemd

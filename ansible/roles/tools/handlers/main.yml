@@ -1,0 +1,9 @@
+---
+- name: disable thp
+  shell: "{{ disable_thp }}"
+
+- name: restart networking
+  systemd:
+    name: 'networking'
+    state: restarted
+    enabled: yes

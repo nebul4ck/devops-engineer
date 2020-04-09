@@ -1,0 +1,26 @@
+# Node Config
+druid.host={{ ansible_hostname }}
+druid.port={{ druid_coordinator_port|default(8084) }}
+druid.service={{ druid_coordinator_service }}
+
+# Coordinator Operation
+druid.coordinator.period={{ druid_coordinator_period|default('PT60S') }}
+druid.coordinator.period.indexingPeriod={{ druid_coordinator_period_indexingPeriod|default('PT1800S') }}
+druid.coordinator.startDelay={{ druid_coordinator_startDelay|default('PT300S') }}
+druid.coordinator.merge.on={{ druid_coordinator_merge_on|default('false') }}
+druid.coordinator.conversion.on={{ druid_coordinator_conversion_on|default('false') }}
+druid.coordinator.load.timeout={{ druid_coordinator_load_timeout|default('PT15M') }}
+druid.coordinator.kill.on={{ druid_coordinator_kill_on|default('false') }}
+druid.coordinator.kill.period={{ druid_coordinator_kill_period|default('P1D') }}
+druid.coordinator.kill.durationToRetain={{ druid_coordinator_kill_durationToRetain|default('PT-1S') }}
+druid.coordinator.kill.maxSegments={{ druid_coordinator_kill_maxSegments|default(0) }}
+druid.coordinator.balancer.strategy={{ druid_coordinator_balancer_strategy|default('cost') }}
+druid.coordinator.loadqueuepeon.repeatDelay={{ druid_coordinator_loadqueuepeon_repeatDelay|default('PT0.050S') }}
+druid.coordinator.asOverlord.enabled={{ druid_coordinator_asOverlord_enabled|default('false') }}
+
+# Metadata Retrieval
+druid.manager.config.pollDuration={{ druid_manager_config_pollDuration|default('PT1M') }}
+druid.manager.segments.pollDuration={{ druid_manager_segments_pollDuration|default('PT1M') }}
+druid.manager.rules.pollDuration={{ druid_manager_rules_pollDuration|default('PT1M') }}
+druid.manager.rules.defaultTier={{ druid_manager_rules_defaultTier|default('_default') }}
+druid.manager.rules.alertThreshold={{ druid_manager_rules_alertThreshold|default('PT10M') }}

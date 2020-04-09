@@ -1,0 +1,57 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default system properties included when running spark-submit.
+# This is useful for setting default environmental settings.
+
+##### MASTER #####
+spark.master                     spark://{{ spark_masternode }}:{{ spark_masternode_port|default(7077) }}
+spark.eventLog.enabled           {{ spark_eventLog_enabled|default('false') }}
+spark.eventLog.dir               hdfs://{{ hdfs_namenode }}:{{ hdfs_namenode_port|default(54310) }}/spark/eventLog
+spark.local.dir {{ spark_tmp_dir|default('/opt/spark/tmp') }}
+spark.ui.port {{ spark_ui_port|default(4040) }}
+
+##### WORKER #####
+spark.worker.cleanup.enabled {{ spark_worker_cleanup_enabled|default('true') }}
+spark.worker.cleanup.interval {{ spark_worker_cleanup_interval|default(1800) }}
+spark.worker.cleanup.appDataTtl {{ spark_worker_cleanup_appDataTtl|default(86400) }}
+## Python tunning
+#spark.python.worker.memory {{ spark_python_worker_memory|default('512m') }}
+
+##### DRIVER #####
+spark.driver.cores {{ spark_driver_cores|default(1) }}
+spark.driver.maxResultSize {{ spark_driver_maxResultSize|default('128m') }}
+spark.driver.memory {{ spark_driver_memory|default('512m') }}
+#spark.cores.max {{ spark_cores_max|default(8) }}
+
+##### EXECUTOR #####
+spark.executor.memory {{ spark_executor_memory|default('512m') }}
+spark.executor.logs.rolling.maxRetainedFiles {{ spark_executor_logs_rolling_maxRetainedFiles|default(3) }}
+spark.executor.logs.rolling.maxSize {{ spark_executor_logs_rolling_maxSize|default(500000000) }}
+spark.executor.logs.rolling.strategy {{ spark_executor_logs_rolling_strategy|default('size') }}
+#spark.executor.cores {{ spark_executor_cores|default(4) }}
+
+##### DYNAMIC RESOURCES #####
+#spark.dynamicAllocation.enabled {{ spark_dynamicAllocation_enabled|default('true') }}
+spark.shuffle.service.enabled {{ spark_shuffle_service_enabled|default('true') }}
+#spark.dynamicAllocation.minExecutors {{ spark_dynamicAllocation_minExecutors|default(1) }}
+#spark.dynamicAllocation.maxExecutors {{ spark_dynamicAllocation_maxExecutors|default(1) }}
+#spark.dynamicAllocation.initialExecutors {{ spark_dynamicAllocation_initialExecutors|default(1) }}
+
+#### TUNNING
+spark.memory.fraction {{ spark_memory_fraction|default(0.6) }}
+spark.memory.storageFraction {{ spark_memory_storageFraction|default(0.5) }}

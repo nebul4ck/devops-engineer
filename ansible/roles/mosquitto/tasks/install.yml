@@ -1,0 +1,20 @@
+---
+
+- name: Ensure mosquito repository is added.
+  become: yes
+  apt_repository:
+    repo: ppa:mosquitto-dev/mosquitto-ppa
+    state: present
+    update_cache: yes
+    validate_certs: no
+
+- name: Ensure mosquitto server is installed
+  become: yes
+  apt:
+    name: "mosquitto={{ mosquitto_version }}"
+    state: present
+  notify:
+    - stop mosquitto server
+    - systemd daemon reload
+
+...

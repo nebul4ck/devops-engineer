@@ -1,0 +1,61 @@
+actions:
+  1:
+    action: snapshot
+    description: Daily index' snapshot
+    options:
+      repository: {{ elasticsearch_hdfs_repo }}
+      name: day_%d-%m-%Y
+      ignore_unavailable: False
+      ignore_empty_list: True
+      include_global_state: True
+      partial: True
+      wait_for_completion: True
+      skip_repo_fs_check: False
+      continue_if_exception: True
+      disable_action: False
+    filters:
+    - filtertype: period
+      source: name
+      # Last day in the past (yesterday)
+      range_from: -1
+      range_to: -1
+      timestring: '%Y.%m.%d'
+      unit: days
+
+  2:
+    action: delete_snapshots
+    description: Delete snapshot with more from two months
+    options:
+      repository: {{ elasticsearch_hdfs_repo }}
+      retry_interval: 120
+      retry_count: 3
+      ignore_empty_list: True
+      timeout_override: 21600
+      continue_if_exception: True
+      disable_action: False
+    filters:
+    - filtertype: period
+      source: name
+      # Not snapshots with more from two months into HDFS cluster
+      range_from: -4
+      range_to: -3
+      timestring: '%d-%m-%Y'
+      unit: months
+
+  3:
+    action: delete_indices
+    description: Drop older index
+    options:
+      ignore_empty_list: True
+      continue_if_exception: False
+      disable_action: False
+    filters:
+      - filtertype: period
+        source: name
+        # Last month in the past
+        range_from: -15
+        range_to: -15
+        timestring: '%Y.%m.%d'
+        unit: days
+        week_starts_on: monday
+...

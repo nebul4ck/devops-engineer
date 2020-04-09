@@ -1,0 +1,10 @@
+---
+# Put here defaults variables for role
+mongodb_user: 'mongodb'
+mongodb_group: ' mongodb'
+mongodb_service: 'mongod'
+mongodb_conf_file: '/etc/mongod.conf'
+mongodb_pid_file: '/var/run/mongodb/mongod.pid'
+mongodb_log_file: /var/log/mongodb/mongod.log
+mongodb_timeZoneInfo: '/usr/share/zoneinfo'
+mongodb_storage_dbPath: /opt/store/mongodb

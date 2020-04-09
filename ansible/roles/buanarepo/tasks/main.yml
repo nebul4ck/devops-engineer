@@ -1,0 +1,17 @@
+---
+# Set your repository:
+
+  # env_repo = production|development
+  # type = main|restricted
+  # remove_repo = true 
+    # keep the 'remove_repo' in 'yes' to ensure that the old repository is removed and 
+    # there will be no problems with the new configuration. 
+
+- name: Add Buanarepo repository.
+  include_tasks: buanarepo.yml
+  vars:
+    env_repo: 'production'
+    type: 'main'
+    add_repo: true
+    remove_repo: true
+  tags: buanarepo

@@ -1,0 +1,40 @@
+# The number of milliseconds of each tick
+tickTime={{ tick_time|default(2000) }}
+maxSessionTimeout={{ max_session_timeout|default(160000) }}
+# The number of ticks that the initial 
+# synchronization phase can take
+initLimit={{ init_limit|default(5) }}
+# The number of ticks that can pass between 
+# sending a request and getting an acknowledgement
+syncLimit={{ sync_limit|default(2) }}
+# the directory where the snapshot is stored.
+# do not use /tmp for storage, /tmp here is just 
+# example sakes.
+dataDir={{ data_dir|default('/opt/zookeeper/snapshots') }}
+# Directorio donde se almacenarán los registros de zookeeper (volumen independiente)
+dataLogDir={{ data_log_dir|default('/opt/zookeeper/dataLog') }}
+# the port at which the clients will connect
+clientPort={{ zookeeper_client_port|default(2181) }}
+# the maximum number of client connections.
+# increase this if you need to handle more clients
+maxClientCnxns={{ max_client_cnxns|default(60) }}
+#
+# Be sure to read the maintenance section of the 
+# administrator guide before turning on autopurge.
+#
+# http://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_maintenance
+#
+# The number of snapshots to retain in dataDir
+autopurge.snapRetainCount={{ autopurge_snap_retain_count|default(3) }}
+# Purge task interval in hours
+# Set to "0" to disable auto purge feature
+autopurge.purgeInterval={{ autopurge_purge_interval|default(1) }}
+# El leader acepta conexiones
+leaderServes={{ leader_serves|default('no') }}
+
+# Quorum
+{% for host in groups['all'] %}
+{% if hostvars[host]['myid']|default(0) >= 1 -%}
+server.{{ hostvars[host]['myid']|default(0) }}={{ host }}:{{ peer_port|default(2888) }}:{{ election_port|default(3888) }}
+{% endif -%}
+{% endfor %}"

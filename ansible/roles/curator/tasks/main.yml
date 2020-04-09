@@ -1,0 +1,32 @@
+---
+# Main role to install and configure Curator service.
+
+- name: Install Curator service.
+  apt:
+    name: curator
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+- name: Configure Curator service.
+  template: 
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: '{{ curator_service}}-config.yml.j2',  dest: '{{ curator_conf_file }}' }
+    - { src: 'daily-actions.yml.j2',  dest: '{{ curator_tasks_file }}' }
+
+- name: Configure Crontab.
+  include_tasks: utils/setCron.yml
+  vars:
+    service: 'Curator'
+    minute: '0'
+    hour: '1'
+    day: '*'
+    weekday: '*'
+    month: '*'
+    job: '{{ curator_base }}/curator --config {{ curator_conf_file }} {{ curator_tasks_file }}'

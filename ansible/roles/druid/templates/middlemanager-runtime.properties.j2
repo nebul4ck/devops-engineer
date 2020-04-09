@@ -1,0 +1,37 @@
+# Node config
+druid.host={{ ansible_hostname }}
+druid.port={{ druid_middlemanager_port|default(8091) }}
+druid.service={{ druid_middlemanager_service }}
+
+# Logging
+druid.indexer.logs.type={{ common_indexer_logs_type|default('noop') }}
+druid.indexer.logs.directory={{ common_indexer_logs_directory }}
+
+# Config for launch peons
+druid.indexer.runner.javaCommand={{ middlemanager_indexer_runner_javaCommand|default('java') }}
+druid.indexer.runner.javaOptsArray={{ middlemanager_indexer_runner_javaOptsArray }}
+druid.indexer.runner.maxZnodeBytes={{ middlemanager_indexer_runner_maxZnodeBytes|default(524288) }}
+druid.indexer.runner.startPort={{ middlemanager_indexer_runner_startPort|default(8100) }}
+druid.indexer.runner.separateIngestionEndpoint={{ middlemanager_indexer_runner_separateIngestionEndpoint|default('false') }}
+druid.worker.ip={{ ansible_hostname }}
+druid.worker.version={{ middlemanager_worker_version|default(0) }}
+druid.worker.capacity={{ middlemanager_worker_capacity|default(10) }}
+
+# Peon config
+druid.peon.mode={{ middlemanager_peon_mode|default('local') }}
+druid.indexer.task.baseTaskDir={{ middlemanager_indexer_task_baseTaskDir  }}
+druid.indexer.task.defaultHadoopCoordinates={{ middlemanager_indexer_task_defaultHadoopCoordinates|default('["org.apache.hadoop:hadoop-client:2.7.3"]') }}
+druid.indexer.task.defaultRowFlushBoundary={{ middlemanager_indexer_task_defaultRowFlushBoundary|default(75000) }}
+druid.indexer.task.directoryLockTimeout={{ middlemanager_indexer_task_directoryLockTimeout|default('PT10M') }}
+druid.indexer.task.gracefulShutdownTimeout={{ middlemanager_indexer_task_gracefulShutdownTimeout|default('PT5M') }}
+druid.indexer.task.hadoopWorkingPath={{ middlemanager_indexer_task_hadoopWorkingPath|default('/tmp') }}
+druid.indexer.task.restoreTasksOnRestart={{ middlemanager_indexer_task_restoreTasksOnRestart|default('false') }}
+druid.indexer.server.maxChatRequests={{ middlemanager_indexer_server_maxChatRequests|default(0) }}
+
+# Processing threads and buffers on Peons
+druid.processing.buffer.sizeBytes={{ middlemanager_processing_buffer_sizeBytes|default(157286400) }}
+druid.processing.numMergeBuffers={{ middlemanager_processing_numMergeBuffers|default(1) }}
+druid.processing.numThreads={{ middlemanager_processing_numThreads|default(2) }}
+
+#TMP Directory
+druid.processing.tmpDir={{ middlemanager_processing_tmpDir|default('/tmp') }}

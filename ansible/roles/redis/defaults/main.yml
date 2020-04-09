@@ -1,0 +1,14 @@
+---
+# Put here defaults variables for role
+redis_service: 'redis-server'
+redis_conf_dir: '/etc/redis'
+redis_conf_file: '{{ redis_conf_dir }}/{{ redis_service }}.conf'
+redis_pid_file: '/var/run/redis/redis-server.pid'
+redis_bin: '/usr/bin/redis-server'
+redis_user: 'redis'
+redis_group: 'redis'
+redis_log_dir: '/var/log/redis'
+redis_log_file: '{{ redis_log_dir }}/{{ redis_service }}.log'
+redis_work_dir: '/opt/store/redis'
+redis_run_dir: '/var/run/redis'
+redis_num_file: 65536

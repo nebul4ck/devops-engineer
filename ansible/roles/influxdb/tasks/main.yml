@@ -1,0 +1,12 @@
+---
+
+- name: Install Influxdb
+  include_tasks: install.yml
+
+- name: Configure Influxdb
+  include_tasks: configure.yml
+
+- name: Logrotate Influxdb
+  include_tasks: logrotate.yml
+
+...

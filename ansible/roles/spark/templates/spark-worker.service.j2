@@ -1,0 +1,23 @@
+[Unit]
+Description=Spark-cluster
+Documentation=http://spark.apache.org/
+
+Requires=spark-master.service
+
+[Service]
+Type=forking
+
+User={{ spark_user|default('spark') }}
+Group={{ spark_group|default('spark') }}
+
+ExecStart=/opt/spark/sbin/start-slave.sh spark://{{ spark_masternode }}:7077
+ExecStop=/opt/spark/sbin/stop-slave.sh
+
+Restart=on-failure
+RestartSec=2000ms
+
+StandardOutput=journal
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,5 @@
+{% for host in groups['all'] %}
+{%- if hostvars[host]['workernode']|default(false) %}
+{{ host }}      
+{% endif -%}
+{% endfor %}

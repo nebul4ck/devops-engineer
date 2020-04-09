@@ -1,0 +1,44 @@
+---
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ hdfs_namenode_service }}'
+  tags: systemd
+
+# Hadoop
+- name: Format HDFS Namenode.
+  block:
+
+    - name: Set directory attributes...
+      include_tasks: utils/setAttributes.yml
+      vars:
+        file: "/home/{{ hdfs_user|default('hdfs') }}/.ansible/tmp"
+        user: "{{ hdfs_user|default('hdfs') }}"
+        group: "{{ hdfs_group|default('hdfs') }}"
+        mode: 0755
+        state: 'directory'
+      tags: setAttributes
+
+    - name: Format Namenode storage.
+      shell: '{{ hdfs_base_dir }}/bin/hdfs namenode -format {{ tenant_name }}_DFS'
+      become: true
+      become_user: "{{ hdfs_user|default('hdfs') }}"
+      when: (hdfs_fresh_install is defined) and (hdfs_fresh_install|default(false))
+  tags: 
+    - formatnamenode
+
+# Create SSH KEY for current user and create the authorized_keys file.
+- include_tasks: utils/sshGen.yml  
+  vars:
+    node_type: '{{ hdfs_namenode_service }}'
+    user: '{{ hdfs_user }}'
+    tenant: '{{ tenant_name }}'
+  tags: sshGen
+
+# Discover host key for all hosts in a group.
+- include_tasks: utils/discoveryHostKey.yml
+  vars:
+    host_groups: '{{ groups.persistence }}'
+    node_type: '{{ hdfs_namenode_service }}'
+    user: '{{ hdfs_user }}'
+  tags: discoveryHostKey

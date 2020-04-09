@@ -1,0 +1,30 @@
+---
+- name: Setting Swappiness.
+  sysctl:
+    name: vm.swappiness
+    value: "{{ swappiness }}"
+    state: present
+    sysctl_set: yes
+
+- name: Setting File Handles.
+  sysctl:
+    name: fs.file-max
+    value: "{{ file_max }}"
+    state: present
+    sysctl_set: yes
+
+- name: Virtual Memory Setting (Overcommit).
+  sysctl:
+    name: vm.overcommit_memory
+    value: "{{ overcommit_memory }}"
+    state: present
+    sysctl_set: yes
+
+- name: Virtual Memory Setting (MMAP).
+  sysctl:
+    name: vm.max_map_count
+    value: "{{ max_map_count }}"
+    state: present
+    sysctl_set: yes
+    reload: yes
+...

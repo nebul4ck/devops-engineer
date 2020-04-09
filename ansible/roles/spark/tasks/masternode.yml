@@ -1,0 +1,22 @@
+---
+# Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ spark_master_service }}'
+  tags: systemd
+
+# Create SSH KEY for current user and create the authorized_keys file.
+- include_tasks: utils/sshGen.yml  
+  vars:
+    node_type: 'masternode'
+    user: '{{ spark_user }}'
+    tenant: '{{ tenant_name }}'
+  tags: sshGen
+
+# Discover host key for all hosts in a group.
+- include_tasks: utils/discoveryHostKey.yml
+  vars:
+    host_groups: "[{% for host in groups['all'] %}{% if hostvars[host]['workernode']|default(false) %}'{{ host }}'{% if not loop.last %},{% endif %}{% endif %}{% endfor %}]"
+    node_type: 'masternode'
+    user: '{{ spark_user }}'
+  tags: discoveryHostKey

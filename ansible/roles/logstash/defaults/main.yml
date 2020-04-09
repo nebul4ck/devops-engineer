@@ -1,0 +1,10 @@
+---
+# Global
+logstash_service: 'logstash'
+logstash_user: 'logstash'
+logstash_group: 'logstash'
+logstash_conf_dir: '/etc/logstash/conf.d'
+logstash_home_dir: '/var/lib/logstash'
+logstash_log_dir: '/var/log/logstash'
+logstash_bin_file: '/opt/logstash/bin/logstash'
+logstash_pid_file: '/var/run/logstash.pid'

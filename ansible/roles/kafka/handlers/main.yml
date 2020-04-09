@@ -1,0 +1,25 @@
+---
+- name: daemon reload
+  systemd: 
+    daemon_reload: yes
+
+- name: start {{ kafka_service }}
+  systemd:
+    name: '{{ kafka_service }}'
+    state: started
+    enabled: yes
+
+- name: restart {{ kafka_service }}
+  systemd:
+    name: '{{ kafka_service }}'
+    state: restarted
+
+- name: stop {{ kafka_service }}
+  systemd:
+    name: '{{ kafka_service }}'
+    state: stopped
+
+- name: reload {{ kafka_service }}
+  systemd:
+    name: '{{ kafka_service }}'
+    state: reloaded

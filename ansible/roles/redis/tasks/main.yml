@@ -1,0 +1,24 @@
+---
+# Main role to install and configure redis service.
+
+- name: Install Redis service.
+  apt:
+    name: redis
+    allow_unauthenticated: no
+    update_cache: yes
+    cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+    state: present
+    install_recommends: yes
+  environment:
+    RUNLEVEL: 1
+
+  # Configure Systemd Service.
+- include_tasks: utils/systemd.yml 
+  vars:
+    service: '{{ redis_service }}'
+  tags: systemd
+
+- name: Configure Redis service.
+  template: 
+    src: '{{ redis_service }}.conf.j2'
+    dest: '{{ redis_conf_file }}'

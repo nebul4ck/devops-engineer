@@ -1,0 +1,389 @@
+---
+
+##
+# Alberto Gonzalez Mesas, <a.gonzalezmesas@gmail.com>
+# thu Dic 18 12:00:00 CEST 2019
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  'Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based
+  on the Weekly Golden AMI. This example creates an EC2 security group
+  for the instance to give you SSH access.'
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: Set up account configuration.
+        Parameters:
+          - AccountName
+          - EnvType
+          - InstanceName
+      - Label:
+          default: Set up the environment.
+        Parameters:
+          - VolumeSize
+          - VolumeType
+          #- SnapshotId
+          - IamInstanceProfile
+          - ImageId
+          - InstanceType
+          - SSHLocation
+          - KeyName
+          #- SecurityGroup
+          - Subnet
+          - VpcId
+          #- AvailabilityZone
+      - Label:
+          default: Tagging
+        Parameters:
+          - TagRole
+          - TagEnvironment
+          - TagSLA
+          - TagStartTime
+          - TagEndTime
+          - TagCECO
+          - TagOperation
+          - TagCompliance
+          - TagConfidentiality
+          - TagFirewallGlobalSecurityPolicy
+
+    ParameterLabels:
+      AccountName:
+        default: Account Name
+
+      EnvType:
+        default: Deployment environment
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Type: String
+    Description: 'The account name, ie ''cf-compliance'''
+    MinLength: 1
+  EnvType: 
+    Description: 'Environment where the App will be deployed.'
+    Type: String
+    Default: development
+    AllowedValues: 
+      - development
+      - integration
+      - production
+  InstanceName:
+    Description: 'Select a valid instance name'
+    Type: String
+    Default: ansible-hardening-poc
+
+  # Environment EC2
+  VolumeSize:
+    Description: 'Select a size for the volume, ie 10 (for 10GB)'
+    Type: String
+    Default: '10'
+    MinLength: 1
+  VolumeType:
+    Description: 'Select the generation EBS volume'
+    Type: String
+    Default: 'gp2'
+    AllowedValues:
+      - 'gp2'
+      - 'io1'
+      - 'st1'
+      - 'sc1'
+  #SnapshotId:
+  #  Description: 'Select a snapshot ID, ie snap-056854445fdd94f79'
+  #  Type: String
+  #  Default: 'snap-056854445fdd94f79'
+  IamInstanceProfile:
+    Description: 'Select a valid instance Role'
+    Type: 'String'
+    Default: 'cf-compliance-remoteS3AccessBucket-role'
+  ImageId:
+    Description: ImageId of your existing Amazon Machine Image (AMI)
+    Type: AWS::EC2::Image::Id
+    ConstraintDescription: must be the ImageId of an existing Amazon Machine Image.
+    Default: 'ami-040ba9174949f6de4'
+  InstanceType:
+    Description: EC2 instance type
+    Type: String 
+    Default: 't2.micro'
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - g3.8xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r3.12xlarge
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 10.93.3.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  KeyName:
+    Description: 'Name of an existing EC2 KeyPair to enable SSH access to the instance.'
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  #SecurityGroup:
+  #  Description: 'A security group ID, such as sg-a123fd85.'
+  #  Type: AWS::EC2::SecurityGroup::Id
+  #  Default: 'sg-049a32317d912553c'
+  Subnet:
+    Description: The list of SubnetIds in your Virtual Private Cloud (VPC).
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: >-
+      must be a list of two existing subnets associated with two different
+      availability zones. They should be residing in the selected Virtual Private
+      Cloud.
+    Default: 'subnet-0cb4c2bd47a1d7540'
+  #AvailabilityZone:
+  #  Description: 'An Availability Zone, such as us-west-2a.'
+  #  Type: AWS::EC2::AvailabilityZone::Name
+  VpcId:
+    Description: An Availability Zone, such as us-west-2a.
+    Type: AWS::EC2::VPC::Id
+
+  # The tags can be replaced by cf-nblk-tags.json
+  TagRole:
+    Type: String
+    Description: 'Tag: Role of resource.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - pro
+  TagEnvironment:
+    Type: String
+    Description: 'Tag: Environment where the resource is spawned.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - pro
+  TagSLA:
+    Type: String
+    Description: 'Tag: Service-level agreement.'
+    Default: 24x7
+    AllowedValues:
+      - '24x7'
+      - '8x5'
+  TagStartTime:
+    Type: String
+    Description: 'When is the resource spawned?, ie ''00:00''.'
+    Default: '00:00'
+  TagEndTime:
+    Type: String
+    Description: 'When is the resource terminated?, ie ''18:30''.'
+    Default: '00:00'
+  TagCECO:
+    Type: String
+    Description: 'Operation owner of resource deployed, ie ''the same as Operation tag''.'
+    Default: nblk
+  TagOperation:
+    Type: String
+    Description: 'Operation owner of resource deployed.'
+    Default: nblk
+    AllowedValues:
+      - nblk
+      - as
+      - ct 
+      - ef
+  TagCompliance:
+    Type: String
+    Description: Compliance.
+    Default: 'no'
+    AllowedValues:
+      - 'no'
+      - 'yes'
+  TagConfidentiality:
+    Type: String
+    Description: Confidentiality.
+    Default: 'no'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+  TagCommongSGPolicy:
+    Type: String
+    Description: Use a common security group based o security policies (WAF)
+    Default: 'no'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+  TagFirewallGlobalSecurityPolicy:
+    Type: String
+    Description: Apply Web Application Firewall Common Policies
+    Default: 'no'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+
+##############################################################################################
+# Conditions                                                                                 #
+##############################################################################################
+
+#Conditions:
+#  isNotPublicAccess: !Equals [!Ref S3PublicAccess, Private]
+#  isWebSite: !Equals [!Ref S3PublicAccess, PublicRead]
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      GroupName: !Sub ${AccountName}-${InstanceName}-ssh-access-sg
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref 'SSHLocation'
+      VpcId: !Sub ${VpcId}
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AccountName}-${InstanceName}-ec2'
+        - Key: ApplicationID
+          Value: !Sub '${AccountName}-${InstanceName}-ec2'
+        - Key: Role
+          Value: !Sub '${TagRole}'
+        - Key: Environment
+          Value: !Sub '${TagEnvironment}'
+        - Key: SLA
+          Value: !Sub '${TagSLA}'
+        - Key: StartTime
+          Value: !Sub '${TagStartTime}'
+        - Key: EndTime
+          Value: !Sub '${TagEndTime}'
+        - Key: CECO
+          Value: !Sub '${TagCECO}'
+        - Key: Operation
+          Value: !Sub '${TagOperation}'
+        - Key: Compliance
+          Value: !Sub '${TagCompliance}'
+        - Key: Confidentiality
+          Value: !Sub '${TagConfidentiality}'
+        - Key: CommonSG
+          Value: !Sub '${TagCommongSGPolicy}'
+        - Key: FirewallGlobalSecurityPolicy
+          Value: !Sub '${TagFirewallGlobalSecurityPolicy}'
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Join [",", [!Select [0, !GetAZs ]]]
+      BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs: 
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: !Sub '${VolumeSize}'
+            VolumeType: !Sub '${VolumeType}'
+      DisableApiTermination: false
+      # This optimization isn't available with all instance types.
+      EbsOptimized: false
+      IamInstanceProfile: !Sub '${IamInstanceProfile}'
+      ImageId: !Sub '${ImageId}'
+      InstanceInitiatedShutdownBehavior: 'stop'
+      InstanceType: !Sub '${InstanceType}'
+      KeyName: !Sub '${KeyName}'
+      Monitoring: false
+      # You cannot specify this option if you're launching more than one instance in the request.
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: false
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          GroupSet:  
+           - !Ref InstanceSecurityGroup
+          SubnetId: !Sub '${Subnet}'
+      SourceDestCheck: true
+      Tenancy: 'default'
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            amazon-linux-extras install ansible2 -y
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AccountName}-${InstanceName}-ec2'
+        - Key: ApplicationID
+          Value: !Sub '${AccountName}-${InstanceName}-ec2'
+        - Key: Role
+          Value: !Sub '${TagRole}'
+        - Key: Environment
+          Value: !Sub '${TagEnvironment}'
+        - Key: SLA
+          Value: !Sub '${TagSLA}'
+        - Key: StartTime
+          Value: !Sub '${TagStartTime}'
+        - Key: EndTime
+          Value: !Sub '${TagEndTime}'
+        - Key: CECO
+          Value: !Sub '${TagCECO}'
+        - Key: Operation
+          Value: !Sub '${TagOperation}'
+        - Key: Compliance
+          Value: !Sub '${TagCompliance}'
+        - Key: Confidentiality
+          Value: !Sub '${TagConfidentiality}'
+        - Key: CommonSG
+          Value: !Sub '${TagCommongSGPolicy}'
+        - Key: FirewallGlobalSecurityPolicy
+          Value: !Sub '${TagFirewallGlobalSecurityPolicy}'
+
+##############################################################################################
+# Outputs                                                                                    #
+##############################################################################################
+
+#Outputs:

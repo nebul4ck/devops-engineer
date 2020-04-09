@@ -1,0 +1,52 @@
+---
+- name: Add Buanarepo Pro APT-KEY by ID from a Ubuntu Keyserver.
+  apt_key:
+    keyserver: '{{ ubuntu_key_repository }}'
+    id: '{{ buanarepo_pro_key }}'
+
+- name: Make directory tree for Buanarepo CERTS.
+  block:
+    - name: Checking folders...
+      stat:
+        path: '{{ item }}'
+      register: folder_stats
+      with_items:
+        - '{{ certs_base }}'
+        - '{{ buanarepo_certs_base }}'
+        - '{{ buanarepo_restricted_certs_base }}'
+    - name: Creating folders for Buanarepo CERTS...
+      file:
+        path: '{{ item.item }}'
+        state: directory
+        mode: 0755
+        group: root
+        owner: root
+      when: item.stat.exists == false
+      with_items:
+        - '{{ folder_stats.results }}'
+
+- name: Configure APT-CONF for accepts HTTPS connections.
+  template:
+    src: '{{ buanarepo_pro_restricted_template }}.j2'
+    dest: '{{ buanarepo_apt_confd }}/{{ buanarepo_pro_restricted_template }}'
+
+- name: Copy CERTS to tarjet hosts.
+  copy:
+    src: '{{ item }}'
+    dest: '{{ buanarepo_restricted_certs_base }}'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - '{{ buanarepo_pro_ca_restricted_crt }}'
+    - '{{ buanarepo_pro_client_restricted_crt }}'
+    - '{{ buanarepo_pro_client_restricted_key }}'
+
+- name: Add Buanarepo Pro repository.
+  apt_repository:
+    repo: '{{ buanarepo_pro_restricted_full_path_apt_source }}'
+    state: present
+    filename: '{{ buanarepo_pro_restricted }}'
+    update_cache: yes
+    validate_certs: yes
+...

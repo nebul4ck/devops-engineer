@@ -1,0 +1,53 @@
+status = error
+
+# log action execution errors for easier debugging
+logger.action.name = org.elasticsearch.action
+logger.action.level = debug
+
+appender.console.type = Console
+appender.console.name = console
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%m%n
+
+appender.file.type = File
+appender.file.name = file
+appender.file.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}.log
+appender.file.layout.type = PatternLayout
+appender.file.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%.-10000m%n
+
+rootLogger.level = info
+rootLogger.appenderRef.console.ref = console
+rootLogger.appenderRef.file.ref = file
+
+appender.deprecation_file.type = File
+appender.deprecation_file.name = deprecation_file
+appender.deprecation_file.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}_deprecation.log
+appender.deprecation_file.layout.type = PatternLayout
+appender.deprecation_file.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%.-10000m%n
+
+logger.deprecation.name = org.elasticsearch.deprecation
+logger.deprecation.level = warn
+logger.deprecation.appenderRef.deprecation_file.ref = deprecation_file
+logger.deprecation.additivity = false
+
+appender.index_search_slowlog_file.type = File
+appender.index_search_slowlog_file.name = index_search_slowlog_file
+appender.index_search_slowlog_file.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}_index_search_slowlog.log
+appender.index_search_slowlog_file.layout.type = PatternLayout
+appender.index_search_slowlog_file.layout.pattern = [%d{ISO8601}][%-5p][%-25c] %marker%.-10000m%n
+
+logger.index_search_slowlog_file.name = index.search.slowlog
+logger.index_search_slowlog_file.level = trace
+logger.index_search_slowlog_file.appenderRef.index_search_slowlog_file.ref = index_search_slowlog_file
+logger.index_search_slowlog_file.additivity = false
+
+appender.index_indexing_slowlog_file.type = File
+appender.index_indexing_slowlog_file.name = index_indexing_slowlog_file
+appender.index_indexing_slowlog_file.fileName = ${sys:es.logs.base_path}${sys:file.separator}${sys:es.logs.cluster_name}_index_indexing_slowlog.log
+appender.index_indexing_slowlog_file.layout.type = PatternLayout
+appender.index_indexing_slowlog_file.layout.pattern = [%d{ISO8601}][%-5p][%-25c] %marker%.-10000m%n
+
+logger.index_indexing_slowlog.name = index.indexing.slowlog.index
+logger.index_indexing_slowlog.level = trace
+logger.index_indexing_slowlog.appenderRef.index_indexing_slowlog_file.ref = index_indexing_slowlog_file
+logger.index_indexing_slowlog.additivity = false

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="{{ broker_log_status|default('WARN') }}">
+    <Appenders>
+        <File name="{{ broker_log_appender }}" fileName="{{ broker_log_filename|default('/tmp/broker.log') }}">
+            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="{{ broker_log_level|default('info') }}">
+            <AppenderRef ref="{{ broker_log_appender }}"/>
+        </Root>
+    </Loggers>
+</Configuration>
