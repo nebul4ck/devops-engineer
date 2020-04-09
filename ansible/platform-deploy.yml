@@ -1,0 +1,57 @@
+---
+# This Playbook is a example how deploy a complete BigData platform.
+
+- name: Add deb repository to managed hosts.
+	hosts: all
+	roles:
+		- buanarepo
+
+- name: Running common system settings.
+	hosts: all
+	roles:
+		- common-platform
+
+#-----------------------------------------------------#
+- include-playbooks: create-sshkeys
+- include-playbooks: create-known-hosts
+
+- name: Create SSH-KEYS for distributed services
+	hosts: 
+	roles:
+		- unattended-ssh
+#-----------------------------------------------------#
+
+- name: Deploying Zookeeper Quorum...
+	hosts: zookeeper
+	roles:
+		- zookeeper
+	when: (myid is defined) and (myid)
+#-----------------------------------------------------#
+
+- name: Provisioning Streaming Servers.
+  hosts: platform_streaming
+  roles:
+		- dnsmasq
+		- zookeeper
+		- vernemq
+
+- name: Provisioning Analysis Servers.
+	hosts: platform_analytics
+	roles:
+		- zookeeper
+		- kafka
+		- mongodb
+		- spark
+		- redis
+		- logstash
+		- elasticsearch
+		- cerebro
+		- curator
+
+- name: Provisioning Persistence Servers.
+	hosts: platform_persistence
+	roles:
+		- provisioning
+		- zookeeper
+		- hdfs
+		- druid
