@@ -2,7 +2,7 @@
 ---
 
 ##
-# Alberto Gonzalez Mesas, <a.gonzalezmesas@gmail.com>
+# Alberto Gonz?lez Mesas, <a.gonzalezmesas@gmail.com>
 # lun Oct 07 16:00:00 CEST 2019
 #
 # !The next resource properties is hardcoded:
@@ -98,9 +98,9 @@ Parameters:
     Description: 'The name of the S3 bucket for the access logs.'
     Type: String
     MinLength: 5
-    Default: cf-compliance-albwafaccesslog-s3
+    Default: albwafaccesslog-s3
     AllowedValues:
-      - cf-compliance-albwafaccesslog-s3
+      - albwafaccesslog-s3
   DeletionALBProtectionEnabled:
     Description: 'Indicates whether deletion protection is enabled.'
     Type: String
@@ -172,16 +172,16 @@ Resources:
         - Key:   CECO
           Value: dev
         - Key:   Operation
-          Value: nblk
+          Value: nebul4ck
         - Key:   Compliance
           Value: no
         - Key:   Confidentiality
           Value: no
       Targets: 
-        - Id: i-01234567890cdfg
+        - Id: i-1234567890cdfg
           Port: 80
       TargetType: instance
-      VpcId: vpc-1234567890cfgh
+      VpcId: vpc-1234567890cdfgh
 
 #############################################################
 # Application Load Balancer Resources                       #
@@ -207,7 +207,7 @@ Resources:
       Scheme: !Sub ${ApplicationLoadBalancerType}
       # The SG is hardcoded because it only is a proof.
       SecurityGroups: 
-        - sg-1234567890cdfg
+        - sg-1234567890cdfgh
       Subnets: !Ref Subnets
       Tags:
         - Key:   Application
@@ -229,7 +229,7 @@ Resources:
         - Key:   CECO
           Value: dev
         - Key:   Operation
-          Value: nblk
+          Value: nebul4ck
         - Key:   Compliance
           Value: no
         - Key:   Confidentiality

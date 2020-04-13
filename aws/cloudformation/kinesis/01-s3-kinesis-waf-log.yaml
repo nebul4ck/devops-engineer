@@ -1,14 +1,17 @@
 ---
-
-##
-# Alberto González Mesas, <a.gonzalezmesas@gmail.com>
-# lun sep 18 12:47:00 CEST 2019
-##
-
 AWSTemplateFormatVersion: 2010-09-09
-Description: >
-  Creates an encrypted S3 bucket, with denied public access, enabled MFA for
-  deletion, tagging and activated versioning.
+Description: >-
+  #   :platform: AWS CloudFormation
+  #   :module: Kinesis Firehose Delivery Stream
+  #   :synopsis: Delivering WAF real-time logging to AWS S3 destination
+  #   :Author: Alberto Gonzalez
+  #   :mail: a.gonzalezmesas@gmail.com
+  #   :Web : https://github.com/nebul4ck/
+
+    - S3 destination data holder
+    - CloudWatch LogGroup
+    - IAM Role and IAM Policy
+    - Kinesis Firehose Delivery Stream
 
 ##############################################################################################
 # Metadata                                                                                   #
@@ -18,7 +21,7 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: Set up account configuration.
+          default: Setup account configuration.
         Parameters:
           - AccountName
       - Label:
@@ -56,9 +59,6 @@ Metadata:
           - S3NumDaysSecondTransitionsNonCurrentObject
           - S3SecondTransitionsNonCurrentObjectStorageClass
           - S3FullExpirationNonCurrentObjectInDays
-    ParameterLabels:
-      AccountName:
-        default: Account Name
 
 ##############################################################################################
 # Parameters                                                                                 #
@@ -118,7 +118,7 @@ Parameters:
     Default: dev
     AllowedValues:
       - dev
-      - staging
+      - int
       - pro
   Environment:
     Type: String
@@ -149,6 +149,8 @@ Parameters:
   Operation:
     Type: String
     Description: 'Operation owner of resource deployed.'
+    AllowedValues:
+      - nebul4ck
   Compliance:
     Type: String
     Description: Compliance.
@@ -195,8 +197,9 @@ Parameters:
   S3NumDaysSecondTransitionsCurrentObject:
     Type: Number
     Description: >-
-      Indicates the number of days to spend in 'S3FirstTransitionsCurrentObjectStorageClass' before the object are transitioned to 
-      'S3SecondTransitionsCurrentObjectStorageClass'. The value must be a positive integer.
+      Indicates the number of days to spend in 'S3FirstTransitionsCurrentObjectStorageClass' 
+      before the object are transitioned to 'S3SecondTransitionsCurrentObjectStorageClass'.
+      The value must be a positive integer.
     Default: 180
   S3SecondTransitionsCurrentObjectStorageClass:
     Type: String
@@ -231,8 +234,9 @@ Parameters:
   S3NumDaysSecondTransitionsNonCurrentObject:
     Type: Number
     Description: >-
-      Indicates the number of days to spend in 'S3FirstTransitionsNonCurrentObjectStorageClass' before the object are transitioned to 
-      'S3SecondTransitionsNonCurrentObjectStorageClass'. The value must be a positive integer.
+      Indicates the number of days to spend in 'S3FirstTransitionsNonCurrentObjectStorageClass' before 
+      the object are transitioned to 'S3SecondTransitionsNonCurrentObjectStorageClass'.
+      The value must be a positive integer.
     Default: 180
   S3SecondTransitionsNonCurrentObjectStorageClass:
     Type: String

@@ -1,13 +1,13 @@
 ---
 
 ##
-# Alberto González Mesas, <a.gonzalezmesas@gmail.com>
+# Alberto Gonzalez Mesas, <a.gonzalezmesas@gmail.com>
 # thu Jan 15 15:30:00 CEST 2020 
 ##
 
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  'VPC: Publish flow logs to CloudWatch Logs'
+  VPC: Publish flow logs to CloudWatch Logs
 
 ##############################################################################################
 # Metadata                                                                                   #
@@ -58,9 +58,6 @@ Parameters:
       - ACCEPT
       - REJECT
       - ALL
-  VPCId:
-    Description: 'A valid VPC id.'
-    Type: String
 
 ##############################################################################################
 # Resources                                                                                  #

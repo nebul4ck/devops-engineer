@@ -1,22 +1,22 @@
 [
     {
         "ParameterKey": "VPCId",
-        "ParameterValue": "vpc-014578107703ac0e3"
+        "ParameterValue": "vpc-1234567890cfg"
     },
     {
         "ParameterKey": "RoleName",
-        "ParameterValue": "as-pro-orchestrator-flowlogsRole"
+        "ParameterValue": "flowlogs-Role"
     },
     {
         "ParameterKey": "PolicyName",
-        "ParameterValue": "as-pro-orchestrator"
+        "ParameterValue": "flowlogs-policy"
     },
     {
         "ParameterKey": "RetentionInDays",
-        "ParameterValue": 
+        "ParameterValue": "365"
     },
     {
         "ParameterKey": "TrafficType",
-        "ParameterValue": "flowlogs-policy"
+        "ParameterValue": "ALL"
     }
 ]

@@ -1,7 +1,7 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "nebul4ck"
+        "Value" : "nebul4ck-account"
     },
     {
         "Key" : "Compliance",
@@ -33,7 +33,7 @@
     },
     {
         "Key" : "Operation",
-        "Value" : "nebul4ck"
+        "Value" : ""
     },
     {
         "Key" : "SLA",
