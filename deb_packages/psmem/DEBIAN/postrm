@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# This script is executed in the pre-installation phase
+#
+#   On Debian,
+#       $1=remove : indicates an new install
+#       $1=purge : indicates an upgrade
+#
+
+# No needed

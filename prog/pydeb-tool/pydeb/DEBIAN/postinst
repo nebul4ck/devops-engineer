@@ -1,0 +1,127 @@
+#!/bin/bash -e
+#
+# This script is executed in the post-installation phase
+#
+#   On Debian,
+#       $1=configure : is set to 'configure' and if $2 is set, it is an upgrade
+#
+# You must just use this script to enable and start service, and setting directory
+# Owner, Group and permissions.
+
+# Sets the default values for pydeb variables used in this script
+pydeb_user="pydeb"
+pydeb_group="pydeb"
+pydeb_conf="/etc/pydeb"
+pydeb_log="/var/log/pydeb"
+IS_UPGRADE=false
+
+# Source the default env file
+pydeb_env_file="/etc/default/pydeb"
+if [ -f "$pydeb_env_file" ]; then
+    . "$pydeb_env_file"
+fi
+
+
+case "$1" in
+
+    # Debian ####################################################
+    configure)
+        # If $1=configure and $2 is set, this is an upgrade
+        if [ ! -z $2 ]; then
+            IS_UPGRADE=true
+            RESTART_ON_UPGRADE=true
+        fi
+
+
+        echo "Making $pydeb_log dir"
+        if [ ! -d $pydeb_log ]; then
+            mkdir -p $pydeb_log && echo "...OK"
+        fi
+
+        echo "Setting User and Group..."
+        chown -R "$pydeb_user":"$pydeb_group" "$pydeb_log" && echo -e "... OK"
+
+        echo -e "Setting directory attributes..."
+        chmod -R 775 "$pydeb_log" && echo -e "... OK"
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    *)
+        echo "post install script called with unknown argument \`$1'" >&2
+	exit 1
+    ;;
+esac
+
+if [ "$IS_UPGRADE" != "true" ]; then
+    if command -v systemctl >/dev/null; then
+        if systemctl is-enabled pydeb.service >/dev/null; then
+            systemctl disable pydeb.service
+        fi
+
+        systemctl daemon-reload
+    
+        echo -e "\n### You can start pydeb services by executing"
+        echo -e " sudo systemctl start <service>.service\n"
+    fi
+elif [ "$RESTART_ON_UPGRADE" = "true" ]; then
+    echo -n "Restarting pydeb services..."
+    if command -v systemctl >/dev/null; then
+        systemctl daemon-reload
+
+        if systemctl is-active pydeb.service >/dev/null; then
+            systemctl restart pydeb.service
+        fi
+
+        echo -e "... OK"
+   fi
+fi
+
+# IF YOU NEED CREATE A SYMLINK OR SOME DIRECTORY...
+#if [ ! -e ${SYMLINK_pydeb} ];then
+#       echo -e "Making symlink ${SYMLINK_pydeb}..."
+#       ln -s ${HARDRELOAD} ${SYMLINK_pydeb} && echo -e "... OK"
+#fi
+
+# IF IS A UPGRADE, REMOVE PREVIUS VERSION FILES...
+#if [ "$IS_UPGRADE" = "true" ]; then
+#    echo -e "Purge Middlemanager crontabs..."
+#    sed -i "/druid/d" /var/spool/cron/crontabs/root
+
+#    echo -e "Purge fstab $DRUID_TMP automount..."
+#    sed -i "/ss-tmp/d" /etc/fstab &> /dev/null
+#    echo -e "Removing $DRUID_TMP..."
+#    rm -rf $DRUID_TMP && echo -e "... OK"
+#fi
+
+# SOME EXAMPLES
+# if [ "$IS_UPGRADE" = "true" ]; then
+#     echo -e "Purge pydeb crontabs..."
+#     sed -i "/pydeb/d" /var/spool/cron/crontabs/root
+
+#     echo -e "Purge fstab $pydeb automount..."
+#     sed -i "/ss-tmp/d" /etc/fstab &> /dev/null
+#     echo -e "Removing $pydeb..."
+#     rm -rf $pydeb && echo -e "... OK"
+# fi
+
+# if [ ! -d $pydeb_tmp ]; then
+# 	echo -e "Making SmartSentinel $pydeb dir..."
+# 	mkdir ${pydeb_tmp} && echo -e "... OK"
+# 	echo -e "Setting owner and group on ${pydeb_tmp}..."
+# 	chmod 777 ${pydeb_tmp} && echo -e "... OK"
+#         echo -e "SmartSentinel $pydeb_tmp dir automount..."
+#         echo -e "tmpfs /ss-tmp tmpfs rw,nosuid,noatime,nodev,size=1G,mode=1777 0 0" >> /etc/fstab
+# fi
+	
+# echo "Set pydeb crontabs..."
+# echo -e "Note: remember uncomment Middlemanager crontab if you will run pydeb service in this host\n"
+# if [ -e /var/spool/cron/crontabs/root ]
+# then
+#         crontab -l >> /opt/c_tools/pydeb_crontab
+# fi
+
+# crontab /opt/c_tools/pydeb_crontab
+
+systemctl daemon-reload
+
+exit 0

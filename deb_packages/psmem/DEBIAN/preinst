@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# This script is executed in the pre-installation phase
+#
+#   On Debian,
+#       $1=install : indicates an new install
+#       $1=upgrade : indicates an upgrade
+#
+
+case $1 in
+  # Debian
+  install|upgrade)
+	echo "Installing psmem, tool for monitoring system memory..."
+  ;;
+  abort-deconfigure|abort-upgrade|abort-remove)
+  ;;
+  *)
+      echo "post install script called with unknown argument \`$1'" >&2
+      exit 1
+  ;;
+esac
+
+exit 0

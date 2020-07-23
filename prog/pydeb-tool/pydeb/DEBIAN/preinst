@@ -1,0 +1,68 @@
+#!/bin/bash -e
+#
+# This script is executed in the pre-installation phase
+#
+#   On Debian,
+#       $1=install : indicates an new install
+#       $1=upgrade : indicates an upgrade
+#
+# You must just use this script to create user and group.
+# Maybe, you also need create some file or directory before that the service runs.
+
+# Sets the default values for pydeb variables used in this script
+pydeb_user="pydeb"
+IS_UPGRADE=false
+
+# Source the default env file
+pydeb_env_file="/etc/default/pydeb"
+if [ -f "$pydeb_env_file" ]; then
+    . "$pydeb_env_file"
+fi
+
+case "$1" in
+
+    # Debian ####################################################
+    install|upgrade)
+    
+        echo -e "Creating $pydeb_user user..."
+
+        if ! getent passwd "$pydeb_user" >/dev/null; then
+            useradd -d /home/${pydeb_user} -s /bin/false $pydeb_user
+            echo "... OK"
+        fi
+
+        # If $1=configure and $2 is set, this is an upgrade
+        if [ ! -z $2 ]; then
+            IS_UPGRADE=true
+            RESTART_ON_UPGRADE=true
+        fi
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    *)
+        echo "post install script called with unknown argument \`$1'" >&2
+	exit 1
+    ;;
+esac
+
+# IF YOU NEED CREATE A SYMLINK OR SOME DIRECTORY...
+#if [ ! -e ${SYMLINK_pydeb} ];then
+#	echo -e "Making symlink ${SYMLINK_pydeb}..."
+#	ln -s ${HARDRELOAD} ${SYMLINK_pydeb} && echo -e "... OK"
+#fi
+
+# IF IS A UPGRADE, REMOVE PREVIUS VERSION FILES...
+#if [ "$IS_UPGRADE" = "true" ]; then
+#    echo -e "Purge Middlemanager crontabs..."
+#    sed -i "/druid/d" /var/spool/cron/crontabs/root
+
+#    echo -e "Purge fstab $DRUID_TMP automount..."
+#    sed -i "/ss-tmp/d" /etc/fstab &> /dev/null
+#    echo -e "Removing $DRUID_TMP..."
+#    rm -rf $DRUID_TMP && echo -e "... OK"
+#fi
+
+systemctl daemon-reload
+
+exit 0
+
