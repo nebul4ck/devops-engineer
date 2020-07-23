@@ -5,13 +5,13 @@
 # ./multi-aws-cli.sh
 # │
 # ├── ec2
-# │   ├── cf-compliance-ec2-instance.yaml
+# │   ├── cf-ec2-instance.yaml
 # │   ├── parameters
 # │   │   └── parameters.json
 # │   └── tags
 # │       └── tags.json
 # └── s3  
-#     ├── cf-compliance-s3-bucket.yaml
+#     ├── cf-s3-bucket.yaml
 #     ├── parameters
 #     │   └── parameters.json
 #     └── tags
@@ -20,6 +20,9 @@
 # run it:
 #       $ ./multi-aws-cli.sh <profile> <account>
 #               <resource> <action>
+#
+#       $ ./multi-aws-cli.sh nebul4ck-account ec2 deploy
+#
 #----------------------------------------------#
 
 # Please, visit the AWS Best Practices if you are going to either create or edit any CloudFormation template:

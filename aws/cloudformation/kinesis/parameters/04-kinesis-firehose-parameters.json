@@ -1,0 +1,54 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "nebul4ck-account"
+    },
+    {
+        "ParameterKey": "S3BucketArn",
+        "ParameterValue": "arn:aws:s3:::nebul4ck-account-kinesis-waf-logging-s3"
+    },
+    {
+        "ParameterKey": "CloudWatchLoggingEnable",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "CompressionType",
+        "ParameterValue": "UNCOMPRESSED"
+    },
+    {
+        "ParameterKey": "CloudWatchLogStreamName",
+        "ParameterValue": "WafLoggingStream"
+    },
+    {
+        "ParameterKey": "DeliveryStreamName",
+        "ParameterValue": "WAFDeliveryLoggingStream"
+    },
+    {
+        "ParameterKey": "DeliveryStreamType",
+        "ParameterValue": "DirectPut"
+    },
+    {
+        "ParameterKey": "IntervalInSeconds",
+        "ParameterValue": "300"
+    },
+    {
+        "ParameterKey": "SizeInMBs",
+        "ParameterValue": "5"
+    },
+    {
+        "ParameterKey": "EncryptionConfig",
+        "ParameterValue": "NoEncryption"
+    },
+    {
+        "ParameterKey": "ErrorPrefix",
+        "ParameterValue": "YYYY/MM/DD/HH"
+    },
+    {
+        "ParameterKey": "KinesisIAMRoleARN",
+        "ParameterValue": "arn:aws:iam::123456789009876:role/nebul4ck-account-kinesis-delivery-stream-role"
+    },
+    {
+        "ParameterKey": "CloudWatchLogGroupName",
+        "ParameterValue": "nebul4ck-account-deliveryStream-loggroup"
+    }
+]

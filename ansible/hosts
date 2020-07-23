@@ -1,0 +1,10 @@
+# Note the important restriction in the relationship between hosts and services since services such as spark, elasticsearch and hdfs, execute their services on the same machine. 
+
+[platform_streaming]
+ansible-poc-01  myid=1  dns=true  kibana=true	vernemq=true
+
+[platform_analytics]
+ansible-poc-02  myid=2  kafka_id=1  es_master=true  es_data=true masternode=true workernode=true mongodb_node=true
+
+[platform_persistence]
+ansible-poc-03  myid=3	 namenode=true	datanode=true postgresql_node=true

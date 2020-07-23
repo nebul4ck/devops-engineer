@@ -1,0 +1,148 @@
+---
+
+##
+# Alberto González Mesas, <a.gonzalezmesas@gmail.com>
+# thu Feb 20 10:30:00 CEST 2020 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+
+##############################################################################################
+# Description                                                                                   #
+##############################################################################################
+
+Description: >
+  Enable AWS Config Recorder.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Setup account configuration.
+        Parameters:
+          - AccountName
+      - Label:
+          default: AWS Recorder configuration.
+        Parameters:
+          - ConfigRecorderName
+          - RecordingAllResources
+          - RecordingGlobalResourcesToo
+          - RecorderRoleARN
+      - Label:
+          default: AWS Delivery Channel configuration.
+        Parameters:
+          - DeliveryDataFrequency
+          - DeliveryChannelName
+          - DeliveryBucketSink
+          #- SinkBucketKeyPrefix
+          #- DeliverySNSTopicNotification
+    ParameterLabels:
+      AccountName:
+        default: Account Name
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Type: String
+    Description: 'The account name'
+    MinLength: 1
+  ConfigRecorderName:
+    Type: String
+    Description: A name for the configuration recorder.
+    MinLength: 1
+  RecordingAllResources:
+    Type: String
+    Description: >-
+      Specifies wSpecifies whether AWS Config records configuration changes for every 
+      supported type of regional resource.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  RecordingGlobalResourcesToo:
+    Type: String
+    Description: >-
+      Specifies whether AWS Config includes all supported types of global resources 
+      (for example, IAM resources) with the resources that it records.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  #RecordingResourceTypes:
+  #  Type: String
+  #  Description: >-
+  #    A comma-separated list that specifies the types of AWS resources for which 
+  #    AWS Config records configuration changes (for example, AWS::EC2::Instance or 
+  #    AWS::CloudTrail::Trail).
+  RecorderRoleARN:
+    Type: String
+    Description: >-
+      The Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role
+       that is used to make read or write requests to the delivery channel that you specify 
+       and to get configuration details for supported AWS resources.
+  DeliveryDataFrequency:
+    Type: String
+    Description: >-
+      The frequency with which AWS Config delivers configuration snapshots.
+    Default: TwentyFour_Hours
+    AllowedValues:
+      - One_Hour
+      - Six_Hours
+      - Three_Hours
+      - Twelve_Hours
+      - TwentyFour_Hours
+  DeliveryChannelName:
+    Type: String
+    Description: >-
+      A name for the delivery channel.
+    MinLength: 1
+  DeliveryBucketSink:
+    Type: String
+    Description: >-
+      The name of the Amazon S3 bucket to which AWS Config delivers configuration 
+      snapshots and configuration history files.
+    MinLength: 1
+    Default: awsconfig-config-s3
+  #SinkBucketKeyPrefix:
+  #  Type: String
+  #  Description: >-
+  #    The prefix for the specified Amazon S3 bucket.
+  #DeliverySNSTopicNotification:
+  #  Type: String
+  #  Description: >-
+  #    The Amazon Resource Name (ARN) of the Amazon SNS topic to which AWS Config sends 
+  #    notifications about configuration changes.
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  ConfigRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    Properties: 
+      Name: !Sub ${AccountName}-${ConfigRecorderName}-config
+      RecordingGroup: 
+        AllSupported: !Ref RecordingAllResources
+        IncludeGlobalResourceTypes: !Ref RecordingGlobalResourcesToo
+        # If you want to exclude any resource, you shoudl to create a list with them.
+        #ResourceTypes:
+        #  - 
+      RoleARN: !Sub ${RecorderRoleARN}
+
+  ConfigDeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    Properties: 
+      ConfigSnapshotDeliveryProperties: 
+        DeliveryFrequency: !Sub ${DeliveryDataFrequency}
+      Name: !Sub ${AccountName}-${DeliveryChannelName}
+      S3BucketName: !Sub ${DeliveryBucketSink}
+      #S3KeyPrefix: !Sub ${SinkBucketKeyPrefix}
+      #SnsTopicARN: !Sub ${DeliverySNSTopicNotification}

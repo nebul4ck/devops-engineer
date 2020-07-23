@@ -1,11 +1,11 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": "nebul4ck"
+        "ParameterValue": "nebul4ck-account"
     },
     {
         "ParameterKey": "S3BucketName",
-        "ParameterValue": "software-repository"
+        "ParameterValue": "kinesis-waf-logging"
     },
     {
         "ParameterKey": "S3EncryptionProto",

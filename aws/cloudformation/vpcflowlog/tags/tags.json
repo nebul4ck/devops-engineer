@@ -1,7 +1,7 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "as-pro-orchestrator-VPCFlowLogs"
+        "Value" : "nebul4ck"
     },
     {
         "Key" : "Compliance",
@@ -9,7 +9,7 @@
     },
     {
         "Key" : "CECO",
-        "Value" : "pro"
+        "Value" : "dev"
     },
     {
         "Key" : "Confidentiality",
@@ -17,11 +17,11 @@
     },
     {
         "Key" : "Role",
-        "Value" : "pro"
+        "Value" : "dev"
     },
     {
         "Key" : "Environment",
-        "Value" : "production"
+        "Value" : "dev"
     },
     {
         "Key" : "StartTime",
@@ -33,7 +33,7 @@
     },
     {
         "Key" : "Operation",
-        "Value" : "as"
+        "Value" : "nebul4ck"
     },
     {
         "Key" : "SLA",

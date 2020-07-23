@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "nebul4ck-account"
+    },
+    {
+        "ParameterKey": "CloudWatchLogGroupName",
+        "ParameterValue": "deliveryStream"
+    },
+    {
+        "ParameterKey": "CloudWatchLogStreamName",
+        "ParameterValue": "WafLoggingStream"
+    },
+    {
+        "ParameterKey": "LoggingRetentionDays",
+        "ParameterValue": "365"
+    }
+]

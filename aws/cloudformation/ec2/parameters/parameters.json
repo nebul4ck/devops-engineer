@@ -1,7 +1,7 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": ""
+        "ParameterValue": "nebul4ck-account"
     },
     {
         "ParameterKey": "EnvType",
@@ -9,7 +9,7 @@
     },
     {
         "ParameterKey": "InstanceName",
-        "ParameterValue": "goldenAMI-hardened"
+        "ParameterValue": "testLastNginxVersion"
     },
     {
         "ParameterKey": "VolumeSize",
@@ -25,7 +25,11 @@
     },
     {
         "ParameterKey": "ImageId",
-        "ParameterValue": "ami-06c8c90384ad398aa"
+        "ParameterValue": "ami-1234567890cdf"
+    },
+    {
+        "ParameterKey": "SecurityGroup",
+        "ParameterValue": "sg-1234567890cdfgh"
     },
     {
         "ParameterKey": "InstanceType",
@@ -33,18 +37,18 @@
     },
     {
         "ParameterKey": "SSHLocation",
-        "ParameterValue": ""
+        "ParameterValue": "192.168.1.0/24"
     },
     {
         "ParameterKey": "KeyName",
-        "ParameterValue": ""
+        "ParameterValue": "nebul4ck-keypair"
     },
     {
         "ParameterKey": "Subnet",
-        "ParameterValue": ""
+        "ParameterValue": "subnet-1234567890cd"
     },
     {
         "ParameterKey": "VpcId",
-        "ParameterValue": ""
+        "ParameterValue": "vpc-1234567890cdf"
     }
 ]

@@ -1,0 +1,76 @@
+---
+#-----------------------------------#
+#			System Settings								#
+#-----------------------------------#
+# Network discovery
+iface: '{{ ansible_default_ipv4.interface }}'
+iface_ip: '{{ ansible_default_ipv4.address }}'
+iface_gateway: '{{ ansible_default_ipv4.gateway }}'
+iface_network: '{{ ansible_default_ipv4.network }}'
+iface_netmask: '{{ ansible_default_ipv4.netmask }}'
+# In APT module only run "update_cache=yes" if the last one is more than 3600 seconds ago
+cache_valid_time: 3600
+java_bin: '/usr/bin/java'
+# Systemd default path
+systemd_path: '/lib/systemd/system'
+# Public DNS
+public_dns: '8.8.8.8'
+# Nameservers in /etc/network/interfaces
+dns_nameservers: "{% for host in groups['platform_streaming'] %}{% if ansible_hostname in groups['platform_streaming'] %}{{ tenant_dns_upstream_1 }} {{ tenant_dns_upstream_2 }} {{ public_dns }}{% else %}{% if hostvars[host]['dns']|default(False) %}{{ hostvars[host]['ansible_' + iface].ipv4.address }}{% endif %}{% endif %}{% endfor %}"
+
+
+#-----------------------------------#
+#			Tenant Config									#
+#-----------------------------------#
+tenant_name: TENANT
+tenant_timezone: 'Europe/Madrid'
+# Upstream company dns servers
+tenant_dns_upstream_1: '10.124.21.2'
+tenant_dns_upstream_2: '10.128.21.3'
+tenant_network_to_scan: '["10.0.0.0/8"]'
+
+
+#-----------------------------------#
+#		   Services Settings		#
+#-----------------------------------#
+# Zookeeper #
+# Zookeeper qourom for rest of services
+zookeeper_quorum: "{% for host in groups['all'] %}{% if hostvars[host]['myid']|default(0) >= 1 %}{{ host }}:{{ zookeeper_client_port }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}"
+zookeeper_client_port: 2181
+
+# Kafka #
+# Build Kafka quorum for rest of services
+kafka_broker: "{% for host in groups['all'] %}{% if hostvars[host]['kafka_id'] is defined %}{{ host }}{% endif %}{% endfor %}"
+kafka_broker_port: 9092
+
+# Hadoop
+# Namenode discovery
+hdfs_namenode: "{% for host in groups['all'] %}{% if hostvars[host]['namenode']|default(false) %}{{ host }}{% endif %}{% endfor %}"
+hdfs_namenode_port: 54310
+
+# Elasticsearch
+elasticsearch_master: "{% for host in groups['all'] %}{% if hostvars[host]['es_master']|default(false) %}{{ host }}{% endif %}{% endfor %}"
+elasticsearch_cluster: "[{% for host in groups['all'] %}{% if hostvars[host]['es_data']|default(false) or hostvars[host]['es_master']|default(false) %}'{{ host }}'{% if not loop.last %},{% endif %}{% endif %}{% endfor %}]"
+elasticsearch_master_port: 9200
+elasticsearch_hdfs_repo: 'elasticsearch-repo'
+
+# RedisDB
+redis_port: 6379
+
+# VerneMQ
+vernemq_host: "{% for host in groups['all'] %}{% if hostvars[host]['vernemq'] is defined %}{{ host }}{% endif %}{% endfor %}"
+
+# Spark
+spark_masternode: "{% for host in groups['all'] %}{% if hostvars[host]['masternode']|default(false) %}{{ host }}{% endif %}{% endfor %}"
+spark_masternode_port: 7077
+
+## PostgreSQL
+postgresql_port: 5432
+postgresql_host: "{% for host in groups['all'] %}{% if hostvars[host]['postgresql_node']|default(false) %}{{ host }}{% endif %}{% endfor %}"
+
+# MongoDB
+mongodb_port: 27017
+mongodb_host: "{% for host in groups['all'] %}{% if hostvars[host]['mongodb_node']|default(false) %}{{ host }}{% endif %}{% endfor %}"
+
+# InfluxDB
+influxdb_host: "{% for host in groups['all'] %}{% if hostvars[host]['influxdb_node']|default(false) %}{{ host }}{% endif %}{% endfor %}"

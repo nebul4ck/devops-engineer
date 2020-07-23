@@ -11,13 +11,13 @@
 # ./multi-aws-cli.sh
 # │
 # ├── ec2
-# │   ├── cf-compliance-ec2-instance.yaml
+# │   ├── cf-ec2-instance.yaml
 # │   ├── parameters
 # │   │   └── parameters.json
 # │   └── tags
 # │       └── tags.json
 # └── s3  
-#     ├── cf-compliance-s3-bucket.yaml
+#     ├── cf-s3-bucket.yaml
 #     ├── parameters
 #     │   └── parameters.json
 #     └── tags
@@ -25,19 +25,21 @@
 #
 # run it:
 # 	$ ./multi-aws-cli.sh <account>
-#		<resource> <action>
+#		<resource> <action> <stack_name>
 #
-#	$ ./multi-aws-cli.sh my-private-account
-#		my-private-account ec2 deploy
+#	$ ./multi-aws-cli.sh nebul4ck-account ec2 deploy nginxInstance
 #----------------------------------------------#
 
 # Arguments #
 account="$1"
 resource="$2"
 action="$3"
+stack_name="$4"
+full_stack_name="${account}-${stack_name}-${resource}"
 random=`echo $(($RANDOM%100))`
 
-stack="${account}-"`ls ./${resource} |egrep ".*yaml$|.*yml$"|cut -d. -f1`"-${random}-cf"
+#stack="${account}-"`ls ./${resource} |egrep ".*yaml$|.*yml$"|cut -d. -f1`"-${random}-cf"
+#stack="${account}-"`ls ./${resource} |egrep ".*yaml$|.*yml$"|cut -d. -f1`"-cf"
 template="file://${resource}/"`ls ./${resource} |egrep ".*yaml$|.*yml$"`
 parameters="file://${resource}/parameters/parameters.json"
 tags="file://${resource}/tags/tags.json"
@@ -50,8 +52,8 @@ test_stack () {
 	# Sintax validator
 
     ${aws_cmd} cloudformation validate-template \
-    --profile ${account} \
-    --region ${region} \
+    --profile "${account}" \
+    --region "${region}" \
     --template-body "${template}"
 
     exit 0
@@ -61,13 +63,21 @@ create_stack () {
 
 	# Create a new Stack
     ${aws_cmd} cloudformation create-stack \
-    --profile ${account} \
-    --stack-name ${stack} \
-    --template-body ${template} \
-    --parameters ${parameters} \
-    --tags ${tags} \
-    --region ${region} \
+    --profile "${account}" \
+    --stack-name "${full_stack_name}" \
+    --template-body "${template}" \
+    --parameters "${parameters}" \
+    --tags "${tags}" \
+    --region "${region}" \
     --capabilities CAPABILITY_NAMED_IAM
+
+    # The following lines code will block the CLI
+    # until the command is finished.
+    # ${aws_cmd} cloudformation wait stack-create-complete \
+    # --profile ${account} \
+    # --stack-name ${stack} \
+    # --region ${region} && echo " done."
+
 	exit 0
 }
 
@@ -91,7 +101,7 @@ stack_deploy_info () {
 	# Check the stack deployment status
 
 	for event in $(aws cloudformation describe-stack-events \
-		--stack-name ${stack} \
+		--stack-name "${full_stack_name}" \
 		--profile "${account}" \
 		--query "StackEvents[].ResourceStatus");
 		do
@@ -100,7 +110,7 @@ stack_deploy_info () {
 				echo -e "\n Status: `echo ${event}|tr -d ','`\n"
 
 				select_failed=$(aws cloudformation describe-stack-events \
-					--stack-name ${stack} \
+					--stack-name ${full_stack_name} \
 					--profile ${account} \
 					--query "StackEvents[?ResourceStatus == 'CREATE_FAILED'].ResourceStatusReason")
 
@@ -108,7 +118,7 @@ stack_deploy_info () {
 	    	elif [[ ${event} =~ 'CREATE_COMPLETE' ]];
 	   		then
 	    		select_complete=$(aws cloudformation describe-stack-events \
-	    			--stack-name ${stack} \
+	    			--stack-name ${full_stack_name} \
 	    			--profile ${account} \
 	    			--query "StackEvents[?ResourceStatus == 'CREATE_COMPLETE'].ResourceStatus[] | [0]")
 
@@ -126,15 +136,15 @@ delete_stack () {
 	# Delete a selected stack
 
 	aws cloudformation delete-stack \
-	--stack-name ${stack} \
-	--profile ${account}
+	--stack-name "${full_stack_name}" \
+	--profile "${account}"
 
 	exit 0
 }
 
 if [ "$#" -lt 3 ] ; then
-    echo "Usage: `basename $0` <account> <resource> <action>"
-    echo -e "\t`basename $0` my-private-account my-private-account ec2 deploy"
+    echo "Usage: `basename $0` <account> <resource> <action> <stack_name>"
+    echo -e "\t`basename $0` nebul4ck-account ec2 deploy nginx-instance"
     echo -e "Actions:"
     echo -e "\ttest: validate a cloudformation template"
     echo -e "\tdeploy: create a new cloudformation stack"
