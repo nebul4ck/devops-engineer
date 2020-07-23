@@ -28,6 +28,7 @@ Roles
 * **vernemq**
 * **zookeeper**
 * **utils**
+* **amazon-cis-linux**
 
 AWS
 ===
