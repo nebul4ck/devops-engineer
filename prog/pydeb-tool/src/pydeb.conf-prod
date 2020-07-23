@@ -1,6 +1,0 @@
-[profiler]
-enabled = False
-stats_path = ../docs/profiler_stats
-sort_by = filename
-[general]
-pip_executable=pip3

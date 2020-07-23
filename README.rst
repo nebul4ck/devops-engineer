@@ -46,6 +46,12 @@ CloudFormation Templates
 Jenkins
 =======
 
+Jenkins pipeline is an own self illustration how jenkins groovy shared library works. For a full work, it needs a third party software like buanarepo. Jenkins is integrated with github, buanarepo (build debian packages, backups and encrypted ownself tool write in python) and slack.
+
+During the stages, **Jenkins clone the code from github repository** (develop or master branch, it is depend of the commit that the developer did), after that, a **test cycle is launched into development environment** and if all work fine, **jenkins up the software version**, **auto-merge master and development branches**, **tags the new version** on github and finally, clone the master branch and **deploy the code on production environment**.
+
+**Note** much more info into jenkins > docs folder
+
 Shared libary
 -------------
 
@@ -62,7 +68,6 @@ Scripting/SysAdmin
     - scripts/vagrant/create_vm.sh -> Create and orchestrate one or more virtual machine in few seconds.
     - debian_packages/psmen -> view processes using advanced ps command options in tree+forks and used memory by each of them by easy way.
     - prog/mongostats -> useful tool for view and monit mongo database
-    - prog/pydeb-tool -> Python to Debian package converter.
 
 debian_packages/psmen
 ---------------------
@@ -105,24 +110,3 @@ prog/mongostats
 $ . bin/activate
 $ python mongostats.py
 ```
-
-prog/pydev-tool
----------------
-
-Python to Debian package converter.
-
-1. Make a requirements file with your project dependencies.
-
-2. Make a directory to save .deb packages.
-
-3. Use our tool:
-
-.. code:: console
-
-    cd /path/to/pydeb/
-    ./pydeb_main.py -r requirements.txt -p /usr/bin/python3 -d /path/to/download_dir/
-
-.. note::
-
-    To execute pydeb like a script, you need python3.5 installed in your system. Alternatively, you can use traditional invocation: python3 pydeb_main ...
-

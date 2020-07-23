@@ -1,0 +1,12 @@
+@Library('saturn_ci_cd@master') _
+
+saturnPipeline(
+                build_command: 'buanaclient mpkg',
+                third_party: 'False',
+                build_timeout: 3,
+                language: 'python',
+                language_version: '2.7',
+                git_maintainer: 'nebul4ck',
+                auto_deploy_dev: 'True',
+                auto_deploy_pro: 'False'
+)
