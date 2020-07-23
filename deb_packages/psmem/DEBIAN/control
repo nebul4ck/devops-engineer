@@ -1,0 +1,10 @@
+Package: psmem-saturn
+Essential: no
+Priority: optional
+Section: main
+Maintainer: Wellness Labs <agonzalez@wtelecom.es>
+Architecture: amd64
+Version: 1.0.0
+Depends: 
+Homepage: https://github.com/wtelecom/wlabs-tools/deb_packages
+Description: Show 'ps' command output with user, rss and cmd. Use it command for memmory monitoring.
