@@ -90,17 +90,17 @@ debian_packages/psmen
    
 .. code:: console
 
-$ psmem agonzalez
-agonzalez             1,7M      \_ /bin/sh /usr/bin/startkde
-agonzalez             320K          \_ /usr/bin/ssh-agent /usr/bin/im-launch /usr/bin/startkde
-agonzalez             7,0M          \_ kwrapper5 /usr/bin/ksmserver
-agonzalez             7,8M /lib/systemd/systemd --user
-agonzalez             2,6M  \_ (sd-pam)
-agonzalez             4,8M  \_ /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
-agonzalez              35M  \_ /usr/bin/kglobalaccel5
-agonzalez             4,9M  \_ /usr/lib/dconf/dconf-service
-agonzalez              27M  \_ /usr/bin/kactivitymanagerd start-daemon
-...
+    $ psmem agonzalez
+    agonzalez             1,7M      \_ /bin/sh /usr/bin/startkde
+    agonzalez             320K          \_ /usr/bin/ssh-agent /usr/bin/im-launch /usr/bin/startkde
+    agonzalez             7,0M          \_ kwrapper5 /usr/bin/ksmserver
+    agonzalez             7,8M /lib/systemd/systemd --user
+    agonzalez             2,6M  \_ (sd-pam)
+    agonzalez             4,8M  \_ /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+    agonzalez              35M  \_ /usr/bin/kglobalaccel5
+    agonzalez             4,9M  \_ /usr/lib/dconf/dconf-service
+    agonzalez              27M  \_ /usr/bin/kactivitymanagerd start-daemon
+    ...
 ..
 
 **note**: psmem let us to see all processes of agonzalez user. You can get all process of concrete service. ($ psmem httpd) 
@@ -113,6 +113,6 @@ prog/mongostats
 3. 
 .. code:: console
 
-$ . bin/activate
-$ python mongostats.py
+    $ . bin/activate
+    $ python mongostats.py
 ..
