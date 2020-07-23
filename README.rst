@@ -110,7 +110,7 @@ prog/mongostats
 
 1. Launch a python virtualenv
 2. run mongostats.py
-3. 
+
 .. code:: console
 
     $ . bin/activate
