@@ -73,7 +73,16 @@ HIST_STAMPS="dd.mm.yyyy"
 # Add wisely, as too many plugins slow down shell startup.
 # More plugins: https://github.com/robbyrussell/oh-my-zsh/wiki/Plugins
 #	git-extras kubectl pip python vagrant
-plugins=(ansible git gitfast docker kubectl aws)
+plugins=(ansible aws git docker-compose docker pip sudo zsh_reload)
+
+# Doc
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker-compose
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/aws
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/ansible
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/pip
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/sudo
+# https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/zsh_reload
 
 source $ZSH/oh-my-zsh.sh
 
