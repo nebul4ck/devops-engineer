@@ -1,0 +1,948 @@
+
+
+mesos or marathon
+rancher, redhat openshift
+primero estudiar con kebertene de github pero luego pasar a un vendors, porejemplo como rancher, eks, openshift, etc que aportan mejores soluciones de logging, networking, monitoring, etc
+
+
+Kubernetes
+
+* Kubernetes está construído por nodos maestros y nodos o workers. Todos los nodos pertenecientes al clúster (maestros y workers) llevan instalado Docker. De hecho en realidad Kubernetes está formado por una serie de contenedores, CLI's y configuraciones.
+* Kubectl es la herramienta con la que administrar kubernetes
+* Kubelet: es el agente que se instala en cada uno de los nodosdel cluster de kubernetes. Es necesario para que la API que corre en los maestro tenga control sobre estos. Va a ser el encargado de inicializar contenedores dentro de los pods. En swarm esto no es necesario ya que tanto swarm como Docker están construido dentro de la misma pieza de software (built-in).
+* Kube-proxy: containers que corre sobre cada uno de los nodos/workers para hacer posible la gestión de las comunicaciones
+* Control plane: a diferencia de Swarm donde el control plane era el Swarm al completo, en kubernetes está formado exclusivamente por los maestros.
+* Pod: uno o mas contenedores ejecutándose juntos dentro de un nodo. Es la unidad básica de despliegue.
+* Controller: sirve para crear o actualizar pods y otros objetos del cluster. Existen muchos tipos de Controllers:
+	* Deployment
+	* ReplicaSet
+	* StatefulSet
+	* DaemonSet
+	* Job
+	* CronJob
+	* ...
+* Service: es el network endpoint en el cluster donde conectaremos los pods. Mediante este podremos acceder vía DNS name y port a un set de pods.
+* Namespace: nada que ver con los namespace de Linux ni de docker. Es simplemente como un "área de trabajo" donde desplegamos el systema de contenedores dentro de un cluster. -----> Entiendo que podemos tener diferentes namespaces para agrupar y filtrar contenedores o pods?????
+
+
+Los nodos maestros de kubernetes despliegan una serie de contenedores para cada una de las "características" o sistemas que cubre kubernetes. Lo mas normal es que un nodo maestro de kubernetes haya desplegado al menos los siguientes contenedores:
+	- etcd -> contenedor para la base de datos de kubernetes. Es una base de datos key:value distribuída y que almacena todo lo relacionado con la gestión del cluster (raft en swarm).
+	- API: necesario para conectar con cada uno de los nodos/workers del clúster
+	- Scheduler: encargado de controlar como y donde son desplegado los contenedores. Además a diferencia de Swarm, los contenedores son desplegado dentros de objetos pods, y estos a su vez dentro de cada uno de los nodos/workers.
+	- Control manager: encargado de velar por el clúster en general, hace uso de la API para comunicarse con el resto de nodos.
+	- CoreDNS: para controlar los nombres de contenedores dentro del cluster.
+
+	Nota: además es posible que en función de nuestras necesidades o de las del cluster en si, necesitemos desplegar mas contenedores en los nodos maestros, por ejemplo para amplicar funcionalidades del networking o de webapps.
+
+
+Pods
+
+Un pod es la unidad mínima que es manejada por kubernetes. uno o más contenedores con almacenamiento compartido entre ellos. Varios contenedores que pertenezcan al mismo pod son visibles unos de otrosmientras que contenedores que se encuentran en distintos pods no pueden comunicarse de esta manera. Los pods son entidades efímeras por lo que un pod no debería de tener información almacenada que pueda ser utilizada de forma persistente por otros pods. Es recomendable crear volúmenes para tal fin (https://kubernetes.io/docs/concepts/storage/volumes/).
+
+Los pods se pueden crear de dos maneras: directamente por línea de comandos o a través de un fichero de tipo YAML.
+
+Si los creamos directamente por linea de comandos, además se creará un replication controller para administrarlo mientras que si lo hacemos por spec file, no.
+
+Con respecto al networking, un pod tiene su propia dirección IP pero es posible que esta cambie durante su ciclo de vida lo que acarrea serios problemas de conectividad. Para solventar esto existen addons de networking los cuales crearemos mediante servicios. A continuación veremos que es y para que sirve un servicio.
+
+
+Replication controller
+
+Un replication controller se asegura de que grupo de uno o más pods esté siempre disponible (supervisor). U replication controller se encarga del ciclo de vida de un pod así como de sus políticas de restauración. Este grupo de pods forman un replicaSet.
+
+Podemos crear un replication controller desde un spec file que a su vez inicie un pod.
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+    name: my-nginx # Nombre del RC
+spec:
+    replicas: 1
+    selector:
+        app: nginx # Todos los pods bajo este label serán gestionados por ese RC
+    template:
+        metadata:
+            name: nginx
+            labels:
+                app: nginx # Aquí definimos la etiqueta bajo la que englobaremos a las replicas (cada uno de los pods que desplieguen contenedores).
+        spec:
+            containers:
+                - name: nginx
+                  image: nginx
+                  ports:
+                    - containerPort: 80
+
+	$ kubectl create -f /etc/kubernetes/manifests/nginx-RC.yaml
+
+Un replication controller nos permite escalar y desescalar el número de pods que este administra, borrar el replication controller con o sin los pods o incluso sacar un pod de su control simplemente cambiando el lab del pod.
+
+Para escalar un replicationSet administrado por un replication controller utilizamos el comando scale:
+
+	$ kubectl scale rc my-nginx --replicas=3
+
+Como ya veremos mas adelante, al igual que eliminamos cualquier recurso/objeto podemos eliminar un replication controller con el comando delete
+
+	$ kubectl delete rc my-ginx
+
+
+Creando pods...
+
+Mediante comando en versiones anteriores a la 1.18
+
+	$ kubectl run my-nginx --image=nginx --port=80
+
+Mediante comando en version 1.18+
+
+	
+	$ 
+
+Mediante spec file (YAML)
+
+	apiVersion: v1
+	kind: Pod # Tipo de objeto a crear
+	metadata:
+	    name: my-nginx
+	    labels:
+	        app: nginx
+	spec:
+	    containers:
+	        - name: nginx
+	          image: nginx
+	          ports:
+	            - containerPort: 80
+	    restartPolicy: Always
+
+	   Nota: al crear un pod se crea un replication controller, encargado de la administración del pod, por defecto la política a seguir por un replication controller es la de autoiniciar el pod al terminar, es por ello que antes de crear de nuevo el mismo pod que hemos creado por consola, conviene eliminar el replication controller.
+
+    $ kubectl delete rc my-nginx
+
+    $ kubectl create -f /etc/kubernetes/manifests/nginx-pod.yaml
+
+
+
+Lo servicios
+
+Un servicio es una capa de abstracción que sirve para crear endpoints para otros objetos por ejemplo para solucionar el tema de conectividad desde, hacia o entre pods. Imaginemos que tenemos un servicio corriendo en un pod y este necesita ser accesible en todo momento, que ocurre si por cualquier motivo el pod es restaurado y pierde su IP?, para esto se crean los servicios. En este caso concreto crearíamos un servicio (endpoint) para un conjunto de pods que haría de capa de abstracción a su conectividad permitiendo que si un pod es restaurado y su IP cambia, el servicio es capaz de "auto-descubrir" su nueva IP y seguir exponiendo la conectividad desde o hacia el pod.
+
+Un caso externo a todo esto que puede servir de simil, si se me permite, son los servicios DNS que permiten mantener mediante un nombre de dominio la conectividad con nuestro router en todo momento desde el exterior. El router es capaz de crear un servicio que continuamente chequea la IP pública que nuestro proveedor nos ha dado y enlaza esta con un nombre por el cual nosotros nos conectamos. Si nuestra IP cambia, el servicio lo detectará y de forma transparente a nosotros re-enlazará la nueva IP con el nombre y podremos mantener la conectividad.
+
+
+Para completar la pila "pod-replication controller" que hemos creado en secciones anteriores, podríamos entonces primero crear un servicio que apunte hacia un label "app: nginx" de manera que enlace con el replication controller que administra los pod con este mismo label y de esta manera quedarían pods-replicationController-Servicio enlazados:
+
+El archivo para el servicio podría ser similar al siguiente:
+
+apiVersion: v1
+kind: Service
+metadata:
+    name: my-nginx-service
+spec:
+    selector:
+        app: nginx
+    ports:
+      - port: 80
+
+Recordar que tambien podríamos crear un servicio desde la línea de comandos. En próximas secciones veremos mas detalladamente los comandos de kubectl.
+
+Tip: para acceder al servicio nginx que corre en un container dentro de un pod que a su vez es administrado por un replication-contoller y por ello pertenece a un replicaSet/clúster, podríamos utilizar el siguiente comando
+
+	$ kubectl get -o template pod <nombre_del_pod> --template={{.status.podIP}}
+
+
+Si quisieramos acceder a este servicio desde fuera del cluster (lo anterior estaría bien para mantener una granja de servidores sirviendo a alguna applicación cliente o frontend) deberíamos entonces de crear un servicio que exponga puertos a la maquina host/nodo en la que se encuentra el pod.
+
+Para tal fin el archivo spec quedaría tal que así:
+
+apiVersion: v1
+kind: Service
+metadata:
+    name: my-nginx-service
+spec:
+    type: NodePort
+    selector:
+        app: nginx
+    ports:
+      - port: 80
+      	targetPort: 9090
+
+Esto expondría el servicio del pod en el puerto 9090 de nuestro host, por lo que cualquier cliente o servidor con acceso de red a este host/nodo podría acceder a nginx vía curl, wget o webbrowser por el puerto expuesto (targetPort).
+
+Los puertos expuestos en el host/nodo son de rango superior y son aleatorios (por encima del 30000), en nuestro caso hemos especificado el puerto con "targetPort" pero recordar que de no haberlo hecho el puerto sería aleatorio.
+
+Durante la instalación será necesario configurar:
+
+1. cgroup de docker:
+
+# Set up the Docker daemon
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+
+2. Desactivar la swap
+
+# swapoff -a
+# sed -i '/swap/d' /etc/fstab
+
+
+
+1. Crear un cluster de kubernetes de dos nodos:
+	
+	Master:
+		# kubeadm config images pull
+		# kubeadm init --apiserver-advertise-address=192.168.1.37 --node-name=node1 --service-dns-domain nebul4ck.org
+
+		Donde:
+			- address = la IP de mi red física
+			- node1 = nombre de mi host en la red (cat /etc/hostname)
+
+	Archivos de configuración:
+
+		* Kubelet environment: /var/lib/kubelet/kubeadm-flags.env
+		* kubelet configuration: /var/lib/kubelet/config.yaml (kubelet en modo estático, archivo por defeto para configurar kubelet), /etc/kubernetes/kubelet.conf (kubelet en modo cluster/kubernetes)
+		* Default certificates: /etc/kubernetes/pki
+		* kubeconfig (kubernetes) folder: /etc/kubernetes
+		* Kubeconfig file (kubernetes config): admin.conf
+		* Controller Manager: controller-manager.conf
+		* Scheduler: scheduler.conf
+		* Static Pod manifest: /etc/kubernetes/manifests
+		* Raft data base (dataDir): /var/lib/etcd
+
+Manifests
+
+Los Manifests son cada uno de los archivos JSON/YAML que podemos utilizar para desplegar un Pods. Por defecto se guardan bajo el directorio /etc/kubernetes/manifests aunque podemos cambiar este comportamiento modificando la configuración de Kubelet (util si queremos desplegar Pods estáticos con kubelet).
+
+
+Nota: los pods estáticos son aquellos que se despliegan en un nodo en concreto y no son administrados por kubernetes-api-server (control-plane).
+
+	Configurar kubelet
+		
+		1. En tiempo de arranque de kubelet usar el siguiente parámetro:
+
+			--pod-manifest-path=/etc/kubelet.d/
+
+		2. Modificar el archivo de configuración de kubelet
+
+			$ vi /var/lib/kubelet/config.yaml
+			staticPodPath: <path>
+
+		Para fedora utilizar el archivo /etc/kubernetes/kubelet
+
+		Reiniciar kubelet:
+
+			$ sudo systemctl restart kubelet
+
+
+Los primeros Pods que se crean son:
+
+	1. etcd-<NODE_NAME>
+	2. kube-apiserver-<NODE_NAME>
+	3. kube-controller-manager-<NODE_NAME>
+	4. kube-scheduler-<ID>
+	5. kube-scheduler-<NODE_NAME>
+
+Autorizaciones:
+
+	1. kube-apiserver authorization-mode is "Node,RBAC"; using "Node,RBAC"
+
+Namespaces:
+
+	* Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+	* Creating a ConfigMap "kubelet-config-1.18" in namespace kube-system with the configuration for the kubelets in the cluster.
+	* Creating the "cluster-info" ConfigMap in the "kube-public" namespace
+
+
+Initials Addons
+
+	1. CoreDNS
+	2. kube-proxy
+
+
+
+1. Comienza a utilizar el cluster.
+
+	Lo primero será crear la configuración para que un usuario estándar pueda "administrar" el cluster:
+
+	# sudo su - "mi user"
+
+	$ mkdir -p $HOME/.kube
+	$ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+	$ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+2. Mostrar la configuración del clúster
+
+	Master
+		$ kubeadm config view --kubeconfig /etc/kubernetes/admin.conf
+		$ kubectl config view
+		$ kubectl cluster-info
+
+3. Añadir un worker al nuevo clúster
+
+	Esta tarea es necesaria hacerla con el usuario root del nodo que vamos añadir:
+
+	# kubeadm join 192.168.1.37:6443 --token b9lsdh.s0jhktc06n5283v6 \
+    --discovery-token-ca-cert-hash sha256:aeda8ba8dd5f5c8897b3c803a3e7ffdb1d78596fffbed211e1bdb8335c280322
+
+4. Ver los nodos del cluster:
+
+	$ kubectl get nodes
+
+	Nota: es posible que tras inicializar un clúster y visualizar los nodos nos indique que el Mastes "is not Ready". Esto ocurre por no disponer de ningún addon/plugin de red "NetworkReady=false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized".
+
+	En la sección "Añadir nuevos addons" indicamos como instalar Calico, un addon de Networking.
+	
+5. Mostrar toda la información relativa a un nodo:
+
+	$ kubectl describe nodes <NODE_NAME>
+
+	Como kubectl nos permite trabajar sobre diferentes objetos, podemos hacer igualmente un describe de un pod concreto:
+
+	$ kubectl get pod
+
+	<copy de name>
+
+	$ kubectl describe pod/<paste_de_name>
+
+	Este comando podría compararse con el "inspect" de Swarm o Docker.
+
+5. Eliminar un nodo del cluster
+
+	kubectl drain <node-name>
+	(optional, if error exists) kubectl drain <node-name> --ignore-daemonsets --delete-local-data
+	kubectl delete node <node-name>
+
+6. Crear un pods statico
+
+	Recordar la nota de capítulos anteriores sobre los pods:
+
+	Nota: los pods estáticos son aquellos que se despliegan en un nodo en concreto y no son administrados por kubernetes-api-server (control-plane).
+
+	Crear un pod statico de nginx utilizando un archivo de configuracón:
+
+	# vi /etc/kubernetes/manifests/nginx-pod.yml
+	apiVersion: v1
+	kind: Pod
+	metadata:
+	  name: static-web
+	  labels:
+	    role: myrole
+	spec:
+	  containers:
+	    - name: web
+	      image: nginx
+	      ports:
+	        - name: web
+	          containerPort: 80
+	          protocol: TCP
+
+	  # su - <mi_user>
+		$ kubectl create -f /etc/kubernetes/manifests/nginx-pod.yml
+
+	Incluso pasándole desde la stdin
+
+		$ cat pod.yml | kubectl create -f -
+
+	Nota: en versiones 1.18+ tambien podemos usar:
+
+	$ kubectl run nginx --image nginx
+
+	Ahora podemos ver el nuevo pod:
+
+	$ kubectl get pod static-web
+
+	Nota: recordar que si no hemos configurado el Networking, el estado del pod será "PENDING"
+
+7. Crear un Pods dinámico
+
+	En esta ocasión el pods estará administrado por la api-server (control-plane) de nuestro cluster de kubernetes:
+
+	$ kubectl apply -f https://k8s.io/examples/pods/init-containers.yaml
+
+	Donde el archivo de configuración es: 
+
+		apiVersion: v1
+		kind: Pod
+		metadata:
+		  name: init-demo
+		spec:
+		  containers:
+		  - name: nginx
+		    image: nginx
+		    ports:
+		    - containerPort: 80
+		    volumeMounts:
+		    - name: workdir
+		      mountPath: /usr/share/nginx/html
+		  # These containers are run during pod initialization
+		  initContainers:
+		  - name: install
+		    image: busybox
+		    command:
+		    - wget
+		    - "-O"
+		    - "/work-dir/index.html"
+		    - http://kubernetes.io
+		    volumeMounts:
+		    - name: workdir
+		      mountPath: "/work-dir"
+		  dnsPolicy: Default
+		  volumes:
+		  - name: workdir
+		    emptyDir: {}
+
+8. Acceder al shell de un container:
+
+	$ kubectl exec -it init-demo -- /bin/bash
+
+7. Eliminar un pod
+
+	$ kubectl delete pod static-web
+
+	o
+
+	$ kubectl delete pod/static-web
+
+Nota: podemos ver en tiempo real el comportamiento del comando anterior, si en una pestaña nueva ejecutamos el siguiente comando, el cual es similar al comando "watch" de Linux, el cual deja abierto el proceso en la terminal:
+
+$ kubectl get pods -w
+
+7. Ver en que namespaces tenemos recursos desplegados
+
+	$ kubectl get all --all-namespaces
+
+7. Añadir nuevos addons.
+
+	7.1 Networking
+		Despliega un pod de red en el nodo maestro para comenzar a añadir nodos al cluster. Para ello podemos usar cualquiera de los disponibles (https://kubernetes.io/docs/concepts/cluster-administration/addons/). En nuestro caso vamos a utilizar Cálico (https://docs.projectcalico.org/getting-started/kubernetes/quickstart)
+
+			$ kubectl apply -f [podnetwork].yaml
+
+		Importante: esta es una forma de añadir addons y "paquetes" a nuestro clúster de kubernetes pero podemos descargar, instalar y usar Helm, el gestor de paquetes para Kubernetes.
+
+
+* El coreDNS lo tengo Pending y 0/2
+* El master is not ready: instalar calico
+* Diferencia entre "create", "apply", y entre pod estático o dinámico durante su creación.
+
+	Al usar "apply" (no sé si create también), podemos crear "despliegues", pods que son dinámicos dentro del cluster y son administrados por la api-server (control-plane) de kubernetes. Un archivo de despliegue podría ser:
+
+		https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+
+		Crear un "deployment"
+
+		$ kubectl apply -f https://k8s.io/examples/controllers/nginx-deployment.yaml
+
+		Nota: aquí, el replicaset estará formado por 3 replicas/pods ya que así se ha definido en su archivo.
+
+		Si queremos crear un despliegue mediante imagen y con una sola réplica/pod para posteriormente escalar (versiones 1.18+):
+
+		$ kubectl create deployment nginx --image nginx
+
+		En versiones anteriores a la 1.18, podríamos crear un despliegue de un replicaset pero con una sola replica de la siguiente manera:
+
+		$ kubectl run nginx --image nginx
+
+		Es importante saber que esto en versiones 1.18+ crearía un unico pod en vez de un despliegue (similar a docker run, el cual crearía un solo contenedor). Sin embargo en versiones anteriores (a fecha, finales 2020, muchos productos desarrollados para k8s no son compatibles con la version mas reciente por lo que no está de mas saber de estos comandos para la retrocompatibilidad) este comando crearía un despliegue de una sola réplica o pod.
+
+		Podremos escalar el replicaset de un deployment con el siguiente comando, pero para ello antes necesitaremos su nombre:
+
+		$ kubectl get deployments
+
+		ahora:
+
+		$ kubectl scale deploy/nginx-deployment --replicas 3
+
+		o
+
+		$ kubectl scale deployment nginx-deployment --replicas 3
+
+		
+		Ver el estado de un deployment:
+
+		$ kubectl get deployment nginx-deployment
+
+		Ver el estado de todos los servicios desplegados (pods, services, deployments y replicasets)
+
+		$ kubectl get all
+
+		Eliminar el deployment:
+
+		$ kubectl delete deployment nginx-deployment
+
+
+	Como ver los logs de un objeto. En este caso de un despliegue:
+
+		$ kubectl logs deploy/httpd --follow --tail 1
+		$ kubectl logs deployment httpd --follow --tail 1
+
+		Esto el problema es que nos da los logs de todos los pods del despliegue en una misma salida lo que puede ser algo engorroso.
+
+		Para ver la traza de un pod específico debemos de usar la herramienta "selector" de kubernetes. Esta herramienta hace uso del "labeling" de los pods. Es muy importante etiquetar correctamente nuestros despliegues o nuestros pods:
+
+		$ kubectl logs -l run=<laber>
+
+		Nota: Stern es una herramienta que de terceros que nos puede ayudar bastante en cuanto a los logs de nuestro despliegue se refiere.
+
+
+
+Networking en kubernetes
+
+Cuando trabajamos con aspectos relacionados al networking debemos de tener en cuenta algunos conceptos básicos necesarios en kubernetes para que nuestros pod obtengan tráfico:
+
+	- Exponer puertos
+	- Resolución de nombres
+	- Asignar un DNS name al Pod
+	- Asignar una dirección IP al Pod
+
+Ports
+
+Para exponer un puerto en kubernetes se usa el comando "kubectl expose" el cual crea un servicio de puertos para un pod existente. Basicamente un servicio es una dirección estable asignada al pod de manera que exista un traffic in/out.
+
+Por lo tanto, si queremos conectar hacia o desde un pod deberemos de crear un servicio de puertos, de direccionamiento y de nombres.
+
+Para la resolución de nombres, por defecto, kubernetes despliega en su control-plane CoreDNS.
+
+Para el direccionamieto existen otros servicios que permiten crear direccionamiento desde o hacia un pod:
+
+	* ClusterIP
+	* NodePort
+	* LoadBalancer
+	* ExternalName
+
+ClusterIP: servicio de direccionamiento por defecto que trabaja a nivel de cluster (nodes y pods) haciendo uso de IP virtuales internas.
+
+NodePort: diseñado para el direccionamiento fuera del cluster, es decir permite el tráfico con puertos del nodo. fuera de la capa de los pods-cluster. Por ejemplo para conectar al puerto 80 de un nodo a otro y luego a su vez este tiene un pod con puerto expuesto al 80.
+
+LoadBalancer: es el mas usado en el cloud y requiere infraestructura del proveedor como por ejemplo los LoadBalancer de AWS (ELB). Con el ClusterIP y NodePort creado, tan solo tendremos que decirle al ELB que envie las comunicaciones a NodePort.
+
+Nota: tal y como veremos, cuando se crea el servicio LoadBalancer, este a su vez creará el NodePort y ClusterIP.
+
+ExternalName: es menos común su uso. Facilita la resolución de nombres externos a nuestro clúster de kubernetes y que no son resultos por dominios de internet. Un caso particular podría ser durante una migración. Es posible que los servicios a migrar y nuestro clúster de kubernetes no se resuelvan, en este caso podremos crear un "ExternalName service" en nuestro clúster para hacer una resolución IP-name de los servicios externos a migrar. Esto se hace basicamente crearn CNAME DNS record en el CoreDNS del clúster.
+
+
+Como crear un servicio ClusterIP en un despliegue de kubernetes:
+
+Siguiendo con nuestro deployment anterior (nginx-deployment):
+
+	$ kubectl expose deploy/httpenv --port 8888
+
+	$ kubectl get service
+
+
+Crear un NodePort Service
+
+	$ kubectl expose deploy/httpenv --port 8888 --name httpenv-np --type NodePort
+
+	Si ahora vemos los servicios creados:
+
+	$ kubectl get services
+	NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+httpenv      ClusterIP   10.109.94.71     <none>        8888/TCP         10m
+httpenv-np   NodePort    10.105.224.225   <none>        8888:30627/TCP   6s
+
+
+Vemos que se ha creado el servicio NodePort. Debemos prestar especial atención a la columna PORT(S) y recordar que en este caso va a ser al revés que en Docker y Swarm, es decir, el puerto de la izquierda (8888) es el puerto que ha expuesto el pods dentro del cluster y que solo es alcanzable dentro del cluster mientras que el de la derecha (30627) es el puerto que exponemos fuera del cluster, es decir, a nivel de nodo. Este puerto es un puerto aleatorio del rango entre 30000-32767. Para fijar un puerto deberemos de utilizar un yaml.
+
+A continuación vamos a ver como crear un servicio LoadBlanacer pero adelantar que cuando se crea un LoadBalancer, se crea automáticamente el NodePort y el ClusterIP al igual que cuando creamos el NodePort, automáticamente se creará el ClusterIP, es decir cada uno de los siguientes servicios crea el que tiene por debajo:
+
+	* ClusterIP
+	* NodePort
+	* LoadBalancer
+
+
+Crear un LoadBalancer Service
+
+$ kubectl expose deploy/httpenv --port 8888 --name httpenv-lb
+--type LoadBalancer
+
+
+Sobre los DNS
+
+ En versiones iniciales Kubernetes usaba kubeDNS como servicio de nombres, a partir de la 1.11, el servicio de nombres intero pasó a ser CoreDNS.
+
+ Al igual que ocurre en Swarm, DNS es utilizado como servicio de descubrimiento por lo que para comunicar de un container a otro en el caso de swarm o de un pod a otro en kubernetes se utiliza el hostname o servicename (recordemos que en Swarm cuando úsabamos stacks o incluso en docker-compose, se le daba un nombre al servicio que formaba el container y este, asumía entonces el nombre del servicio).
+
+ En kubernetes, la resolución de nombres va mas allá, ya que dentro de un clúster podemos tener varios namespaces, y diferentes namespaces pueden tener los mismos pods desplegados incluso con el mismo nombre (pods, despliegues, replicaset, etc...) por lo que para diferenciar unos de otros hay que nombrarlos por su FQDN (<hostname>.<namespace>.service.cluster.local)
+
+
+Generators: generadores de configuraciones
+
+Cuando ejecutamos un comando por la terminal, realmente puede volverse engorroso debido a la cantidad de parámetros que podemos pasar en tiempo de creación de un objeto/recurso. Para lidiar con esto, Kubernetes nos ofrece la capacidad de utilizar archivos de especificaciones "spec" en los que podremos definir objetos con sus opciones en formato YAML.
+
+Como punto de partida para un archivo spec podemos utilizar las opciones --dry-run -o yaml para generar en un archivo el comando ejecutado.
+
+Crear una plantilla para un despliegue
+
+	$ kubectl create deployment nginx-template --image nginx --dry-run -o yaml
+
+	Donde:
+
+		--dry-run: ejecuta el comando pero no toma efecto real, es mas un "esto es lo que haría"
+		-o yaml: ofrece ese "esto es lo que haría" pero en un archivo de especificaciones con formato YAML.
+
+Crear una plantilla EXPOSE
+
+En este caso, expose depende de un despliegue, entonces, necesitaremos tener un despliege debidamente creado antes y sobre este ejecutaremos el comando para obtener la plantilla necesaria
+
+	$ kubectl expose deploy/test-port --port 80 --dry-run -o yaml.
+
+Nota: podemos ir paso a paso hasta que formemos una plantilla genérica para varios recursos dependientes y lanzarlo de una sola vez las próximas veces.
+
+Crear una plantilla para un Job.
+
+Los jobs son uno o mas pods que se ejecutan una sola vez para cumplir una tarea. Por defecto no son reiniciados al terminar.
+
+	$ kubectl create job testing --image nginx --dry-run -o yaml
+
+
+Retrocompatibilidad
+
+En versiones anteriores a la 1.18, el comando "kubectl run" es "de facto" para inicializar despliegues, pods, etc... pero a partir de la versión 1.18 esto cambio por un número mayor de comandos, cada uno dedicados a uno o varios recursos. A continuación varios ejemplos:
+
+	$ kubectl run test --image nginx --dry-run=client -o yaml
+	$ kubectl run test --image nginx --port 80 --expose
+	--dry-run -o yaml
+	$ kubectl run test --image nginx --restart OnFailure --dry-run=server -o yaml
+	$ kubectl run test --image nginx --restar Never --dry-run -o yaml
+	$ kubectl run test --image nginx --schedule "*/1 * * * *" --dry-run -o yaml
+
+Tip: es recomendable usar "--dry-run=server" frente a "--dry-run=client" ya que nos muestra los cambios que se han producido o mejor dicho, que produciría en el servidor de aplicar la nueva configuración. Si nos mostrase que se han producido cambios (ahora vemos un ejemplo) podríamos usar el comando diff para comprobar los cambios que se han realizado en el archivo spec.
+
+1. Lanzamos un despliegue a partir de un spec.yml que contiene un servicio para exponer puerto (NodePort) y un deployment de nginx con 3 réplicas.
+
+$ kubectl apply -f nginx-file.yml 
+service/app-nginx-service created
+deployment.apps/app-nginx-deployment created
+
+2. Ahora vamos a realizar un simple cambio en el archivo nginx-file.yml para modificar el número de réplicas (escalamos a 5) y antes de lanzarlo vamos a asegurarnos de que produciríamos cambios en el cluster:
+
+$ kubectl apply -f nginx-file.yml --dry-run=server
+service/app-nginx-service unchanged (server dry run)
+deployment.apps/app-nginx-deployment configured (server dry run)
+
+Podéis ver como en la parte de "deployment" nos marca un "configured", es posible que no nos acordemos de que cambios hicimos.
+
+3. Vamos ahora a verificar que cambios se produjeron en el archivo:
+
+	$ kubectl diff -f nginx-file.yml
+
+	-  generation: 1
+	+  generation: 2
+
+	-    time: "2020-08-04T10:08:01Z"
+	+    time: "2020-08-04T10:17:47Z"
+
+	-  replicas: 3
+	+  replicas: 5
+
+	Nota: obviamente la salida ha sido reducida a exclusivamente los cambios que han cambiado.
+
+
+Si además nos ha devuelto la salida de que ha habido cambios, quiere decir que nuestro yaml ha cambiado, podemos hacer uso del comando "diff" para comprobar que cambios se han producido en el archivo.
+
+Tres enfoques diferente para administrar kubernetes. Aunque realmente se divide en dos grandes grupos; lenguaje imperativo y lenguaje declarativo, la documentación de kubernetes subdivide a su vez el lenguaje imperativo en dos grupos.
+
+	* Comandos imperativos: run, expose, scale, edit, create deployment, etc... Estos comandos son un buen camino para el aprendizaje, el despliegue rápido en desarrollo o incluso para pequeños proyectos.
+
+	* Objetos imperativos: aunque se trata igualmente de comandos imperativos digamos que están entre los dos caminos, el declarativo e imperativo ya que el propio comando utiliza un archivo yaml para ejecutar sus ordenes. Para declararlo se utiliza la sintaxis "create|delete|replace|edit -f file.yml". Este camino puede ser bueno para pequeños proyectos en producción, versionado de archivo para cada comando (delete, replace...), etc... Con "replace" podremos actualizar de una forma rápida y sencilla nuestro proyecto.
+
+	* Objetos declarativos: este lenguaje es puramente declarativo y hace uso de archivos yaml también pero mucho mas ambiciosos. Basicamente se usa el comando apply y diff para aplicar configuraciones y diff para mostrar diferencias entre un despliegue y otro posible. Es el mejor camino para automatizar nuestra infraestructura en producción incluso con proyectos ambiciosos. Es el que tiene la curva de aprendizaje mas elevada pero al final es el camino elegido por sysadmins o devops para gobernar los despliegues de proyectos.
+
+
+Declarativo vs emperativo
+
+Como ya hemos comentado el lenguaje declarativo se usa cuando queremos automatizar despliegues, aplicar configuraciones que tenemos ya controladas, cuando no nos importa el estado de lo que está ya en ejecución si no el estado que queremos alcanzar, o cuando queremos aplicar un conjunto de spec files (un directorio completo). En cambio utilizaremos un lenguaje imperativo cuando estemos trabajando mayormente en desarrollo y testing, o queramos desplegar algo en función del estado actual de lo ya ejecutado, o si queremos desplegar recursos de una forma rápida.
+
+No obstante el lenguaje imperativo también puede ser usado para pequeñas infraestructuras en producción ya que pueden orquestarse con archivos spec básicos integrando en algun repositoro de código como github. En este caso hablamos de la segunda de las formas (objetos imperativos) que la documentación de kubernetes nos facilita.
+
+
+Labels
+
+Durante la guía rápida ya hemos hecho mención al etiquetado y a su importancia.
+
+Para que un servicio controle/abarque todos los contenedores desplegado por los pods creados en la plantilla es necesario etiquetar las replicas/pods a desplegar y a su vez decirle al servicio que etiqueta va abarcar mediante la clave "selector".
+
+Recuerda: muchos recursos usan "Label Selectors" para linkar recursos dependientes, por ejemplo pods que necesitan un direccionamiento o exponer los puertos de los contenedores desplegados en su interior al nodo en el que están desplegado (los pods).
+
+Un ejemplo de lo anterior sería el siguiente archivo:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-nginx-service
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+  selector:
+    app: app-nginx # Aquí estamos indicando que este servicio va a linkar con todos los pods agrupados por esta etiqueta, y que a su vez estarán misma mente etiquetados (lo vemos mas abajo)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels: # Con esta clave estamos definiendo en el servicio Deployment un grupo de pods que estén etiquetados bajo la etiqueta "app-nginx". Este grupo será el que linkará el servicio NodePort de mas arriba.
+      app: app-nginx
+  template:
+    metadata:
+      labels: # y por último, bajo "template" definimos que todos los pods aquí creados, estarán etiquetado como "app-nginx". Estos aún no forman ningún grupo, si no que son agrupados por la definición de matchLabers->app.
+        app: app-nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.17.3
+        ports:
+        - containerPort: 80
+
+En el ejemplo anterior, las 3 replicas de nginx van etiquetadas con "app-nginx". Se ha especificado además que se agrupe bajo esa misma etiqueta "app-nginx" a todo recurso etiquetado con ese valor. Y para terminar y enlazar ambos servicios, se ha utilizado la clave "selector" del servicio NodePort para indicar que selección y "abarque" todo recurso con dicha etiqueta.
+
+Las etiquetas bajo la sección "metadata", además de ser muy útiles para poder enlazar servicios, por ejemplo como en el ejemplo anterior, para hacer posible la exposición de puertos al exterior de contenedores de un cluster, ayudan a filtrar salidas o incluso seleccionar recursos para modificarles su configuración. En definitiva, sirven para posteriormente poder seleccionar, agrupar o filtrar por nombres o incluso expresiones regulares.
+
+Algunos ejemplos:
+
+1. Mostrar todos los pods del clúster etiquetados como proxy
+
+	$ kubectl get pods -l app=proxy
+
+	Nota: podríamos haber separado varios valores por ','.
+
+2. Aplicar cambios a algunas partes de un yaml-file.
+
+	$ kubectl apply -f deployment-file.yml -l app=nginx
+
+
+
+
+
+* Leer después sobre los daemonSet y deployments
+
+	https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+
+
+	Un deployment controller crea un replicaSet controller y a su vez este crea los pods.
+
+
+
+
+copiar foto movil kubertenes replicaset
+
+
+	<foto>
+
+podemos administrar cada uno de los objetos de un deployment de forma individual (container, pod, replicaset, deployment) pero sin duda lo mas cómodo es utilizar siempre una capa superior que englobe a varios objetos, en este caso "deployment" o "replicaset"
+
+
+
+
+
+* Leer y hacer una plantilla tipo para difenetes objetos, comprender las secciones de cada spec file.
+
+
+
+
+Sintaxis declarativa
+
+Bueno a lo largo de la guía rápida ya hemos ejecutado diferentes comandos imperativos y aunque obviamente se quedan muchos atrás, tenemos una buena idea de como estructurar los comandos.
+
+A continuación, veremos en mas detalle la sintaxis declarativa, es decir, la construcción de archivos spec utilizando el lenguaje YAML.
+
+Antes de empezar vamos a recordar que para entornos de producción y automatismos, es decir para metodología DevOps, el mejor enfoque es mediante objetos declarativos que instanciaremos tal que así:
+
+	$ kubectl apply -f file.yml
+
+Nota: el comando apply de kubectl se utiliza cuando no necesitamos saber el estado del cluster pero si el estado en el que queremos que quede, por ejemplo para crear o actualizar infraestructuras desde un archivo, un directorio completo de yaml o desde una URLs. Podríamos decir que es una convinación del comando replace y edit del prodcedimiento por objetos imperativos visto anteriormente.
+
+* Los archivos de configuración de kubernetes pueden estar en YAML o JSON
+* Los archivos contienen uno o mas manifests
+* Cada manifes describen un objeto API (deployment, job, secret)
+* Cada manifest necesita cuatro partes
+
+	apiVersion: # usa kubectl api-versions para ver las diferentes versiones de cada grupo de "tipos" de recursos
+	kind: # usa kubectl api-resources para obtener un listado
+	metadata: # solo el campo "name" es requerido
+	spec: # los campos cambiarán en función del recurso a definir.
+
+Nota: cuando vamos a usar un tipo de recurso, debemos de ver su versión, para ello primero con el comando api-resources veremos el campo KIND y el campo APIGROUP y luego con el comando api-versions, buscaremos el APIGROUP al que pertenece nuestro tipo de objeto y seleccionaremos la versión mas reciente.
+
+Un archivo simple de despliege de un contenedor/pod:
+
+	apiVersion: v1
+	kind: Pod
+	metadata:
+		name: nginx-pod
+	spec:
+		containers:
+		- name: nginx
+			image: nginx:1.17.3
+			ports:
+			- containerPort: 80
+
+Un ejemplo de un archivo que define un objeto "deployment" con dos replicas:
+
+	apiVersion:apps/v1 # es dependiente del "kind" utilizado. En este caso se refiere a la v1 dentro del APIGROUP "apps". Es posible encontrar el mismo tipo de recurso en diferentes grupos. Esto se debe a que la API está dividida en grupos de recursos que pueden ser creados, eliminados, etc...
+	kind: Deployment
+	metadata:
+		name: nginx-deployment
+	spec:
+		selector:
+			matchLabels:
+				app: nginx
+		replicas: 2
+		template:
+			metadata:
+				labels:
+					app: nginx
+			spec:
+				containers:
+				- name: nginx
+					image: nginx:1.17.3
+					ports:
+					- containerPort: 80 
+
+Cada uno de los archivos anteriores definen un solo manifest cada uno de ellos. Podríamos unir dos archivos por ejemplo uno que define un objeto del tipo "service" para crear un NodePort y exponer los puertos del siguiente objeto o manifest que defina un replicaset de dos contenedores. En este caso los dos manifest dentro del mismo archivo irían separado por tres caractéres "---"
+
+Al igual que las páginas man de Linux, podemos encontrar toda la información sobre los recursos en la documentación de "kubectl". A continuación vamos a ver un ejemplo de como localizar está información.
+
+1. Vamos a suponer que no sabemos el nombre exacto de nuestro recurso, por ello, vamos a desplegar todos los recursos:
+
+	$ kubectl api-resources
+
+Nos fijamos en la columna KIND y ese será el nombre exacto del recurso que estábamos buscando (case senstive). Vamos a suponer que es "Service"
+
+2. Ahora vamos a localizar una breve información sobre el tipo de recurso "Service"
+
+	$ kubectl explain Service
+
+	Con esto vamos a tener todos los campos que definen este manifest.
+
+3. Podemos incluso centrarnos en uno de ellos (campos) y ver su descripción y uso:
+
+	$ kubectl explain Service.metadata
+
+	Incluso seguir recursivamente, ahora sobre el objeto metadata:
+
+	$ kubectl explain Service.metadata.namespace
+
+4. Si queremos ver lo que podría ser un spec file completo de nuestro manifest/recurso a definir, es decir la estructura YAML (siguiendo con el ejemplo de service pero recuerda que podemos hacerlo sobre cualquiera de los recursos que nos devolvió el comando api-resources):
+
+	$ kubectl explain Services --recursive
+
+	  apiVersion	<string>
+	  kind	<string>
+	  metadata	<Object>
+	     annotations	<map[string]string>
+	     clusterName	<string>
+	     creationTimestamp	<string>
+	     deletionGracePeriodSeconds	<integer>
+	     deletionTimestamp	<string>
+	     finalizers	<[]string>
+	     generateName	<string>
+	     generation	<integer>
+	     labels	<map[string]string>
+	     managedFields	<[]Object>
+	        apiVersion	<string>
+	        fieldsType	<string>
+	        fieldsV1
+	   ...
+
+Tip: otra forma de realizar búsqqueda pudiera ser el invertir el orden que acabamos de definir, es decir, partimos de la plantilla de nuestro manifest mostrada por el comando "kubectl explain services --recursive" y buscar información sobre un campo concreto, por ejemplo de "metadata -> manageFields -> fieldsType":
+
+	$ kubectl explain Service.metadata.managedFields.fieldsType
+	KIND:     Service
+	VERSION:  v1
+
+	FIELD:    fieldsType <string>
+
+	DESCRIPTION:
+	     FieldsType is the discriminator for the different fields format and
+	     version. There is currently only one possible value: "FieldsV1"
+
+No obstante, podemos leer la documentación oficial a través del webbrowser:
+
+	https://kubernetes.io/docs/reference/#api-reference
+
+Sin duda, buscar por la consola es mucho mas práctico que la API-REFERECE pero es recomendable mirar la documentación de la API ya que hace diferencia entre diferentes versiones algo que la línea de comandos no (esta solo mira la docu correspondiente a la versión instalada).
+
+
+Storage
+
+Volumes in K8s
+
+Podemos diferenciar dos tipos de volúmenes por su forma de creación y por su forma de conectarse a.
+
+Por un lado los Volumenes (Volumes), los cuales dependen del ciclo de vida del pod y además es compartido por todos los contenedores del pod.
+
+Volúmenes persistentes (PersistenVolumes): son creados a nivel de clúster, con configuraciones independientes y al que multiples pods pueden tener acceso.
+
+Cabe mencionar el estándar CSI (Container Storage Interface) el cual expone una API que mediante esta y la instalación de plugins, podremos conectar nuestros nodos con almacenamiento de terceros. Esto lo hace realmente flexible. Antes de la CSI, los fabricantes desarrollaban sus módulos directamente para el core de Kubernetes, de hecho a finales de 2020, se sigue recomendado esta forma de conexión con almacenamiento de terceros. No obstante, el futuro de la interconexión de almacenamiento-kubernetes es a través del estándar CSI.
+
+
+Ingress
+
+En kubernetes la capacidad de tener varios sites expuestos en el mismo puerto en la capa 7 del modelo OSI, recibe el nombre de Ingress.
+
+Ninguno de los servicios de Kubernetes trabaja en esta capa, entonces... como es posible enrutar conexiones basadas en hostname o URL?. Para cubrir esto, se desarrolló Ingress Controller, un servicio opcional que no viene instalado por defecto con Kubernetes pero que nos permitirá tener múltiples contenedores con diferentes sites publicados por el mismo puerto (normalmente 80 y 443). Ingress Controller tiene la capacidad de integrarse con un Porxy de terceros y hacer que kubernetes trabaje bien con esta funcionalidad. Existen diferentes Porxy de terceros que se pueden integrar facilmente con Kubernetes:
+	- Nginx
+	- HAProxy
+	- F5
+	- Traefik
+	- Envoy
+	- Istio
+
+
+
+
+* como usar RBCA, usuarios en kubernetes etc...
+
+* diferencias entre kubelet, kubeadm y kubecl a la hora de administrar un cluster
+
+* despliegues con helm
+
+* knative
+
+* k3os, simple kubernetes OS para raspebery arm, etc.. iot
+
+
+Tips seguridad
+
+Seguir el link de kubedex: kubedex.com/follow-up-scanning-comparison
+
+
+
+code repo and image scanner
+
+snyk (git code) y Trivy (docker hub images) y software packages
+
+aqua microscanner, scan for cve's en las imagenes
+
+Rcordar que la lista de top10 de seguridad de Fisher es para servidores en produccion
+
+
+Namespaces
+
+Es la primera capa con la que se aislan a los procesos que corren dentro de un contenetor, de hecho, los procesos que corren dentro de un contenedor no podran ni afectar ni verse afectado por los procesos que corren dentro de otro contenedor. Con respecto al networking pasa algo parecido y es que un contenedor no tiene privilegios de acceso a los sockets o interfaces de otro contenedor (esto no quiere decir que un contenedor no pueda interactuar a nivel de capa de red con otro contenedor e incluso con servicios externos).
+
+Kernel Linux capabilities
+
+Bueno no vamos a hablar extensamente de las capabilities del kernel de Linux asi que para entrar en la cuestión que nos atañe decir a grandes rasgos que las capabilities del kernel de Linux son aquellas que permiten realizar ciertas acciones críticas dentro del sistema y para las cuales solo el usuario root tiene los privilegios. Por poner algunos ejemplos prácticos y comunes, ciertas acciones para las cuales un usuario estándar no tiene privilegios mediante las capabilities del kernel podrían ser:
+	* Networking: Abrir un puerto por debajo del 1024, administrar la interfaz de red, habilitar el modo promiscuo, etc...
+	* Administración del hardware der servidor como por ejemplo administrar el servicio udevd el cual controla los dispositivos y firmware, montaje y desmontaje de unidades, etc...
+
+Nota: existen muchas mas, si tienes interés puedes echar un vistazo a la documentación oficial (https://man7.org/linux/man-pages/man7/capabilities.7.html)
+
+Aspectos importantes a favor de la seguridad en Docker es que aunque este sea iniciado con usuario root en realidad no necesita muchas de las funcionalidades que pudiera hacer a un sistema vulnerable por ejemplo, iniciar servicios como SSH en cual es iniciado y administrado por el propio servidor donde se inicia Docker, la administración del networking se realiza de forma externa a los contenedores por lo que en realidad los contenedores no tienen porque ejecutar comandos y acciones relacionadas con el networking o la administración de logs, normalmente administrado por el demonio Docker o incluso por aplicaciones de terceros. Con respecto al hardware, los contenedores no tienen porque entrar en la administración de dispositivos físicos. Es por todo esto y mas por lo que Docker "capa" ciertas capabilities del kernel para evitar "agujeros" de seguridad a consecuencias de iniciar Docker en un sistema.
+
+Aún así y por la propia naturaleza del demonio Docker, y aunque configurables, el set de capabilities por defecto da algunos privilegios sobre el sistema anfitrión para realizar ciertas acciones que pueden exponer algún riesgos al sistema  en el que se ejecuta.
+
+No obstante y aunque aún está en versión experimental (Agosto 2020) existe la posibilidad de iniciar el demonio Docker con un usuario estándar (Rootless mode) y esto es gracias al número reducido de capabilities del kernel que necesitan los contenedores de Docker.

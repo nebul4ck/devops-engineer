@@ -1,0 +1,100 @@
+docker para todos 2
+
+* conectar con un segundo daemon:
+
+docker context ls
+
+(solo aparece el local)
+
+Si queremos ejecutar comandos en otro daemon sin conectar por ssh a ese daemon:
+
+$ DOCKER_HOST="tcp://ip:2375"
+
+En este caso tendremos la API abierta por TCP (menos seguro)
+
+Para conectar teniendolo configurado en local (el daemon externo)
+
+usamos docker context
+
+$ docker context create --docker "host=tcp://ip:2375" pwd
+$ docker contetext ls
+
+podemos hacer un switch de context para usar el nuevo daemon:
+
+$ docker context use pwd
+
+
+podemos configurar conexiones por ssl o hacer un skip de certificados auto-creados
+
+Es posible configurar el archivo de configuración que se ha generado, por si quisieramos modificar directamente algunos parámetros de la conexion del daemon:
+
+$ cd ~/.docker/contexts/meta/{id}
+$ vi meta.json
+
+* A partir de la versión 18, podemos conectar con un daemon remoto mediante SSH.
+
+$ docker context create ssh --docker "host=ssh://myremotehost"
+
+Para utilizar "hostaname" en vez de una cadena de conexión propia de ssh (ssh -l usuario host --parametros) deberíamos de crear una configuración ssh en nuestro archivo de configuración ssh local.
+
+Aquí un ejemplo en el que se accede por ssh a "miremotehost" evitando el fingerprint del hostname remoto, y utilizando un certificado .pem en vez de password.
+
+$ cat ~/.ssh/config
+
+Host myremotehost
+  StrickHostKeyCheking no
+  Hostname 3.210.133.101
+  User ubuntu
+  IdentityFile ~/.ssh/myremotehost.pem
+
+
+* Otra característica de la versión 19 es docker app. Es una opción para compartir aplicaciones de forma mas facil, a traves de paquetes tar en git.
+
+Docker app se instala como un plugin en docker 19.83 y en esta versión aún hay que configurar ~/.docker/config.json para que docker trabaje en experimental:
+
+cd; vi .docker/config.json
+{
+	"experimental": "enabled"
+}
+
+$ 
+
+Docker client plugins Manager : lukaszlach/clip
+
+* Mirar también docker buildx
+
+
+* Mirar también docker cluster
+
+Preguntas frecuentes:
+
+1. Sobre la seguridad en las imágenes Alpile
+
+Es muy segura debida a la cantidad de archivos, binarios, programas, que han sido eliminados. Uno de los lemas es menos paching, mas seguro.
+
+No obstante, es recomendable ir a producción con imágenes basadas en aquellos sistemas operativos qu acostumbremos usar (Debian, Ubuntu, RHEL, CentOS) debido a que Alpine cambia aspectos importantes como el propio gestor de paquetes, ubicación de archivos y binarios, etc... por lo que al final, si no estás acostumbrado a Alpine, tendrás que realizar un gran esfuerzo al principio, e incluso acostumbrarte a este OS, si quieres ir a producción con los menos problemas posibles. EN la mayoría de los casos, este esfuerzo te hará ahorar algunos MB en tu disco, algo que no es especialmente significativo hoy en día.
+
+Un inconveniente de usar Alpine y tal y como se define en (https://kubedex.com/follow-up-scanning-comparison) es el problema que tienen los escaneadores de vulnerabilidades. Alpine, al modificar rutas de archivos o incluso los distributions back-port patches los escaneadores no encuentren vulnerabilidades en sus paquetes.
+
+2. Apache:
+
+Es buena práctica crear un contenedor con Apache + site de forma asislada a ejecutar un contenedor con Apache + multisite. Esto principalmente es por escalabilidad de un site concreto, la actualización del web site (no tener que tirar todos e iniciar todos)... si tuvieramos cientos de sites, igual conviene agruparlos de forma coherente por contenedores, para optimizar recursos en el servidor.
+
+3. Bases de datos en VM's continers o bare metal.
+
+
+
+
+
+
+
+
+
+
+shopt -s nullglob
+
+if [ "${1:0:1}" = '-' ]; then
+
+	set -- mysqld "$@"
+
+
