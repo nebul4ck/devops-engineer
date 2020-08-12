@@ -80,18 +80,81 @@ Un inconveniente de usar Alpine y tal y como se define en (https://kubedex.com/f
 
 Es buena práctica crear un contenedor con Apache + site de forma asislada a ejecutar un contenedor con Apache + multisite. Esto principalmente es por escalabilidad de un site concreto, la actualización del web site (no tener que tirar todos e iniciar todos)... si tuvieramos cientos de sites, igual conviene agruparlos de forma coherente por contenedores, para optimizar recursos en el servidor.
 
-3. Bases de datos en VM's continers o bare metal.
+3. Bases de datos en VM's continers o bare
+
+
+4. Compose vs swarm en un solo servidor: la recomendación es usar siempre swarm en producción aunque solo sea un host debido a que haremos uso de las ventajas de swarm por ejemplo para hacer un rolling upgrade, o actualizaciones, etc... no tendremos downtime, ni tener que re-hacer todo el trabajo. Además siempre estaremos preparados para escalar.
+
+
+5. Docker environment configuration
+
+	The twelve-Factor APP (12factor.net/config)
+
+	-> Factores a tener en cuenta al desplegar infraestructuras microservicios.
+
+6. ENTRYPOINT vs CMD
+
+El ENTRYPOINT por defecto (si no se ejecuta el comando ENTRYPOINT dentro del Dockerfile, el cual referencia a un ShellScript) es "/bin/sh -c" es decir se prepara para ejecutar un comando a partir de sh, que comando? pues el que hayamos marcado para ejecutar en la entrada CMD del Dockerfile.
+
+Existen varias formas de anular, sobreescribir o utilizar estas dos entradas de Dockerfile
+
+1. No usamos entrypoint pero si un CMD dentro del Dockerfile
+
+* CMD: ["/bin/echo","Hello World!"]
+
+Resultado al inicializar el contenedor:
+	El último comando en ejecutarse tras instanciar el contenedor será:
+
+		$ /bin/sh -c "echo Hello World!"
+
+2. Sobreescribimos el CMD:
+
+	$ docker container run --rm image /bin/ls
+	bin
+	boot
+	dev
+	etc
+	home
+	...
+
+3. Utilizar las entradas ENTRYPOINT y CMD en Dockerfile
+
+	FROM ubuntu:16.04
+	ENTRYPOINT ["/bin/echo"]
+	CMD ["Hello World!"]
+
+El resultado será el mismo que el del punto 1.
+
+4. Sobreescribir el CMD. Este caso es diferente al punto 2 debido a que en el punto 2 no usábamos ningún ENTRYPOINT por lo tanto se ejecutaba el comando 'ls' a través de /bin/sh -c. Ahora el ENTRYPOINT es un /bin/echo y por ello el valor con el que vamos a sustituir al CMD del paso 3, será un argumento para echo.
+
+	$ docker container run --rm image "Esto difiere del punt 2."
+	Esto difiere del punt 2.
+
+5. Por último, veremos como sustituir en tiempo de ejecución tanto en ENTRYPOINT como el CMD del Dockerfile. Suponiendo que continuamos con la imagen cosntruida a partir del paso 3. Vamos a modificar el ENTRYPOINT por "/bin/cat" y el CMD por "/etc/release" con lo cual, al instanciar el contenedor, nos imprimirá la versión del OS.
+
+	$ docker container run --rm --entrypoint="/bin/cat" test /etc/lsb-release
+	DISTRIB_ID=Ubuntu
+	DISTRIB_RELEASE=16.04
+	DISTRIB_CODENAME=xenial
+	DISTRIB_DESCRIPTION="Ubuntu 16.04.6 LTS"
+
+Ahora que ya hemos visto las sintaxis del comando ENTRYPOINT y CMD dentro de y fuera de un Dockerfile, decir que estábamos utilizando una de las dos formas en las que estos comandos pueden ser instanciados, en este caso usábamos la "exec form" (["valor1","valor2",...]). La otra forma es la utilizada por el comando RUN del Dockerfile y que también es posible para los dos comandos anteriores y es la "shell form" (<instrucción> <comando>). Veamos un ejemplo:
+
+  	FROM ubuntu:16.04
+  	RUN apt update && \
+  	  apt install wget -y
+  	ENV msg "Hello World!"
+  	ENTRYPOINT echo "$msg"
+
+ En este ejemplo hemos añadido la definición de una variable y un ENTRYPOINT. Todos los comandos definidos en este Dockerfile están en "Shell form".
+
+ Para terminar, entonces podemos decir que lo definido en el comando ENTRYPOINT se ejecuta siempre antes de lo definido en CMD y que en la mayoría de las veces, se usa CMD para pasar parámetros a un comando que se ejecutará desde dentro de un Shell Script. Este Shell script será ejecutado a su vez por ENTRYPOINT. Un ejemplo es cuando ENTRYPOINT define un shellscript de configuración de un servicio, por ejemplo nginx o mysql y en su último comando, define un comando para inicializar el servicio en si, en CMD podremos entonces ver algunos parámetros que se le pasarán a este servicio.
 
 
 
 
 
-
-
-
-
-
-shopt -s nullglob
+fshopt -s nullglob
 
 if [ "${1:0:1}" = '-' ]; then
 
