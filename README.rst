@@ -124,6 +124,9 @@ environment/
 Main configuration files to customize the following app:
 
 * terminator
+
+.. image:: images/zsh4.png
+
 * vim
 * Visual Studio Code
 * zsh
