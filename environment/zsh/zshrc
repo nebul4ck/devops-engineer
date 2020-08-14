@@ -1,11 +1,21 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
-
-#DEFAULT_USER=$(whoami)
+# Path to your oh-my-zsh installation.
 export DEFAULT_USER=$(whoami)
 
-# Path to your oh-my-zsh installation.
-export ZSH="/home/agonzalez/.oh-my-zsh"
+# If you come from bash you might have to change your $PATH.
+export PATH=$HOME/bin:/home/${DEFAULT_USER}/.local/bin:$PATH
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -16,6 +26,7 @@ export ZSH="/home/agonzalez/.oh-my-zsh"
 #ZSH_THEME="avit"
 ZSH_THEME="powerlevel9k/powerlevel9k"
 
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
@@ -23,7 +34,6 @@ ZSH_THEME="powerlevel9k/powerlevel9k"
 # ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
 
 # Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
 CASE_SENSITIVE="true"
 
 # Uncomment the following line to use hyphen-insensitive completion.
@@ -72,8 +82,17 @@ HIST_STAMPS="dd.mm.yyyy"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # More plugins: https://github.com/robbyrussell/oh-my-zsh/wiki/Plugins
-#	git-extras kubectl pip python vagrant
-plugins=(ansible aws git docker-compose docker pip sudo zsh_reload)
+# git-extras kubectl pip python vagrant
+plugins=(
+  ansible
+  aws
+  git
+  docker-compose
+  docker
+  pip
+  sudo
+  zsh_reload
+)
 
 # Doc
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker-compose
@@ -84,25 +103,6 @@ plugins=(ansible aws git docker-compose docker pip sudo zsh_reload)
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/sudo
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/zsh_reload
 
-source $ZSH/oh-my-zsh.sh
-
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
@@ -110,9 +110,11 @@ source $ZSH/oh-my-zsh.sh
 #
 # Example aliases
 alias zshconfig="vi ~/.zshrc"
+alias startzsh="source ~/.zshrc"
 alias ohmyzshconfig="vi ~/.oh-my-zsh"
 alias viconfig="vi ~/.vimrc"
 
+# Self-cook alias function to kill app by their names
 function killer() {
   # Kill program by name, ie: $ mata chrome
   if [ -z $1 ]; then
@@ -127,13 +129,82 @@ function killer() {
 
 alias mata="killer $1"
 
-# Use function instead for "mata" alias
-#
-#
-# AWS-CLI Customization
-# Use aws command from any directory
-export PATH=$PATH:/home/agonzalez/.local/bin:/usr/local/bin
+# #################################### #
+# Powerlevel9k ZSH Theme Customization #
+# #################################### #
 
-# Use aws command autocomplete 
-#source /home/agonzalez/.local/bin/aws_zsh_completer.sh
+# Set font
+#POWERLEVEL9K_MODE="AWESOME_GLYPHS_LOADED"
+#POWERLEVEL9K_MODE="nerdfont-complete"
+#POWERLEVEL9K_MODE="flat"
+POWERLEVEL9K_MODE="awesome-fontconfig"
+
+# ######################### #
+# Custom Segments Functions #
+# ######################### #
+
+# Custom Wifi segment
+
+zsh_wifi_signal(){
+    local signal=$(nmcli device wifi | awk 'FNR == 2 {print $7}')
+    local color='%F{yellow}'
+    [[ $signal -gt 75 ]] && color='%F{green1}'
+    [[ $signal -gt 50 ]] && [[ $signal -lt 75 ]] && color='%F{yellow1}'
+    [[ $signal -lt 50 ]] && color='%F{red1}'
+    echo "%{$color%}\uF09E $signal%{%f%}"
+}
+
+POWERLEVEL9K_CUSTOM_WIFI_SIGNAL="zsh_wifi_signal"
+
+########################### #
+
+# Prompt #
+
+# disable right or left prompts
+POWERLEVEL9K_DISABLE_RPROMPT=false
+POWERLEVEL9K_DISABLE_LPROMPT=false
+# define segments
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(time context dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status background_jobs custom_wifi_signal ssh)
+# define prompt style
+POWERLEVEL9K_PROMPT_ON_NEWLINE=true
+POWERLEVEL9K_RPROMPT_ON_NEWLINE=false
+POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX=""
+POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX=" ↳ "
+# add new empty lines befor each prompt
+POWERLEVEL9K_PROMPT_ADD_NEWLINE_COUNT=1
+POWERLEVEL9K_PROMPT_ADD_NEWLINE=false
+# show git info in another line
+#POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir newline vcs)
+# context = user@host
+POWERLEVEL9K_ALWAYS_SHOW_CONTEXT=true
+POWERLEVEL9K_ALWAYS_SHOW_USER=true
+POWERLEVEL9K_CONTEXT_TEMPLATE="%n|%m"
+# date segment (date)
+POWERLEVEL9K_DATE_FORMAT=%D{%d.%m.%y}
+
+# Icon customization #
+POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR=$'\uE0B0'
+POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=$'\uE0B2'
+POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=$'\uE0B2'
+POWERLEVEL9K_SSH_ICON="[ssh]"
+
+# Segment color customization #
+POWERLEVEL9K_TIME_FOREGROUND='black'
+POWERLEVEL9K_TIME_BACKGROUND='cornsilk1'
+POWERLEVEL9K_SSH_FOREGROUND='black'
+POWERLEVEL9K_SSH_BACKGROUND='red'
+POWERLEVEL9K_VCS_MODIFIED_BACKGROUND='yellow1'
+POWERLEVEL9K_VCS_UNTRACKED_BACKGROUND='red1'
+POWERLEVEL9K_VCS_CLEAN_BACKGROUND='green1'
+
+# AWS Segment profile definition #
+AWS_DEFAULT_PROFILE=""
+
+# Initializes Oh My Zsh
+export ZSH="/home/${DEFAULT_USER}/.oh-my-zsh"
+source $ZSH/oh-my-zsh.sh
+
+# Use aws command autocomplete
+source /home/$DEFAULT_USER/.local/bin/aws_zsh_completer.sh
 #/usr/local/bin/aws_completer
