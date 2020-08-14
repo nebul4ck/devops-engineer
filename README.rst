@@ -105,7 +105,7 @@ debian_packages/psmen
 
 **note**: psmem let us to see all processes of agonzalez user. You can get all process of concrete service. ($ psmem httpd) 
 
-prog/mongostats
+tools/mongostats
 ---------------
 
 1. Launch a python virtualenv
@@ -116,3 +116,12 @@ prog/mongostats
     $ . bin/activate
     $ python mongostats.py
 ..
+
+environment/
+
+Main configuration files to customize the following app:
+
+* terminator
+* vim
+* zsh
+
