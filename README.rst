@@ -138,6 +138,8 @@ Los iconos que han sido utilizados en el prompt para Github han sido:
 
 .. image:: images/zsh3.png
 
+.. image:: images/zsh5.png
+
 Podemos ver todos los iconos disponibles con:
 
 .. code:: console
