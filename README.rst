@@ -119,6 +119,7 @@ tools/mongostats
 ..
 
 environment/
+============
 
 Main configuration files to customize the following app:
 
