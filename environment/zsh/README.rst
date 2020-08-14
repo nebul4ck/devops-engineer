@@ -64,24 +64,3 @@ Configure ZSH
 
 * https://github.com/Powerlevel9k/powerlevel9k
 * https://github.com/Powerlevel9k/powerlevel9k/wiki/Stylizing-Your-Prompt
-
-.. image:: images/zsh1.png
-.. image:: images/zsh2.png
-
-Los iconos que han sido utilizados en el prompt para Github han sido:
-
-* github  
-* incoming changes 
-* outgoing changes  
-* branch 
-* staged 
-* unstaged 
-* untracked 
-
-Podemos ver todos los iconos disponibles con:
-
-.. code:: console
-
-    $ get_icon_names
-
-.. image:: images/zsh3.png
