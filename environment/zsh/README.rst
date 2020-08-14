@@ -64,3 +64,5 @@ Configure ZSH
 
 * https://github.com/Powerlevel9k/powerlevel9k
 * https://github.com/Powerlevel9k/powerlevel9k/wiki/Stylizing-Your-Prompt
+
+**En el README.rst principal del repositorio hay un par de screenshot con el resultado final del zshrc aquí presente**

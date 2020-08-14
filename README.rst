@@ -132,13 +132,7 @@ Main configuration files to customize the following app:
 
 Los iconos que han sido utilizados en el prompt para Github han sido:
 
-* github  
-* incoming changes 
-* outgoing changes  
-* branch 
-* staged 
-* unstaged 
-* untracked 
+.. image:: images/zsh3.png
 
 Podemos ver todos los iconos disponibles con:
 
@@ -146,5 +140,3 @@ Podemos ver todos los iconos disponibles con:
 
     $ get_icon_names
 ..
-
-.. image:: images/zsh3.png
