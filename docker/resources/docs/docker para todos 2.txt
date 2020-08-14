@@ -150,14 +150,90 @@ Ahora que ya hemos visto las sintaxis del comando ENTRYPOINT y CMD dentro de y f
 
  Para terminar, entonces podemos decir que lo definido en el comando ENTRYPOINT se ejecuta siempre antes de lo definido en CMD y que en la mayoría de las veces, se usa CMD para pasar parámetros a un comando que se ejecutará desde dentro de un Shell Script. Este Shell script será ejecutado a su vez por ENTRYPOINT. Un ejemplo es cuando ENTRYPOINT define un shellscript de configuración de un servicio, por ejemplo nginx o mysql y en su último comando, define un comando para inicializar el servicio en si, en CMD podremos entonces ver algunos parámetros que se le pasarán a este servicio.
 
+6. Estudiar el tema de como usar variables de entornos en Docker y sobretodo como administrar secrets, fuera parte de los métodos de swarm y kubernetes. El entrypoint de mysql oficial tiene algo curioso que no term,ino de descifrar.
+
+7. Dividir muchos vhost de apache en muchos contenedores tiene la particularidad de que es muy fácil manejar de forma independiente las applicaciones, rolling update, escalado, etc... pero la deventaja de que estamos gastando muchos mas recursos al tener tantos apache en la misma máquina. Igual pasa con contenedores de servidores de aplicaciones como tomcat, jboss, oas, etc... Lo mejor es valorar todo, y separar aquello que sea mas dinámico para dejar mas "estanco" lo menos cambiante o aquello que es mas fácil de migrar en un futuro aunque sea cambiante (por ejemplo, la versión del servidor de aplicaciones puede incrementar a consecuencia de nuevos parches y soluciones pero la applicación es poco pesada y facil de administrar y migrar, esto seguramente iría mejor en servidores dedicados.)
 
 
 
+* mirar let's encrypt, es una página buena para saber que debemos y que no hacer con la generacion de certificados en local.
 
-fshopt -s nullglob
+* mirar stack-proxy-global para temas decertificados en proxy, etc...
 
-if [ "${1:0:1}" = '-' ]; then
 
-	set -- mysqld "$@"
+* Probar lo del entrypoint: escribir un shell con funciones etc... que haga cosas al iniciar el servicio y por ultimo coja el CMD como parámetro de la inicialización del servicio. Podemos probar esto con cosas faciles como sustituir valor de variable dada por el CMD como argumento etc...
+
+ * otra práctica es iniciar un stack de aplicaciones en orden. Para esto Bret menciona que están disponible los comandos de compose como respawn, depend_on, etc... en 12 factor también podemos encontrar algo. Montar un stack y conseguir que se orquestre bein.
+
+
+ * EN los dockerfile hay que tener especial cuidado con los apt get update, ya que poner un solo update al inicio pensando de que actualizara la cache de los paquetes no será cerieto, ya que lo actualizara (los repo) la priemra vez que constuyamos la imagen pero si volvemos a modificar el docker file, incluso incluyendo posteriores apt install de paquetes, ese paso no se olverá a ejecutar porque ya está en la cache de la imagen y esa linea del dockerfile no ha cambiado. El update debe incluirse antes de cualquier RUN apt install que haya en el dockerfile. Recordar puntualizar las versiones de los paquetes al instalar para fijar las verdiones a usar.
+
+ cuando descargamos archivos de internet, solemos usar RUN wget ... && dpkg -i ...  pero en cambnio algo mas limpio es usar el comando ADD ya que a diferencia de COPY, ADD es capaz de descargar un archivo de internet y copiarlo directamente en el sistema-contenedor.
+
+ * Mirar diferencia entre ADD y COPY
+
+ * Cuando vamos a copiar diferentes archivos de configuración de servicios, en vez de usar el comando COPY lo mejor es montar directamente desde un volumen compartido o desde el docker host, el directorio que los contiene, en el directorio donde necesitan estar dentro del contenedor. De esta manera incluso podróamos editarlos desde local y tomarían efecto en el contenedor sin reacer la imagen.
+
+ * Es una buena practica usar el CMD al final del archivo aunque no haga falta, debido a que el CMD de la imagen padre 'FROM' ya lo contiene. Es decir repetiremos el CMD de la imagen padre para el que use nuestras imágenes sepa que comando es el que acaba iniciando nuestro contenedor y no tenga que ir dentro del dockerfile de la iamgen padre dentro de dockerhub. Es por tema de documentación y clarificación principalmente.
+
+ * Mirar extensiones de docker.. ¿docker-php-ext-configure?
+
+ * Interesante el uso del mapping con
+
+ 	RUN { \
+ 				echo parametro1=valor1; \
+ 				echo parametro2: "valor2"; \
+ 				echo parametro3 valor3; \
+ 				...
+ 			} > /arvhico/de/configuracion
+
+ 	Aunque cuidado porque si son límites que cambian de unos entornos a otros es mejor usar ENV.
+
+
+* Mirar los docerfile multistage (varios FROMl)
+
+* HEALTHCHECK en Dockerfile puede hacerte independiente de la forma en la que despliegues.
+
+* En los compose es una buena práctica el crear una red para despliegues de cluster y exponer los puertos en modo host, de esta forma evitamos pasar el tráfico por las redes mesh y overlay y tenemos acceso directo a la NIC.
+
+Además de lo anterior, cuando tenemos una sola instancia de un servicio como base de datos, y queremos tener acceso directo a la NIC sin pasar por la VIP de la network creada para el cluster, podemos usar el modo "endpoint_mode: dnsrr" en el apartado deploy. Con esto conseguiremos mejor eficiencia en el networking.
+
+* Usar limitaciones de recursos para los contenedores cada vez que sea posible.
+
+* Otro parámetro interesante en los cluster para usar en el compose es "placement" > "constraints" para poner renstricciones, por ejemplo que un cierto contenedor, se despliegue en un nodo en concreto, dado su nombre.
+
+master1:
+	deploy:
+		placement:
+			contraints: [ node.hostname == node-1]
+
+Lo anterior igual se puede hacer mejor cuando son muchos nodos, usando etiquetas y o diciendo donde no deben de situarse, o darles preferencias a ciertas etiquetas de donde si queremos que estén por ejemplo teniendo zonas de disponibilidad y haciendo que siempre haya un nodo (el que sea) por zona de disponibilidad. Ademas si en cada zona tenemos dos nodos, uno de data y otro master, podríamos desplegar temporalmente el master en el de data, asi no perdemos servicio mientras se recupera el nodo master y el contenedor volveria a pasar alli.
+
+* Rex Ray que es?? creo que es un driver para almacenamiento compartido en docker.
+
+* En clister, mejor que tner los datos en cada nodo, por ejemplo un master, tiene los datos en su coker-host, otro master en su otro dockerhost, un slave en su dockerhost, etc... igual es mejor tener un alamcenamiento compartido, cada nodo con su espacio en un directorio, uincluso este podŕia estar limitado con limitaciones del contenedor o del sistema con cgroup, y en caso de caer ese nodo y levantarse en otro nodo, volveria a conectar y tendria los mismos datos que antes de caerse.
+
+* Here's some resources for PHP developers.
+
+First, I have my "good defaults" template project here: https://github.com/BretFisher/php-docker-good-defaults
+
+* https://www.bretfisher.com/docker-certified-associate/
+
+* https://success.docker.com/certification
+
+* https://patreon.com/BretFisher
+
+* www.bretfisher.com/newsletter
+
+* https://www.udemy.com/course/docker-mastery/?couponCode=JULY20C1
+
+*  https://www.udemy.com/course/kubernetesmastery/?couponCode=JULY20C4
+
+
+* Una buena web para buenas práccticas Autopilot Pattern Applications
+
+* Tres carácteristicas avanzadas de docker que la gente no usa: oreilly.com -> 3-docker-compose-features-for-improving-team-development-workflow
+
+	una de ellas es muy improtante que es definir ubn bloque de código y luego usarlo a traves de una variable...
 
 
