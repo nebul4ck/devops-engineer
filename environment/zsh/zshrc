@@ -151,7 +151,7 @@ zsh_wifi_signal(){
     [[ $signal -gt 75 ]] && color='%F{green1}'
     [[ $signal -gt 50 ]] && [[ $signal -lt 75 ]] && color='%F{yellow1}'
     [[ $signal -lt 50 ]] && color='%F{red1}'
-    echo "%{$color%}\uF09E $signal%{%f%}"
+    echo -n "%{$color%}\uF09E $signal%{%f%}"
 }
 
 POWERLEVEL9K_CUSTOM_WIFI_SIGNAL="zsh_wifi_signal"
