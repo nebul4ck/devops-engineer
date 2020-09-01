@@ -151,7 +151,8 @@ zsh_wifi_signal(){
     [[ $signal -gt 75 ]] && color='%F{green1}'
     [[ $signal -gt 50 ]] && [[ $signal -lt 75 ]] && color='%F{yellow1}'
     [[ $signal -lt 50 ]] && color='%F{red1}'
-    echo -n "%{$color%}\uF09E $signal%{%f%}"
+#    echo -n "%{$color%}\uF09E $signal %{%f%}"
+    echo "%{$color%}\uF09E $signal"
 }
 
 POWERLEVEL9K_CUSTOM_WIFI_SIGNAL="zsh_wifi_signal"
@@ -206,5 +207,5 @@ export ZSH="/home/${DEFAULT_USER}/.oh-my-zsh"
 source $ZSH/oh-my-zsh.sh
 
 # Use aws command autocomplete
-source /home/$DEFAULT_USER/.local/bin/aws_zsh_completer.sh
+#source /home/$DEFAULT_USER/.local/bin/aws_zsh_completer.sh
 #/usr/local/bin/aws_completer
