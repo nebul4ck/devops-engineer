@@ -1,92 +1,94 @@
 docker para todos 2
 
-1. Docker Context: Daemon
+DOCKER DAEMON
 
-* Conectar con un segundo daemon:
+1. Docker Context
+
+	Un docker context contiene todo lo necesario (endpoints y security information) para correr docker ya sea sobre kubernetes, swarm o como nodo único. Para crear contenedores y administrarlos, Docker CLI conecta con docker context y hace uso de los recursos disponibles. Por simplificarlo un poco, digamos que el demonio docker (docker-engine) es quien hace de docker context y docker CLI quien conecta mediante API para instanciar y administrar los contenedores. Podemos usar un docker CLI por ejemplo instalado en un laptop y administrar distintos docker context, cada uno en servidores diferentes o bien con un contexto de docker existente en el mismo laptop.
+
+	Para listar los contextos disponibles:
 
 		$ docker context ls
-		(solo aparece el local)
+		NAME                DESCRIPTION                               DOCKER ENDPOINT              
+		default *           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
 
-	1. Forma antigua (TCP, menos seguro)
 
-	Si queremos ejecutar comandos en otro daemon sin conectar por ssh a ese daemon:
+	1.1 DOCKER_HOSTS
 
-		$ DOCKER_HOST="tcp://ip:2375"
+	La variable DOCKER_HOST es la que define el daemon de docker contra el que ejecutaremos los comandos. Según el valor definido, se utilizará el contexto de forma automática (por defecto). Su valor por defecto en instalaciones Linux es DOCKER_HOST="unix:///var/run/docker.sock"
 
-	En este caso tendremos la API abierta por TCP.
+	Si queremos ejecutar comandos directamente sobre un contexto diferente podemos modificar el valor de la variable:
 
-	Para conectar teniendolo configurado en local (el daemon externo) usamos docker context
+		$ export DOCKER_HOST="tcp://remote_docker_ip_name:2375"
 
-		$ docker context create --docker "host=tcp://ip:2375" pwd
+	Después de la definición, el comando que ejecutemos en local, será ejecutado contra el contexto definido, en este caso será por 2375/TCP. Para que esta conexión tenga éxito, el servidor remoto deberá de tener la API expuesta por dicho puerto. Esta conexión es menos segura que bajo SSH como veremos a continuación.
+
+	En este caso tendremos la API de "remote_docker_ip_name" abierta por TCP.
+
+	Con el ejemplo anterior, sobreescribimos el valor por defecto, por lo que si volvemos a listar los contextos veremos como el contexto "default" ha cambiado su cadena de conexión. Si por cualquier motivo la conexión entre cliente y contexto no es exitosa, el comando docker fallará.
+
+	$ docker context ls
+	NAME                DESCRIPTION                               DOCKER ENDPOINT  
+	default *           Current DOCKER_HOST based configuration   tcp://remote_docker_ip_name:2375
+
+	$ docker container ls
+	error during connect: Get http://remote_docker_ip_name:2375/v1.40/containers/json: dial tcp: lookup remote_docker_ip_name on 127.0.0.53:53: server misbehaving
+
+	
+	1.2 Administrar contextos
+
+	Existe una manera mas limpia de administrar los conxtextos sin sobreescribir el valor por defecto.
+
+	En primer lugar, tendremos que crear el contexto, en este caso y haciendo uso de la posibilidad de conectar con contextos remotos vía SSH (introducido en la versión 19.03 de docker) vamos a crear un contexto SSH:
+
+		$ docker context create ssh_context --description "SSH docker context" --docker "host=ssh://my_ssh_context,skip-tls-verify=true"
 		$ docker contetext ls
+		NAME                DESCRIPTION                               DOCKER ENDPOINT
+		default *           Current DOCKER_HOST based configuration   unix:///var/run/docker.sock
+		ssh_context         SSH docker context                        ssh://my_ssh_context
 
-	Podemos hacer un switch de context para usar el nuevo daemon:
+	Creado el contexto podemos recurrir a su archivo meta.json para modificar valores:
 
-		$ docker context use pwd
+		$ cat ~/.docker/contexts/meta/{id}/meta.json
+		{"Name":"ssh_context","Metadata":{"Description":"SSH docker context"},"Endpoints":{"docker":{"Host":"ssh://my_ssh_context","SkipTLSVerify":true}}}
 
-	Nota: podemos configurar conexiones por ssl o hacer un skip de certificados auto-creados
+	Ahora podemos cambiar de contexto con el siguiente comando:
 
-	Es posible configurar el archivo de configuración que se ha generado, por si quisieramos modificar directamente algunos parámetros de la conexion del daemon:
+		$ docker context use ssh_context
 
-		$ cd ~/.docker/contexts/meta/{id}
-		$ vi meta.json
-
-	2. Forma nueva
-
-	A partir de la versión 18, podemos conectar con un daemon remoto mediante SSH (mas seguro).
-
-		$ docker context create ssh --docker "host=ssh://myremotehost"
-
-	Para utilizar "myremotehost" en vez de una cadena de conexión propia de ssh (ssh -l usuario host --parametros) deberíamos de crear una configuración ssh en nuestro archivo de configuración ssh local.
-
-	Aquí un ejemplo en el que se accede por ssh a "myremotehost" evitando el fingerprint del hostname remoto, y utilizando un certificado .pem en vez de password.
+	Para evitar el fingerprint del host, tener que utilizar usuario@host en el contexto (ahora my_ssh_context) o introducir password cada vez que ejecutemos un comando docker en el host remoto, podemos crear un archivo de configuración SSH y utilizar certificado como método de autenticación:
 
 		$ cat ~/.ssh/config
-		Host myremotehost
+		Host my_ssh_context
 		  StrickHostKeyCheking no
 		  Hostname 3.210.133.101
 		  User ubuntu
-		  IdentityFile ~/.ssh/myremotehost.pem
+		  IdentityFile ~/.ssh/my_ssh_context.pem
 
 
-2. Plugins
-	1. docker app: es una opción para compartir aplicaciones de forma facil a traves de paquetes tar en git. Docker app se instala como un plugin a partir de la version docker 19.03. En esta versión aún hay que configurar "~/.docker/config.json" para que docker trabaje en experimental:
+2. DOCKERFILE
 
-		$ sed -i '2i\    "experimental": "enabled",' ~/.docker/config.json
+	2.1 ENTRYPOINT vs CMD
 
-	2. Docker client plugins Manager : lukaszlach/clip
-	3. Mirar también docker buildx
-	4. Mirar también docker cluster
-
-3. DOCKERFILE
-
-	3.1 ENTRYPOINT vs CMD
-
-		El ENTRYPOINT es el punto de entrada a la aplicación que corre dentro del contenedor, o mas bien la forma en la que está es ejecutada. Por defecto se utiliza el comando "/bin/sh -c" como ENTRYPOINT de la app. Si no definimos un ENTRYPOINT diferente en el archivo Dockerfile, aquel comando que hayamos definido en CMD dentro del Dockerfile será ejecutado por el ENTRYPOINT. Según lo anterior el flujo de ejecución es: "ENTRYPOINT" -> "CMD". Si si hemos modificado el ENTRYPOINT, el CMD pasará a ser un parámetro del comando usado como ENTRYPOINT. 
+		ENTRYPOINT es el punto de entrada a la aplicación que corre dentro del contenedor, o mas bien la forma en la que está es ejecutada. Por defecto se utiliza el comando "/bin/sh -c" como ENTRYPOINT de la app. Si no definimos un ENTRYPOINT diferente en el archivo Dockerfile, aquel comando que hayamos definido en CMD dentro del Dockerfile será ejecutado por el ENTRYPOINT. Según lo anterior el flujo de ejecución es: "ENTRYPOINT" -> "CMD". De haber modificado el ENTRYPOINT, el CMD pasará a ser un parámetro del comando usado como ENTRYPOINT. 
 
 		Imaginemos que hemos definido un CMD en Dockerfile para mostrar la fecha actual una vez el contenedor es instanciado:
 
-		...
-		CMD ["date"]
-		...
-
+			CMD ["date"]
+		
 		Una vez construida la imagen a partir del Dockerfile e instanciado el contenedor, el comando que se iniciará será: "/bin/sh -c date".
 
 		En caso de modificar el ENTRYPOINT a /bin/ls y definir un CMD ["-lst"] el comando final tras instanciar el contenedor será: /bin/ls -lst.
 
 		Normalmente cuando el ENTRYPOINT es modificado, es para ejecutar un shellscript que previamente hemos copiado dentro del contenedor con COPY dentro del Dockerfile
 
-		...
-		COPY entrypoint.sh /
-		ENTRYPOINT entrypoint.sh
-		CMD ["daemon"]
-		...
+			COPY entrypoint.sh /
+			ENTRYPOINT entrypoint.sh
+			CMD ["daemon"]
 
-		En este último caso, una vez instanciado el contenedor, el script "entrypoint.sh" es ejecutado y aceptará como parámetro "daemon". Esto es una práctica muy usada en Dockerfiles que construyen imágenes de bases de datos (vea MySQL en Dockerhub).
+		En este último caso, una vez instanciado el contenedor, el script "entrypoint.sh" es ejecutado y aceptará como parámetro "daemon". Esto de crear un script que realice una serie de tareas previas al iniciar la app, como por ejemplo configurar el entorno para una bbdd, es una práctica muy usada en Dockerfiles que construyen imágenes de bases de datos (vea MySQL en Dockerhub).
 
-		Veamos unos ejemplos para entender mejor la diferencia entre ENTRYPOINT y CMD.
-
-		Existen varias formas de anular, sobreescribir o utilizar estas dos entradas de Dockerfile.
+		Veamos unos ejemplos para entender mejor la diferencia entre ENTRYPOINT y CMD anulando o utilizando ambos comandos según nuesras preferencias.
 
 		1. El caso mas básico es sustituir el ENTRYPOINT por un Shell distinto definido en el CMD del Dokerfile:
 
@@ -98,9 +100,9 @@ docker para todos 2
 
 		En este caso el comando sera finalmente ejecutado al instanciar el contenedor tal que asi: 
 
-			ENTRYPOINT "CMD": /bin/sh -c "/bin/echo Hello World!"
+			ENTRYPOINT + CMD => /bin/sh -c "/bin/echo Hello World!"
 
-		3. Utilizando el ENTRYPOINT por defecto y con un CMD definido como el caso 2, podemos sobreescribir este último lanzando un nuevo comando en tiempo dejecución del contenedor:
+		3. El comando definido en CMD puede ser igualmente sustituido en tiempo de ejecución. Asumiendo que ENTRYPOINT y CMD están tal y como en el ejemplo 2:
 
 			$ docker container run --rm image /bin/ls
 			bin
@@ -110,7 +112,7 @@ docker para todos 2
 			home
 			...
 
-			Nota: ahora /bin/ls es ejecutado por /bin/sh -c, sustituyendo a "echo Hello World!"
+			Nota: ahora /bin/ls es ejecutado por /bin/sh -c, sustituyendo a "/bin/echo Hello World!"
 
 		3. Utilizar las entradas ENTRYPOINT y CMD en Dockerfile
 
@@ -135,9 +137,20 @@ docker para todos 2
 
 		Nota: es una buena practica usar el CMD al final del archivo Dockerfile aunque realmente no haga falta cuando heredamos de una imagen padre (ej FROM ubuntu:18.04) debido a que el CMD de la imagen padre ya lo contiene. De esta forma, aquel que utilice la imagen sabrá que comando es el que acaba iniciando nuestro contenedor y no tenga que ir dentro del Dockerfile de la iamgen padre.
 
-	3.2 Exec form vs Shell form
+	2.2 Exec form vs Shell form
 
-		Ahora que ya hemos visto las sintaxis del comando ENTRYPOINT y CMD dentro y fuera de un Dockerfile, decir que estábamos utilizando en todo momento una de las dos formas posibles en las que estos comandos pueden ser definidos dentro del Dockerfile, en este caso usábamos la "exec form" (["valor1","valor2",...]). La otra forma es la comúnmente utilizada por el comando RUN del Dockerfile y es la "shell form" (<instrucción> <comando>).
+		Exec form
+
+		Exec form es la forma en la que hasta ahora hemos definido los comandos ENTRYPONT y CMD dentro del Dockerfile. Es posible definir de la misma manera otros comandos del Dockerfile como veremos a continuación. La sintaxis "exec form" es la siguiente: INSTRUCCIÓN ["comando", "arg1", "arg2"], donde INSTRUCCIÓN es uno de los comandos del Dockerfile (VOLUME, RUN, COPY...)
+
+			FROM ubuntu:16.04
+			RUN ["apt", "install", "wget", "-y"]
+			ENTRYPOINT ["/bin/echo"]
+			CMD ["Hello World"]
+
+		Shell form
+
+		Shell form es aa otra forma es y la comúnmente utilizada por la instrucción RUN y otras del Dockerfile. Veamos la sintaxis a continuación con un ejemplo.
 
 		Veamos un ejemplo:
 
@@ -153,126 +166,99 @@ docker para todos 2
 		 	ENV (instrucción) msg "Hello World!" (comando)
 		 	ENTRYPOINT (instrucción) echo "$msg" (comando)
 
-	3.3 Caché
+		En realidad se suele utilizar una mezcla de ambas formas según la instrucción utilizada.
 
-		Hay que tener en cuenta una particularidad de Dockerfile con respecto a los comandos utilizados en el. Cuando Dockerfile crea una capa intermedia, realmente no se mira el contenido creado por el comando ejecutado; por ejemplo, "RUN apt update", sino que se mira literalmente el texto, es de aquí de donde se genera el hash. Esto es, si ejecutamos dos veces el dockerfile con "RUN apt update" solo la primera vez será realmente ejecutado el "apt update" y los repositorios se actualizarán, no así la segunda vez que construyamos la imagen. A continuación un ejemplo donde el uso de RUN apt update está mal utilizado:
-
-			RUN apt update
-			RUN apt install package1=0.1.1
-
-		Supongamos ahora que han publicado en los repositorios la versión 0.1.2 de package1. Si modificamos tal que así el Dockerfile
-
-			RUN apt update
-			RUN apt install package1=0.1.2
-
-		El paquete no será actualizado ya que no existe en el repositorio debido a que este no ha sido actualizado porque la línea no ha sido modificada y el hash es coincidente con el almacenado en la cache de docker.
-
-		Para que el hash cambiase y el comando update fuera ejecutado es buena práctica meter todos en un mismo comando RUN:
-
-			RUN apt update && \
-				apt install package1=0.1.2
-
-		Ahora, como hemos modificado la línea de 0.1.1 a 0.1.2 el hash cambiará y el comando completo será ejecutado.
-
-		3.4 Diferencia entre ADD y COPY
-
-	4. COPY vs Storage
-
-		Cuando vamos a copiar diferentes archivos de configuración de servicios, en vez de usar el comando COPY lo mejor es montar directamente desde un volumen compartido o desde el docker host, el directorio que los contiene, en el directorio donde necesitan estar dentro del contenedor. De esta manera incluso podremos editarlos desde local y tomarían efecto en el contenedor sin rehacer la imagen.
-
-	5. Uso de mapping con RUN:
-
- 	RUN { \
- 				echo parametro1=valor1; \
- 				echo parametro2: "valor2"; \
- 				echo parametro3 valor3; \
- 				...
- 			} > /arvhico/de/configuracion
-
- 	Aunque cuidado porque si son límites que cambian de unos entornos a otros es mejor usar ENV.
-
-	6. Dockerfile multistage
-
-		Multi-stages build: crea varias estapas de compilación en un mismo Dockerfile de manera que la imagen final solo contenga los archivos necesarios para inicializar la applicación. Por ejemplo, supongamos una primera stage (FROM + otros comandos) en la que descargamos el source de una app en java y posteriormente la compilamos obteniendo su war file. Luego una segunda capa donde descargamos el código fuente y dependencias de una app en react, acto seguido compilamos y obtenemos el ejecutable. Por ultimo una capa con por ejemplo la JVM y su configuración y una ultima capa donde copiamos desde (COPY --from=<nombre_o_número_capa>) las capas 0 y 1, obteniendo una imagen docker con tan solo los ejecutables y la jvm descargada y configurada en la capa 2.
-
-			<poner un ejemplo>
-
-	7. HEALTHCHECK en Dockerfile puede hacerte independiente de la forma en la que despliegues.
-
-3. Preguntas frecuentes:
-
-	3.1. Sobre la seguridad en las imágenes Alpile
-
-	Es muy segura debida a la cantidad de archivos, binarios, programas, que han sido eliminados. Uno de los lemas es menos paching, mas seguro.
-
-	No obstante, es recomendable ir a producción con imágenes basadas en aquellos sistemas operativos que acostumbramos a usar (Debian, Ubuntu, RHEL, CentOS) debido a que Alpine cambia aspectos importantes como el propio gestor de paquetes, ubicación de archivos y binarios, etc... por lo que al final, si no estás acostumbrado a Alpine, tendrás que realizar un gran esfuerzo al principio, e incluso acostumbrarte a este OS, si quieres ir a producción con los menos problemas posibles. En la mayoría de los casos, este esfuerzo te hará ahorar algunos MB en tu disco, algo que no es especialmente significativo hoy en día.
-
-	Un inconveniente de usar Alpine, y tal y como se define en https://kubedex.com/follow-up-scanning-comparison, es el problema que tienen los escaneadores de vulnerabilidades. Alpine, al modificar rutas de archivos o incluso los distributions back-port patches los escaneadores no encuentren vulnerabilidades en sus paquetes.
-
-	3.2. Apache:
-
-	Es buena práctica crear un contenedor con Apache + site de forma asislada a ejecutar un contenedor con Apache + multi-site. Esto principalmente es por escalabilidad de un site concreto, la actualización del web site (no tener que tirar todos e iniciar todos)... Si tuvieramos cientos de sites, igual conviene agruparlos de forma coherente por contenedores, para optimizar recursos en el servidor.
-
-	Dividir muchos vhost de apache en muchos contenedores tiene la particularidad de que es muy fácil manejar de forma independiente las applicaciones, rolling update, escalado, etc... pero la deventaja de que estamos gastando muchos mas recursos al tener tantos Apache en la misma máquina. Igual pasa con contenedores de servidores de aplicaciones como tomcat, jboss, OAS, etc... Lo mejor es valorar todo, y separar aquello que sea mas dinámico para dejar mas "estanco" lo menos cambiante, o aquello que es mas fácil de migrar en un futuro aunque sea cambiante por ejemplo: la versión del servidor de aplicaciones puede incrementar a consecuencia de nuevos parches y soluciones pero la applicación es poco pesada y facil de administrar y migrar, esto seguramente iría mejor en servidores dedicados.
-
-	3.3 Compose vs swarm en un solo servidor: la recomendación es usar siempre swarm en producción aunque solo sea en un host, de este modo haremos uso de las ventajas de swarm por ejemplo para hacer un rolling upgrade o rollback sin downtime, además siempre estaremos preparados para escalar.
-
-4. Buenas prácticas
-
-	4.1 Docker Compose
-
-		En los compose es una buena práctica el crear una red para despliegues de cluster y exponer los puertos en modo host, de esta forma evitamos pasar el tráfico por las redes mesh y overlay y tenemos acceso directo a la NIC. Además de lo anterior, cuando tenemos una sola instancia de un servicio como base de datos, y queremos tener acceso directo a la NIC sin pasar por la VIP de la network creada para el cluster, podemos usar el modo "endpoint_mode: dnsrr" en el apartado deploy. Con esto conseguiremos mejor eficiencia en el networking.
-
-		Otro parámetro interesante en los cluster para usar en el compose-file es "placement" > "constraints" para poner renstricciones, por ejemplo que un cierto contenedor, se despliegue en un nodo en concreto, dado su nombre.
-
-			master1:
-				deploy:
-					placement:
-						contraints: [ node.hostname == node-1]
-
-		Lo anterior igual se puede hacer mejor cuando son muchos nodos, usando etiquetas y/o diciendo donde no deben de situarse, darles preferencias a ciertas etiquetas de donde si queremos que estén por ejemplo teniendo zonas de disponibilidad y haciendo que siempre haya un nodo (el que sea) por zona de disponibilidad. Ademas si en cada zona tenemos dos nodos, un worker y otro master, podríamos desplegar temporalmente el contenedor del master en el worker, asi no perdemos servicio mientras se recupera el nodo master y el contenedor volveria a pasar alli.
-
-	4.2 Limitar recursos
-
-		Usar limitaciones de recursos para los contenedores cada vez que sea posible.
-
-	4.3 Php: Here's some resources for PHP developers.
-
-		* https://github.com/BretFisher/php-docker-good-defaults
-
-		* https://www.bretfisher.com/docker-certified-associate/
-
-		* https://success.docker.com/certification
-
-		* https://patreon.com/BretFisher
-
-		* www.bretfisher.com/newsletter
-
-		* https://www.udemy.com/course/docker-mastery/?couponCode=JULY20C1
-
-		*  https://www.udemy.com/course/kubernetesmastery/?couponCode=JULY20C4
-
-	4.4 Patterns
-
-		* Web: Autopilot Pattern Applications
-
-	4.5 Características avanzadas
 	
-		* Tres carácteristicas avanzadas de docker que la gente no usa: oreilly.com -> 3-docker-compose-features-for-improving-team-development-workflow
+	2.4 Diferencia entre ADD y COPY
 
-		Nota: una de ellas es muy importante que es la de definir ubn bloque de código y luego usarlo a traves de una variable en el mismo archivo Dockerfile
+		Aunque ambas instrucciones las utilizamos en el Dockerfile para añadir nuevos archivos a un directorio específico de la imagen, en la mayoría de los casos deberíamos de usar la instrucción COPY.
 
-	4.6 Salir a la terminar sin parar el contenedor
+			* COPY nos permite copiar archivos o directorios desde una fuente (docker host local) a un destino (el propio contenedor). 
+			* ADD nos permite hacer exactamente lo mismo solo que además incluye dos tipos de fuentes distintas al docker host local: URL y archivos TAR. Hay que tener en cuenta que son acciones independiente y por lo tanto, primero usaríamos ADD para descargar desde URL y posteriormente descomprimiríamos el paquete con ADD o "RUN tar -xvzgf ..."
 
-		Shortcut Ctrl+PQ cuando estoy dentro de un contenedor para salirme a la terminal sin parar el contenedor.
+		Es precisamente en esta "bondad" de ADD donde cometemos el error de usar ADD y RUN para descargar un archivo y acto seguido descomprimirlo o incluso ADD para descargar un paquete tar y ADD para descomprimirlo. Si tenemos en cuenta el tamaño de la imagen, lo que querremos es utilizar cuantas menos instrucciones mejor y además dejar cuanto menos contenido no útil en el filesystem del contenedor. Teniendo en cuenta lo anterior:
 
-		Si ahora ejecuto "$ docker container attach <contenedor>" vuelvo a acceder al bash que tenía lanzado el contenedor e igualmente podré salir con el shortcut. Si por contra ejecuto " $ docker container exec -it <contenedor> /bin/bash" estaré abriendo un nuevo proceso bash dentro del contenedor que podremos ver desde la terminal del contendor con "ps -ef". Si dentro hacemos exit, matamos ese proceso pero aún tenemos el antiguo proceso bash al que hacer un attach.
+			* Para copiar archivos desde una fuente local a un destino, utilice COPY como única instrucción.
+			* Para descargar archivos desde una fuente, descomprimir su contenido y eliminar los archivos/directorios innecesarios (por ejemplo tras una compilación), utilice una única instrucción RUN con varios comandos Linux conectados por tuberías.
+			* Para descomprimir un archivo TAR local directamente en directorio de la imagen, utilice ADD.
 
-5. Imágenes
 
-	5.1 Dangling Images
+	2.3 Caché
 
-		Dangling images son aquellas que por cualquier motivo no han sido tagueadas o bien han sido des-tagueadas cuando ya existía una anterior con un nombre y tag determinado y hemos compilado una nueva con mismo nombre y tag. En ese momento la mas antigua será destagueada quedando como dangling image. Podemos ver estas imágenes con el siguiente comando:
+		Hay que tener en cuenta una particularidad de Dockerfile con respecto a las instrucciones utilizadas en el. Ya sabemos que cada capa es identificada por un digest y que este es único dentro de la imagen. Si el digest está cacheado, la capa continúa creada y a menos que sufra cambios, no será recompilada y por lo tanto el contenido creado por la instrucción será idéntico sin importar cuantas veces de genere una nueva imagen (siempre y cuando queramos hacer uso de la caché). Veamos esto con un ejemplo que es utilizado continuamente en los Dockerfile.
+
+		Antes de instalar cualquier paquete con la instrucción RUN, es buena práctica en Linux actualizar el repositorio de paquetes. Para actualizar el repositorio se utiliza la instrucción "RUN apt update" y esta nunca cambiará. Al no modificarse la cadena, Docker interpreta que la capa es la misma y solo la primera vez que compilemos la imagen será creada y por lo tanto el repositorio será actualizado. Si a continuación de esta instrucción utilizamos una segunda instrucción para instalar los paquetes, de la misma manera solo la primera vez serán instalados. Supongamos que queremos actualizar a una versión específica uno de los paquetes. La cadena se ve modificada al indicar una nueva versión, pero ¿que pasa con la instrucción "RUN apt update" anterior?, al no ser modificada, se tomará como la misma capa y entonces los repositorios no serán actualizados y seguramente el paquete al no estar en los repositorios, no será instalado. Para solventar esto, es una buena práctica crear una sola capa con la instrucción "RUN" uniendo ambos comandos Linux por medio del operador "&&". Este operador "Y", tiene en cuenta el código de error del comando anterior, de ser distinto de 0, el siguiente comando no es ejecutado.
+
+			Forma errónea
+
+				RUN apt update
+				RUN apt install package1=0.1.1
+
+			Forma correcta
+
+				RUN apt update && \
+					apt install package1=0.1.2
+
+		El caracter '\' se utiliza como separador de línea, ayuda a esclarecer el texto.
+
+
+
+
+
+DOCKER IMAGES
+
+25. Docker images
+
+Firma y verificación de imágenes
+
+Si queremos añadir seguridad e integración a las imágenes con las que trabajamos, tendremos entonces que firmar aquellas imágenes sobre las que vayamos a trabajar, normalmente en proyectos personales u organizaciones de trabajo y forzar al dockerhost a trabajar exclusivamente con imágenes firmadas y verificadas. Docker Content Trust o DCT permite a los desarrolladore, devops y sysadmins firmar sus imágenes para posteriormente subirlas a un registry (ej Dockerhub). Estas imágenes podrán ser entonces verificadas cada vez que realizemos un pull de las mismas.
+
+Lo primero que deberemos de hacer para trabajar con imágenes firmadas o comenzar a firmar imágenes será disponer de un par de claves critográficas:
+
+	$ docker trust key generate nombre_key-pair
+
+Este comando nos pedirá que introduzcamos una passphrase que deberemos de guardar o recordar.
+
+En caso de que ya dispongamos de una clave en nuestro proyecto u organización, podremos importarla a nuestra estación de trabajo:
+
+	$ docker trust key load nombre_key-pair.key --name nombre_key-pair
+
+A continuación deberemos de asociar la clave con el repositorio de imágenes con el que vayamos a trabajar, por ejemplo nebul4ck/apiserver en Docker Hub. Para esta asociación utilizaremos la parte pública de nuestro key-pair:
+
+	$ docker trust signer add --key nebul4ck.pub nombre_key-pair nebul4ck/apiserver
+
+Y por último firmamos una imagen con la que vayamos a empezar a trabajar. Este comando también hara un push de la imagen hacia el repositorio. El comando también nos pedirá el passphrase con el que haya sido encriptada la clave.
+
+	$ docker trust sign nebul4ck/apiserver:0.1.0
+
+Podemos utilizar el comando 'inspect' para saber mas sobre la firma de la imágen:
+
+	$ docker trust inspect nebul4ck/apiserver:0.1.0 --pretty
+
+Para automatizar este proceso de ahora en adelante es posible forzar al dockerhost para que cada vez que realicemos un push o pull la imagen sea firmada y verificada. Podemos hacer esto declarando la siguiente variable de entorno con un valor de '1':
+
+	export DOCKER_CONTENT_TRUST=1
+
+A partir de este momento el dockerhost no podrá descargar imagenes sin firmar (unsigned).
+
+
+8.4 Instrucciones vs imagen layers
+
+	Simplemente comentar como nota a tener en cuenta que no todas las instrucciones del Dockerfile generarán una nueva capa que aumente el tamaño de nuestra imagen final, de hecho las únicas instrucciones que lo harán son ADD, COPY y RUN. Otras instrucciones como ENV, EXPOSE, ENTRYPOINT o WORKDIR solo crean metadatos o capas intermedias que sirven para añadir cierta información necesaria durante la compilación.
+
+	8.5 Squashing images
+
+	Con esta técnica conseguimos meter todo el contenido de una imagen en tan solo una capa. Se consigue utilizando el parámetro '--squash' en tiempo de compilación de la imagen. Tener todo en una capa, puede ser necesario cuando queremos tener una imagen base, para utilizar en el resto de nuestros contenedores. Supongamos entonces que desarrollamos sobre Java y vamos a necesitar la JVM corriendo en nuestros contenedores además de alguna otra librería transversal a nuestras apps. En este caso podríamos tener una imagen base sobre la que comenzar a construir otras imágenes.
+
+	Un aspecto negativo de esta práctica es que no aprovechamos el sistema de caché por capas
+
+8. Imágenes
+
+	8.1 Dangling Images
+
+		Dangling images son aquellas imágenes que por cualquier motivo han quedado "huérfanas" o mejor dicho sin nombrar/taguear. Esto puede pasar por diferentes motivos, por ejemplo porque no hayan sido tagueadas. Otro motivo puede ser que la imagen ya existiera con un tag determinado. Por cualquier motivo hemos modificado el Dockerfile de la imagen y hemos recompilado para crear una nueva imagen a partir del Dockerfile y por un descuido hemos utilizado el tag exacto de la imagen anterior ya existente. En ese momento, la imagen previa quedará como "dangling image" y la nueva asumirá el nombre.
+
+		Podemos ver estas imágenes con el siguiente comando:
 
 			$ docker image ls --filter dangling=true
 
@@ -293,151 +279,197 @@ docker para todos 2
 
 			$ docker image prune.
 
-			Si añadimos '-a' al comando anterior también será eliminadas todas aquellas imágenes que no se estén usando.
+		Si añadimos '-a' al comando anterior también será eliminadas todas aquellas imágenes que no se estén usando.
 
-	5.2 Docker image digest
+	8.2 Docker digest
 
-		docker image digest es bueno para descargar o identificar a las imágenes por su sha256 mejor que por su nombre. Un claro ejemplo donde este comando nos puede ayudar es cuando tenemos una imagen "mywebnginx:1.1" que hemos descargado para mejorar ciertos aspectos de la aplicación. Al compilarla, hemos cometido un error en cuanto al tagging y hemos utilizado exactamente el mismo que tenía pero ahora las imágenes son distintas. La pregunta ahora sería ¿Como detectar en nuestro entorno de testing o producción que imágen estamos testeando o cual esta desplegada en cada nodo?, es aquí donde digest nos puede ayudar a identificar cada imagen.
+		Docker image digest es el hash que adquiere cada una de las capas de una imgen para ser posteriormente identificada por Docker. Docker digest ayuda a identificar las capas de un imágen. Este digestCualquier modificación por pequeña que sea en el contenido de la imagen, haría cambiar el digest.
 
-		Desde docker 1.10 se introduce el concepto de digest en las imágenes. Digest es el sha que identifica al contenido de la imagen. Cualquier modificación por pequeña que sea en el contenido de la imagen, haría cambiar el digest. Tanto las capas de una imagen como la imagen en si, son inmutables ya que cualquier cambio, ya sea en una de las capas o en en el archivo de configuración de la imagen (Dockerfile) modificaría el hash de la capa y/o de la imagen.
+		El hash de un contenido comprimido y el hash del mismo contenido pero descomprimido son diferentes. Cuando ejecutamos un push, el contenido es compromido y subido a Docker registr, por lo tanto el hash difiere del almacenado en la cache local. De la misma manera cuando hacemos pull desde el registry, el contenido es descargado y descomprimido. En realidad la imagen es la misma en Docker registry que en local pero el hash no lo es. Como sabe entonces docker-engine y docker hub (registry) cuando hacemos un pull o pull que el contenido de la imagen es diferente o el mismo si los hash son distintos?. Para que la comprobación que hace Dockerhub o docker-engine entre ambas imágenes (contenido) no de como resultado un falso positivo, es decir, diferente hash, diferente contenido, Docker agrega un hash por capa llamado "distribution hash" el cual es un hash de la versión comprimida y es incluído en cada capa de la imagen ya este descomprimida o comprimida. De esta forma, esté en remoto o en local, el digest de cada capa coincidirá (o no) y entonces al hacer push o pull docker sabrá que está cacheado y que no.
 
-		Hay que tener en cuenta es que no es lo mismo el hash de un contenido comprimido a descomprimido. Cuando ejecutamos un push o pull, el hash de la imagen cambia. Cuando hacemos push, Dockerhub verifica los hash (el de la imagen local descomprimida y el de la imagen remota comprimida). Esto es importante ya que el hash de la imagen local una vez hemos hecho pull es diferente al digest de la imagen una vez hecho push (descomprimida vs comprimida). Para que la comprobación que hace Dockerhub entre ambas imágenes no de como resultado error de hashing (al ser diferentes comprimido que descomprimido) Dockerhub agrega un hash por capa llamado "distribution hash" el cual es un hash de la versión comprimida y es incluído en cada capa de la imagen ya este descomprimida o comprimida. De esta forma, esté en remoto o en local, el digest de cada capa coincidirá y entonces al hacer push o pull docker sabrá que cache mantener o no.
+		En realidad la explicación y la teoría es algo mas compleja por lo que os recomiendo que si estáis interesados, busquéis algo de información extra por la web.
 
-	5.3 Docker manifest
 
-		Otros comandos importantes a utilizar cuando trabajamos con imágenes son:
 
-			$ docker manifest [inspect] <imagen>
 
-			Nos permite ver el manifest list de la imagen con lo que sabremos para que arquitecturas/plataformas está cronstruida la imágen.
 
-		También, y aunque al momento de escribir esto (agosto 2020) está en versión experimental es: 
 
-			$ docker buildx build --platform linux/arm/v7 -t myimage:arm-v7.
+DOCKERFILE
 
-	5.4 No todos los comandos del Dockerfile generan una nueva capa, algunos como por ejemplo ENV, EXPOSE, ENTRYPOINT o WORKDIR solo generan metadatos pero no capas nuevas. Solo ADD, COPY y RUN generan capas nuevas.
+	2.5 Uso de mapping con RUN:
 
-	5.5 Squashing images: funciona exactamente igual que el sistema de compilación de imagen normal solo que se añade un paso extra, el de meter todo dentro de una sola capa. Se utiliza el parámetro --squash en tiempo de construcción de imagen. Una buena situación para usar este tipo de compilación es cuando creamos una imagen base que posteriormente utilizaremos para crear otras imágenes. Por contras, este sitema no aprovecha el sistema de cache por capas, es decir no comparte con otras imágenes de la cache ninguna de sus capas por lo que esto produce una ineficiencia en el sistema de ahorro de espacio en disco así como unos tiempos elevados en las operaciones de push y pull
+		Existen varias formas de configurar servicios dentro del contenedor, por ejemplo desde Docker CLI, utilizando la instrucción ENV en el dockerfile, montando volúmenes o directorios con bind-mount. Otra forma de crear un  archivo de configuración key=value dentro del contenedor es creando mappings con la instrucción RUN:
 
+		 	RUN { \
+		 				echo parametro1=valor1; \
+		 				echo parametro2: "valor2"; \
+		 				echo parametro3 valor3; \
+		 				...
+		 			} > /path/config-file.json
 
+ 	Nota: si la configuración cambia de un entorno a otro, entonces el uso de la instrucción ENV prevalece sobre RUN.
 
+	2.6. Multistage
 
+		Multistage nos permite utilizar múltiples instrucciones FROM dentro del mismo Dockerfile. Multistage apareció en Docker 17.05 para solucionar el tedioso trabajo con "shell tricks"; scripts con los que generábamos una serie de imágenes para ir creando contenido que finalmente iría en una última imagen de la que partiría o bien nuestro contenedor o la base de otras apps. Por poner un ejemplo supongamos un Script que realiza los siguientes pasos:
 
+			1. A partir de un primer Dockerfile, se genera una imagen en la que añadimos fuentes que una vez compiladas obtendremos un binario.
+			2. Se instancia un contenedor a partir de la imagen anterior
+			3. Se accede al contenedor y se extrae únicamente el binario, el resto de archivos de compilación ya no son necesarios
+			4. Ejecutamos la creación de una nueva imagen en la que el binario es copiado dentro del sistema de archivos del nuevo contenedor
+			5. La instanciación de la nueva imagen, da como resultado un contenedor que ejecuta código a partir del binario.
 
+		Multistage permite crear un solo Dockerfile desde el que compilar una primera imagen, obtener el binario, copiarlo a una nueva imagen que contendrá exclusivamente lo necesario. Multistage entonces permite además ahorrar espacio y minimizar el tamaño de las imágenes.
 
+		A continuación un breve ejemplo de un Dockerfile multistage:
 
+		# Stage 1: descargamos fuentes de coredns, compilamos y obtenemos el binario
+		FROM golang:1.14 as core
 
+		RUN git clone https://github.com/coredns/coredns.git /coredns
+		RUN cd /coredns && make
 
+		# Stage 2: creamos desde cero (from scratch) nuestro contenedor que arranca coredns
+		FROM scratch
+		COPY --from=core /coredns/coredns /coredns
 
+		EXPOSE 53 53/udp
+		CMD ["/coredns"]
 
+		Nuestra imagen resultante estará basada en golang por lo que tendremos el runtime idóneo para ejecutar coredns. La instrucción COPY copia el binario (coredns) desde el path destino de la stage 1 (/coredns) al path destino de la stage 2 (/coredns). Es importante nombrar las stages (as core) de lo contrario en la stage 2 deberíamos de haber usado "--from=0" refiriendo a la stage desde la que partimos (la 0).
 
+	2.7. HEALTHCHECK
 
+	Los healthcheck además de poder usarse en los compose-file, también podemos añadirlos a los Dockerfile para comprobar el estado de nuesto contenedor.
+	La sintaxis de la instrucción HEALTHCHECK es la siguiente:
 
+		HEALTHCHECK [OPTIONS] CMD command
 
+	El siguiente ejemplo muestra la forma de comprobar que nuestro servicio web está recibiendo peticiones:
 
-* Políticas de reinicio de contenedores. Podemos definir hasta tres políticas de reinicio de un contenedor (a tiempo de escribir esta guía): always, unless-stopped y on-failed. Estas politicas puedes definirse en tiempo de ejecución del contenedor como parámetro del comando "docker container run --restart always", en el archivo compose.yml o al definir un stack de docker swarm o clúster de kubernetes. La política "always"  reiniciará el contenedor cada vez que el comando ejecutado dentro del contenedor sea detenido por cualquier motivo, ya sea paradado con SIGTERM o SIGKILL. El contenedor no será reiniciado si es el propio contenedor el que se para con el comando 'stop'. En cambio si tenemos parado el contenedor y riniciamos el demonio docker, este contenedor será iniciado. La política 'unless-stopped' actúa igual que 'always' solo que cuando el contenedor es parado con el comando 'stop' y el demonio docker es reiniciado, el contenedor no iniciará. Por último la política 'on-failed' reiniciará el contenedor como lo hace 'always' (incluso cuando el demonio docker es reiniciado) pero exclusivamente cuando el comando de un contenedor para con un código de error distinto a 0.
+		HEALTHCHECK CMD curl --fail http://localhost:8080/ || exit 1
 
-* Una buena practica con respecot al uso de los sistemas de paquetes de las distribuciones es utilizar los parámetros que nos permiten limpiar la cache y no instalar paquetes recomendados por ejemplo 'no-install-recommends' de apt.
+	Las opciones que admite el comando son las siguientes:
 
-* Algunas opciones interesantes para logs en swarm service mode son: --follow (para dejar la traza de registros abierta en la terminal), --tail (para listar las últimas líneas de registros ocurridos) o --details (para aplicar un grado de verbose a la salida por defecto).
+		--interval=DURATION (default: 30s)
+		--timeout=DURATION (default: 30s)
+		--start-period=DURATION (default: 0s)
+		--retries=N (default: 3)
 
-* Hacer backup de un cluster swarm parece algo relativamente raro ya que ofrece HA, replicación, etc... pero imaginemos una eliminación accidental de los secretos del swarm. Una de las cosas interesantes de swarm es que muchas de las tareas mas importantes son desplegadas a través del cluster de forma automática (spreading) por ejemplo cuando creamos un swarm, añadimos un nodo, cremos un servicio, una red, etc... esta información o sus metadatos son almacenados en la base de datos raft de forma que cualquier nodo manager posea esta información por si tuviera que ejercer como leader. Esta acción puede ser una contrapertida para acciones que hemos realizado de forma accidental y malintencionada, por ejemplo si elimnamos todos los secretos de un cluster swarm. Ante esta situación, lo mejor sería contar con un backup de la base de datos de manera que podamos reestablecer aquello que haya dejado de existir por cualquier causa.
+	Y podríamos definirlo tal que así:
 
-La mejor forma de llevar a cabo el backup es ir a un nodo manager que no sea el leader. Parar el demonio docker (esto va a dejar al cluster con el quorum al límite si este tuviese 3 nodos por lo que es una acción arriesgada de hacer en producción y en tiempos de mayor "consumo"). Con el demonio parado, hacer un tar del directorio /var/lib/docker/swarm. Realizar esto según las políticas de backup de la empresa. Inicia de nuevo el nodo.
+		HEALTHCHECK --interval=5m --timeout=3s \
+ 		 CMD curl -f http://localhost/ || exit 1
 
-	$ systemctl stop docker
-	$ tar -cvzf swarm-backup-data.bkp /var/lib/docker/swarm/
+ 	El operador lógico "||" (OR) comprueba el código de salida del comando anterior (curl) y en caso de ser distinto de 0, ejecuta el siguiente comando, en este caso "exit 1". 
 
-Para restaurar el cluster, todos los nodos que forman el cluster deben de estar parados y con el contenido del directorio /var/lib/docker/swarm borrado. Ir a un nodo y descomprimir el tar para reconstuir de nuevo el directorio /var/lib/docker/swarm. Inicializar el resto de nodos. Ahora el leader propagará el contenido del directorio swarm al resto de nodos. Dos particularidades a tener en cuenta a la hora de restaurar un backup tanto la versión de docker como la IP del nodo deben de ser exactamente las mismas que cuando se tomó el "snapshot" (backup) del directorio swarm.
+ 	Los cófigos de salida para el contenedor (definidos por la instrucción HEALTHCHECK) son:
 
-	$ systemctl stop docker (de todos los nodos)
-	$ rm -rf /var/lib/docker/swarm/* (en todos los nodos)
-	$ tar -xvzf swarm-backup-data.bkp -C /  (solo en uno de los nodos manager)
-	$ systemctl start docker (en uno de los nodos manager)
-	$ docker swarm init --force-new-cluster (en ese mismo nodo que acabamos de iniciar)
+ 		0: success - the container is healthy and ready for use
+ 		1: unhealthy - the container is not working correctly
+ 		2: reserved - do not use this exit code
 
-	Recuerda que el clúster anterior ya no existe porque los datos han sido eliminados, deberemos entonces de recrear uno nuevo con el nuevo contenido del directorio swarm.
 
-	Ahora deberíamos de comprobar la red, los secrets, etc.. y ver que todo está OK
 
-	Agregar el resto de nodos al "nuevo" clúster.
 
-* Networking: echarle un ojo al diseño del networking de docker: https://github.com/docker/libnetwork/blob/master/docs/design.md
 
-* Los drivers que se incluyen en docker engine para el netorking son los siguientes:
-	- linux: bridge, overlay and macvlan (transparent en windows).
-	- Windows: nat, overlay, transparent and 12bridge
+DOCKER NETWORK
 
-* Tipos de redes en docker linux:
-	- single-host bridge network: solo pueden conectarse contenedores existentes en un mismo docker host y es una implementación del protocolo 802.1d bridge de la capa 2 switch y se crea usando el river bridge en linux o nat en windows, -d bridge. En windows se implementa de forma nativa la red nat, que a efectos prácticos funcionan igual. Esta es la red donde por defecto serán creados los contenedores a menos que se especifique el parámetro --network.
-	Esta red recibe el nombre de bridge en docker engine y docker0 en el sistema. Ambas podríamos decir que son la misma solo que cada una de ellas es administrada por los comandos nativos, bien de docker (docker network inspect, create...) o de Linux (ifconfig, ip, brctl (bridge-utils), ...) y controladas por sus librerías, bien las construidas en docker libnetwork o las nativas del sistema. Ambas redes son conectadas a la interfaz física del dockerhost y mapeadas vía port mapping.
-	- MUlti-host overlay network: permite crear una red propagada por diferentes doker host en la que todos los contenedores asignados a una red creada con este drivers y repartidos por diferentes host podrán conectarse entre si. Se usa el driver overlay (-d overlay). Para aplicaciones mixtas, donde app corren en contenedores pero otras no, existe el driver macvlan o transparent en windows para poder conectar todas las app bajo una misma red. Este driver permite a un contenedor tomar su propia dirección MAC e IP. Aunque el rendimiento es bueno una desventaja es que obliga al docker host a poner su NIC en promiscuous mode, algo que no siempre está permitido en las organizaciones. Por ello es posible que la organización lo permita en data centers o redes privadas pero muy posiblemente no puedas hacer uso de este driver en nubes públicas.
+14. Service-discovery
 
-	A continuación un ejemplo práctico.
+Service discovery es el servicio de DNS nativo de docker. Para que dos contenedores puedan encontrarse por su nombre de servicio dentro de la misma red, ambos contenedores deben de tener un nombre de servicio (--name) o alias (--net-alias). En docker Swarm hay dos maneras de nombrar el servicio que corre en un contenedor, o bien haciendo uso de la directiva 'service' del archivo compose o mediante el parámetro '--name' en tiempo de ejecución.
 
-		"Suponemos que tenemos una red fisica con dos VLAN (100: 10.0.0.0/24 y 200: 192.168.1.0/24) y ahora agregamos un docker host a la red fisica. Uno de los requisitos es que los contenedores que aquí creemos deben de tener conectividad con las app de la VLAN 100. Por ello creamos una macvlan:
-			$ docker network create -d macvlan \
-				--subnet=10.0.0.0/24 \
-				--ip-range=10.0.0.0/25 (es importante que este rango este reservado para docker y no haya otros servidores dhcp que hagan uso de el)\
-				--gateway=10.0.0.1 \
-				-o parent=eth0.100 (es necesario añadir el tagueo de la interfaz ya que es requisito de linux para poder puentear la interfaz virtual del docker host, con la NIC del host)\
-				macvlan100
+Podemos usar servidore DNS alternativos en caso de que queramos resolver nombres de servicios o IP contra servidores DNS externos. Para ello utilizaremos el parámetro '--dns=<ip-dns-server>' al instanciar el servicio o añadiendo los servidores DNS al archivo daemon.json. 
 
-		Ahora podremos crear contenedores dentro de esta red y se verán entre ellos a través de su MAC e IP.
 
-		También podemos crear una segunda macvlan asignada a la misma eth0 (eth0.200) haciendo uso de VLAN truncking"
 
-	Para rastrear cualquier error de conectividad podemos hacer uso de 'journald -u docker.service' si estamos utilizando systemd u otras alternativas como /var/log/message (rhel), /var/log/upstart/docker.log (ubuntu-upstart) o /var/log/daemon.log (debian) dependiendo del sistema. No olvides configurar el logging en /etc/docker/daemon.json a debug: true and log-level: debug|info|warn|error|fatal. Para mirar el log de los contenedores, recordemos los comandos 'docker container logs <contenedor>' y 'docker service logs <servicio>'. Recordemos que estos ultimos comandos solo funcionan si hemos configurado el demonio con los drivers "jorunald" o "json-file". También podemos machacar o crear una configuración de log especifica para un contenedor o servicio pasando los parámetros '--log-driver y --log-opts'.
+3. Preguntas frecuentes:
 
-* Service-discovery es el servicio de DNS nativo de docker. Para poder encontrar un contenedor o servicio por su nombre dentro de la red, ambos contenedores deben de estar en la misma red y deben de haber sidos invocados con el parámetro --name o --net-alias. EN docker swarm se hace uso del parametro service del compose.yml o bien del parámetro --name en tiempo de ejecución. Podemos usar dns alternativos en caso de que queramos resolver servicios o IP con un servidor DNS externo. Podemos hacer esto con el parámetro --dns=<ip-dns-server> en tiempo de ejecución o bien a través del archivo daemon.json. 
-* Publishing service: existen dos formas de publicar un servicio en docker swarm. Bien en ingres mode (por defecto) o host mode. INgress mode permite acceder a un servicio:puerto desde cualquier dockerhost perteneciente al swarm aunque ese dockerhost no esté exponiendo esa app. En cambio en host mode solo los host que tienen un expuesto un servicio, permiten acceder a este. Por defecto cada vez que usamos los parámetros -p puerto:puerto o --publish published=puerto,target=puerto, estamos haciendo uso de ingress mode. Para usar host mode debemos de especificar el modo explicitamente:
+	3.1. Sobre la seguridad en las imágenes Alpile
 
-	"docker service create -d --name serverweb \
-		--publish published=5000,target=80,mode=host \
-		nginx"
+	Realmente la seguridad de las imágenes Alpine rara vez se ha puesto en duda, en gran parte debido a que la cantidad de archivos, directorios, binarios, programas, etc... se ha visto reducida, es decir, son imágenes basadas en un OS muy reducido.
 
+	Uno de los lemas es "menos patching" mas seguro, esto es, menos binarios, programas, utilidades, menos cosas que parchear.
 
-	ingress mode utiliza la capa 4 de routing mesh llamada Service Mesh o Swarm Mode Service Mesh.
+	Todo lo anterior quizás las haga mas seguras pero también generan algunos inconvenientes:
 
-* Cuando creamos un cluster de swarm el control plane es automaticamente encriptado bajo TLS (AES en Google Cloud Platform) cuyas claves son rotadas cada 12 horas. Podemos además encriptar el data plane con la opción '-o encrypted'. Por defecto no está habilitada la opción de data plane encriptado debido al performance overhead.
+		- Es recomendable ir a producción con OS/entornos con los que se tiene soltura. Si vas a administrar los procesos que corren dentro del contenedor, o va a exigir cierto nivel de administración o incluso en la edición del Dockerfile, es recomendable utilizar imágenes del sistema con el que mas cómodo nos sentimos.
+		- Muchos programas con los que acostumbramos a trabajar pueden haber sido eliminados, cambiados de nombre o incluso de path
+		- Lo anterior ademas genera un nuevo problema para los escaneadores de vulnerabilidades (tal y como se define en https://kubedex.com/follow-up-scanning-comparison) y es que estos, configurados para escanear ciertos nombres de programas o rutas, no dan con los archivos, programas o directorios deseados creando falsos positivos o incluso resultados incongruentes.
 
-	* control plane: tráfico relativo a la administración y gestión del swarm.
-	* data plane: tráfico de aplicaciones desplegadas como servicios.
+	Como recomendación, si todo va a ser por ahorrarte unos MB en el disco o decirle a tus compis "yo uso Alpine", es que mejor uses como base para tu entorno imágenes de sistemas con los que tengas mas confianza que además, son sistemas maduros y con una comunidad amplia (Debian, RHEL, Ubuntu, CentOS...)
 
-* Las redes overlay solo son extendidas de los managers a los workers cuando en el worker se ejecuta algun contenedor/servicio perteneciente a esa red, de lo contrario no aparecerán cuando ejecutemos docker network ls en el nodo. Esto es bueno para optimizar el rendimiento y evitar mantener muchas redes en nodos que no están haciendo uso de ellas.
+	3.2. Multisite:
 
-* Persisten data: con respecto a la persistencia de datos decir que cuando se crea un contenedor, se crea la capa de RW encima de cualquier otra capa de solo lectura y es aquí donde se almacenan los datos creados por ese contenedor (esto es llamado local storage o ephymeral data). Estos datos están guardados dentro del directorio del driver utilizado para crear el contenedor (por defecto overlay2) dentro de /var/lib/docker/<storage_driver>/<sha256>. Cuando el contenedor es eliminado, el directorio es eliminado y por ello, los datos también. Para almacenar datos persistentes, ya sea en el propio docker host o en una unidad de almacenamiento compartida entre varios hosts (SAN o NAS) habrá primero que crear un volumen con el comando docker volume create y luego este será montado en un directorio dentro del contenedor. Esta unidad de almacenamiento por defecto se guarda (cuando implica persistencia a ese solo docker host) bajo el directorio /var/lib/docker/volumes/<nombre_volumen>/_data. Aunque no es recomendable, podríamos crear o eliminar contenido dentro de este directorio y automáticamente aparecería o desaparecería del directorio donde está montado dentro del contenedor. Hay que diferenciar entre los storage drivers y los volume drivers. Los primeros son los que soportan las escrituras en el sistema de archivo del propio docker host y son overlay2 (ubuntu/rhel), aufs (ubuntu), btrfs (suse) y devicemapper (rhel). Se recomienda en versiones mas modernas de Linux utilizar el storage driver overlay2. Por otra parte, cuando creamos el volumen, estos se crean con el volume driver local por defecto por lo que ese volumen solo podrá ser utilizado por ese docker host. Para crear un docker volume que pueda ser utilizado por varios docker host habrá que especificar con -d el volume driver a utilizar. Existen drivers de terceros para permitir la compartición de volumen como storage drivers, SAN o NAS. Podemos ver el volume driver con el que fue creado utilizando el comando docker volume inspect <volume_name> --format '{{.Driver}}', usa '{{.Scope}}' para ver el alcance.
+	Una duda frecuente a la hora de desplegar un multi-site con Apache o Nginx, es si es mejor crear un contenedor con el servidor Web y todos nuestros sites embebidos o bien, crear una serie de contenedores, cada uno con su servidor web y un solo site.
 
-* Para conseguir volumes plugins podemos ir a Dockerhub y buscar por 'plugins' en vez de por Containes. Como deciamos antes, podemos compartir volumes entre diferentes hosts. De ser on-premise, es posible compartir LUN o NFS a aquellos hosts donde hemos instalado docker y hacer una publicación de almacenamiento a esas máquinas a nivel de hardware, algo que podría llevarnos mas tiempo y para lo que necesitaríamos mas conocimientos sobre cabinas de almacenamiento. Los plugins se instalan con docker plugin install. Algun ejemplo de plugin conocido es Pure Storage Docker. Lista los plugins instalados con docker plugin ls.  Uno de los mayores problemas de compartir disco es la corrupción de datos. Supongamos una app en un contenedor en host1, esta app escribe datos pero el OS anfitrion realmente los tiene en su buffer y aun no los ha descargado al volumen. MIentras, app2 en host2 está escribiendo sobre los mismos datos y en este caso host2 ya ha flusheado los datos a volume. Acto seguido lo hace host1. A partir de este momento app2 no tiene constancia que los datos que realmente sobreescribieron fueron los de app1 por lo que el funcionamiento de app2 podría verse afectado y comenzar un problema mayor de datos corruptos y anomalias en la app2.
+	La recomendación que mayoritariamente vas a encontrar por la web es la de separar los sites. Obviamente, esto tiene sus ventajas y desventajas. Quizás la desventaja mas importante sea la de tener varios servidores web desplegados en un mismo dockerhost, cada uno haciendo el uso propio de CPU y memoria. Evidentemente la desventaja será mayor cuanto mayor sea el número de servidores web desplegados. Como principal ventaja es que al tener un site por contenedor, la escalabilidad, los rollbacks, rolling-update o re-configuraciones son mas granulares. Imaginemos que vamos a realizar un rollback con un cierto downtime en un site, tendremos que ser consciente que no solo afectaremos al site en cuestion si no a todos, y esto visto desde la perpectiva de los clientes puede jugar gravemente en contra. 
 
-* Los puertos a abrir en cualquier router entre nodos del Swarm son:
+	Entonces ¿que es mejor?, pues seguramente lo mas óptimo sea tener una mezcla de ambas arquitecturas. Por supuesto será importante contar con un análisis y una estrategia previa que nos permita identicar un conjunto de sites que debido a su escaso uso de recursos, demanda o actualizaciones, nos permitan gobernarlos a todos con un mismo servidor web y por otra parte separar en diferentes contenedores sites de clientes mas exigentes, mas dinámicos y que precisan de un mayor mantenimiento.
 
-	- 2377/tcp: comunicación segura (HTTPS) entre clientes y swarm
-	- 7946/tcp y udp: comomunicaciones seguras del control plane
-	- 4789/udp: conexiones relacionadas con VXLAN de las redes overlay
 
-* Cuando iniciamos un cluster swarm, existen dos parámetros relacionados con las IP que aceptan conexiones que son altamente recomendables definir, ya sea por claridad o porque el nodo manager dispone de mas de una interfaz de red activa. Uno de ellos es el que indica la IP donde el endpoint de la API de Swarm acepta conexiones (--advertise-addr). Esta IP puede ser un load balancer. El segundo parámetro es el que define la IP por la que los nodos comparten el tráfico. Este parámetro es obligatorio si el primero es un load balancer. El parámetro es: --listen-addr.
+	3.3 Compose vs Swarm en producción
 
-* Split-brain en swarm cluster. Es importante maneter un número impar de nodos en modo manager debido a la posibilidad de darse una situación de slip-brain si un particionado de red ocurriese. Siempre que haya un numero impar y un particionado de red ocurriese en un cluster, una de las partes continuará manteniendo un número impar de nodos y será esa la que forme el quorum y la que mantenga la administracion del cluster. Si el número es par, por ejemplo 4 y tras el particionado existen 2 nodos en cada partición ninguna de las partes montará un quorum y la administración del cluster podrá ser gobernada por ambas partes creando una incongruencia en los datos. Se recomienda mantener un quroum de 3 a 5 nodos, 7 como máximo debido a que la elección del leader puede crear una sobrecarga cuanto mas nodos existan.
+	Siempre es aconsejable utilizar Swarm u otro orquestador en producción en pro de docker-compose. Docker-compose es una herramienta orientada al desarrollador. Aunque no contemos con escalabilidad ni replicación de servicios, se aconseja utilizar Swarm para desplegar multiples contenedores en un mismo dockerhost. Utilizando un orquestador, aunque no sea un requisito previo, siempre estaremos preparados para escalar, hacer un blue-green, rolling-update, etc...
 
-* Cuando creamos servicios de swarm y hacemos una publicación de puertos, podemos hacerla en dos modos diferentes, modo ingress (por defecto) o modo host. la diferencia es que en modo ingress, podremos acceder a un servicio expuesto desde cualquiera de los nodos del swarm ya que de ese nodo en concreto no contase con el servicio, nos reenviaría al nodo que si tiene el servicio expuesto. En cambio el modo host solo permite el acceso a servicios con puertos expuestos desde los nodos en los que el servicio ha sido despleglado. Para crear una publicación en modo host necesitamos utilizar el formato largo:
+	3.4 Porque usar no-install-recommends
 
-	$ docker service create --name prueba \
-		--network mired \
-		--publish published=80,target=80,mode=host \
-		--replicas 3 \
-		nginx
+	Una buena practica con respecto al uso de los sistemas de paquetes de las distribuciones, es utilizar los parámetros que nos permiten limpiar la caché (apt lo hace de forma automática) y/o no instalar paquetes recomendados por ejemplo utilizando --no-install-recommends. Algo muy típico también es eliminar en la propia instrucción RUN utilizada para actualizar los repositorio e instalar los paquetes es eliminar el contenido del directorio /var/lib/apt/lists/*.
 
-* Dos modos diferentes de inicializar servicios en un swarm son replicated o global, si seleccionamos 'replicated' (por defecto) decidiremos cuantas replicas queremos propagar por todo el cluster, incluso aunque el número sea mayor que el número de nodos, en cambio si seleccionamos 'global' una replica será desplegada por cada nodo activo en el swarm.
+4. Host vs Ingress
 
-* Una medida de protección con respecto a los nodos managers en un cluster de swarm es activando la bandera autolock. Este parámetro nos permite bloquear el acceso de nuevos nodos managers al cluster. Recordemos que si un nodo manager es añadido al cluster, la información del cluster será propagada a este (secrets, nodos, estado, etc..) de manera que podrían robarnos información. También en ciertas ocasiones puede ser interesante mantener un número exacto de nodos managers en el cluster y de quedar un host fuera del nodo, alertar y recuperar esto de una forma manual. Quizás en entornos productivos, como medida de seguridad, mantener el número de managers bloqueadas pueda ser interesante. Podemos aplicar el parámetro --autolock=true tanto al inicilizar el cluster como de forma posterior con el comando docker service update. Un aspecto importante a tener en cuenta es que al bloquear un cluster se nos proporcionará una clave, clave que será muy importante tener bien asegurada ya que para desbloquear el cluster nos hará falta. En principio manteniendo mas nodos en ejecución podríamos recuperarla con la API pero si por cualquier motivo solo estuviese uno disponible y es precisamente desde el que queremos desbloquear, no tendremos opción de recuperar el cluster. Para desbloquear el cluster utilizaremos el siguiente comando:
+	La red host (--network host) nos permite pasar todo el tráfico del contenedor directamente por la NIC del docker host. En este caso el contenedor no coge su propia IP si no que cualquier servicio expuesto por un puerto será accesible directamente por la IP del docker host. En caso de usar la red host y exponer un puerto, no será necesario el parámetro -p, --publish durante la ejecución del contenedor, unicamente la instrucción EXPOSE port del Dockerfile. Existe cierta mejora en el rendimiento del networking de las aplicaciones expuestas en el contenedor debido a que el tráfico a diferencia de una red ingress, no atravisa proxy ni capas de networking diferentes a la propia del docker host. Podemos usar el modo "endpoint_mode: dnsrr" en el apartado deploy cuando desplegamos mediante docker-compose file, con este parámetro conseguiremos mejor eficiencia en el networking.
 
-	$ docker swarm unlock
-	Please enter unlock key: 
+6. Limitar recursos
 
-* Para actualizar servicios de un cluster swarm que ha sido desplegado mediante docker stack es muy recomendable que sea actualizado mediante su propio archivo yaml de despliegue. Esto es porque el archivo debería de estar siempre versionado, y cualquier modificación tomará efecto en el proximo despliegue. Supongamos que tenemos un despliegue por archivo, luego modificamos servicios mediante comandos docker service, docker network, docker volume, etc... y lo dejamos a nuestro gusto. La proxima vez que tengamos que redesplegar el cluster completo por cualquier motivo, habremos perdido todos esos cambios que en su momento se realizaron por alguna casuistica concreta. Es importante tener en cuenta que cuando desplegamos un stack de swarm, todos los servicios podrán ser administrados por los comandos pertinentes: por ejemplo los volumenes con docker volumes <accion>, docker network <accion>, docker service <acción>, etc...
+	Usar limitaciones de recursos para los contenedores cada vez que sea posible. Acontinuación un ejemplo donde se limita la memorya y el número de CPU a un contenedor:
 
-* Cuando definimos despliegues con docker stack, een muchas ocasiones hacemos uso de secciones como 'placement' y 'constraints'. Para especificar nodos, haremos uso de etiquetas, a continuación algunas importantes:
+		$ docker container update <container_id> --memory=250M --cpuset-cpus=2
+		$ docker container inspect -f 'cpu = {{.HostConfig.CpusetCpus}}, memory = {{.HostConfig.Memory}}' <container_id>
+		cpu = 2, memory = 262144000
+
+7. Shortcut Ctrl+PQ
+
+	Un shorcut que nos permite salir de la terminar de un contenedor sin detenerlo es "Ctrl+PQ". Cuando iniciamos un contenedor, podemos hacerlo definiendo los parámetros -it que harán que enseguida nos enganchemos a la terminal del contenedor una vez iniciado, por lo tanto el prompt cambiará de nuestro docker host al del contenedor.
+
+		$ docker container run --name ubuntu -it ubuntu
+		root@a0f01192f71e:/#
+
+	Ahora estaríamos en la consola del contenedor, si escribimos "exit" saldríamos de la terminal del contenedor pero a la misma vez pararíamos el contenedor.
+	En cambio si lo que queremos es salir de la terminal y dejarlo en background para acceder posteriormente, lo mejor es usar la combinación de teclas o shortcut "Ctrl+PQ" y acceder nuevamente a la terminal del contenedor en cualquier momento con:
+
+		$ docker container attach ubuntu
+		root@a0f01192f71e:/# ps -ef
+		UID        PID  PPID  C STIME TTY          TIME CMD
+		root         1     0  0 18:33 pts/0    00:00:00 /bin/bash
+		root        15     8  0 18:34 pts/1    00:00:00 ps -ef
+
+	También podemos usar el comando "docker container exec -it ubuntu bash" para conectarnos de nuevo a la terminal del contenedor. En este caso, lo que estaríamos haciendo es crear un nuevo proceso bash dentro del contenedor. Al escribir exit, mataríamos este nuevo terminal, pero el primero quedará activo hasta que paremos el contenedor o escribamos exit en la terminal.
+
+	 	$ docker container exec -it ubuntu bash
+	 	root@a0f01192f71e:/# ps -ef
+		UID        PID  PPID  C STIME TTY          TIME CMD
+		root         1     0  0 18:33 pts/0    00:00:00 /bin/bash
+		root         8     0  0 18:34 pts/1    00:00:00 bash
+		root        15     8  0 18:34 pts/1    00:00:00 ps -ef
+
+
+
+COMPOSE FILE
+
+5. Constraints
+
+	El uso de las "constraints" en los archivos compose puede mejorar la calidad y estabilidad del despliegue, asignando restricciones de despliegue según nuestra conveniencia. A continuación un ejemplo en el que desplegamos un servicio "master1" exclusivamente en aquel host que tenga como hostname node-1.
+
+		master1:
+			deploy:
+				placement:
+					contraints: [ node.hostname == node-1]
+
+	Podemos también utilizar etiquetas para indicar que no queremos desplegar X servicios en aquellos nodos que tengan por nombre "Y" o darle una zona de desponibilidad a un servicio según la etiqueta y el nodo donde será desplegada.
+
+A continuación algunas etiquetas útiles:
+
 	- 'node.role == worker'
 	- 'node.labels.stage == production'
 	- 'node.id = sd32e23eydhqd'
@@ -447,29 +479,246 @@ Para restaurar el cluster, todos los nodos que forman el cluster deben de estar 
  Nota: utilizamos *.labels.* para crear etiquetas customizadas.
 
 
+	8.3 Docker manifest
+
+		Con docker manifest podemos saber para que arquitectura y/o plataforma ha sido compilada la imagen.
+
+			$ docker manifest [inspect] <imagen>
+
+		El comando anteror nos permite ver el manifest list de la imagen.
+
+		Aprovechando que hablamos de arquitecturas y plataformas, comentar (y aunque a día de escribir esta guía, Agosto 2020 está aún en versión experimental) docker builx, un plugin para docker CLI que extiende las posibilidades del comando docker build. Con docker buildx podremos crear imágenes a partir de manifest list e incluso crear una misma imágen para distintas plataformas:
+
+			$ docker buildx build --platform linux/arm/v7 -t myimage:arm-v7.
+
+
+SWARM
+
+CONTENDORES
+
+9. Políticas de reinicio de contenedores
+
+Podemos definir hasta tres políticas diferentes de reinicio de un contenedor (a tiempo de escribir esta guía), y son: 
+	- always: reiniciará el contenedor cada vez que el comando ejecutado dentro del contenedor sea detenido por cualquier motivo, ya sea paradado con la señal SIGTERM o SIGKILL. El contenedor no será reiniciado si este ha sido detenido con el comando 'stop'. Si el contenedor está detenido y reiniciamos el demonio docker, el contenedor será iniciado por el demonio.
+	- unless-stopped: actúa igual que 'always' solo que cuando el contenedor es parado con el comando 'stop' y el demonio docker es reiniciado, el contenedor no iniciará.
+	- on-failed: actúa igual que 'always' pero exclusivamente cuando el comando de un contenedor para con un código de error distinto a 0.
+
+Cada una de estas politicas pueden definirse en tiempo de instanciación del contenedor utilizando el parámetro '--restart always", en los archivos compose, o bien al definir un stack de docker swarm o clúster de kubernetes.
+
+
+10. Docker Swarm: logs
+
+Algunas opciones interesantes para visualizar los logs en swarm service mode son: 
+	* --follow: para dejar la traza de registros abierta en la terminal
+	* --tail: para listar las últimas líneas del registro
+	* --details: para aplicar un grado de verbose a la salida por defecto
+
+11. Docker Swarm: backup
+
+Hacer backups de un cluster Swarm en principio puede parecer algo relativamente raro ya que este ofrece HA, replicación, etc... Sin duda, lo que parece una bondadosa ventaja de Swarm, el spreading, se nos puede volver en contra en determinadas ocasiones. El spreading permite replicar de manera automática una cierta acción, por ejemplo cuando añadimos un nodo, la información relativa al nodo será difundida a la base de datos RAFT de cada uno de los nodos manager del cluster. Imaginemos ahora una eliminación accidental de los secretos del swarm.
+
+Ante esta situación, lo mejor sería contar con un backup de la base de datos de manera que podamos reestablecer aquello que haya dejado de existir por cualquier causa.
+
+Como crear un backup.
+
+	1. Iniciar sesión en un nodo manager (ej nodomngr3) que no sea leader.
+	2. Parar el demonio docker (ej nodomngr3). Atención, en la mayoría de los casos el quorum lo tenemos formado por 3 nodos managers, esto puede ser una acción arriesgada en producción.
+	3. Crear un tar del directorio /var/lib/docker/swarm. Realizar esto según las políticas de backup de la empresa.
+	4. Iniciar de nuevo el nodo.
+
+Restaurar el Backup.
+
+	1. Parar todos los nodos del Swarm
+	2. Eliminar el contenido de /var/lib/docker/swarm de todos los nodos
+	3. Ir a un nodo manager (ej nodomngr3, el mismo de donde tomamos el snapshot) y descomprimir el tar para reconstuir de nuevo el directorio /var/lib/docker/swarm.
+		 $ tar -xvzf swarm-backup-data.bkp -C / 
+	4. Iniciar el nodo manager (nodomngr3).
+	5. Forzar la creación de un nuevo Swarm (en el mismo nodo que los pasos 3 y 4):
+		$ docker swarm init --force-new-cluster
+	6. Inicializar el resto de nodos, pero no agregarlos al cluster! (paso 9)
+	7. El leader propagará el contenido del directorio swarm al resto de nodos.
+	8. Comprobar la red, los secrets, etc.. y ver que todo está OK
+	9. Agregar el resto de nodos al "nuevo" clúster.
+
+	Dos particularidades a tener en cuenta a la hora de restaurar un backup; tanto la versión de Docker como la IP del nodo manager deben de ser exactamente las mismas que cuando se tomó el "Snapshot" (backup) del directorio Swarm.
+
+
+NETWORKING
+
+12. Docker Driver Networking
+
+Los drivers que se incluyen en docker-engine para el netorking son los siguientes:
+	- linux: bridge, overlay and macvlan (transparent en windows).
+	- Windows: nat, overlay, transparent and 12bridge
+
+13. Tipos de redes en docker linux
+
+	- single-host:
+		- bridge network: solo pueden conectarse contenedores existentes en un mismo docker host y es una implementación del protocolo 802.1d bridge de la capa 2 switch y se crea usando el driver bridge en linux o nat en windows, '-d,--driver bridge'. En windows se implementa de forma nativa la red nat, que a efectos prácticos funcionan igual. Esta es la red donde por defecto serán creados los contenedores a menos que se especifique el parámetro --network.
+	
+		Esta red recibe el nombre de bridge en docker-engine y docker0 en el sistema anfitrión. Ambas, podríamos decir que son la misma solo que cada una de ellas es administrada por los comandos nativos, bien de docker-engine (docker network inspect, create, etc...) o de Linux (ifconfig, ip, brctl) y controladas por sus librerías, libnetwork endocker-engine o las nativas del sistema para el anfitrión. Las dos redes son conectadas a la interfaz física NIC del dockerhost y mapeadas vía port mapping.
+
+	- Multi-host:
+		- overlay network: permite crear una red propagada por diferentes doker host en la que todos los contenedores asignados a una red creada con este drivers y repartidos por diferentes host podrán conectarse entre si. Se usa el driver overlay (-d,--driver overlay).
+		- Para aplicaciones mixtas, donde las apps corren en contenedores pero otras no, existe el driver macvlan o transparent en windows para poder conectar todas las app bajo una misma red. Este driver permite a un contenedor tomar su propia dirección MAC e IP. Aunque el rendimiento es bueno, una desventaja es que obliga al docker host a poner su NIC en promiscuous mode, algo que no siempre está permitido en las organizaciones. Por ello, es posible que la organización lo permita en data centers o redes privadas pero muy posiblemente no puedas hacer uso de este driver en nubes públicas.
+
+	A continuación un ejemplo práctico.
+
+		"Suponemos que tenemos una red fisica con dos VLAN (100: 10.0.0.0/24 y 200: 192.168.1.0/24) y ahora agregamos un docker host a la red fisica. Uno de los requisitos es que los contenedores que aquí creemos deben de tener conectividad con las app de la VLAN 100. Por ello creamos una macvlan:
+
+			$ docker network create -d macvlan \
+				--subnet=10.0.0.0/24 \
+				--ip-range=10.0.0.0/25 \
+				--gateway=10.0.0.1 \
+				-o parent=eth0.100 \
+				macvlan100
+
+			Nota:
+				10.0.0.0/25 : es importante que este rango este reservado para docker y no haya otros servidores dhcp que hagan uso de el.
+				-o parent=eth0.100 :es necesario añadir el tagueo de la interfaz ya que es requisito de linux para poder puentear la interfaz virtual del docker host, con la NIC del host.
+
+		Ahora podremos crear contenedores dentro de esta red y se verán entre ellos a través de su MAC e IP.
+
+		También podemos crear una segunda macvlan asignada a la misma eth0 (eth0.200) haciendo uso de VLAN truncking"
+
+	Para rastrear cualquier error de conectividad podemos hacer uso del siguiente comando si estamos utilizando systemd:
+
+		 $ journald -u docker.service
+
+	Otras alternativas pueden ser /var/log/message para rhel, /var/log/upstart/docker.log para el sistema ubuntu-upstart o /var/log/daemon.log en debian.
+
+	No olvides configurar el logging en /etc/docker/daemon.json a debug: true y el log-level: debug|info|warn|error|fatal.
+
+	Para mirar el log de los contenedores
+
+		$ docker container logs <contenedor>
+		$ docker service logs <servicio>
+
+	Recordemos que estos ultimos comandos solo funcionan si hemos configurado el demonio con los drivers "jorunald" o "json-file".
+
+	También podemos machacar o crear una configuración de log especifica para un contenedor o servicio pasando los parámetros '--log-driver y --log-opts'.
+
+
+SWARM
+
+15. Swarm: Publishing service
+
+Existen dos formas de publicar un servicio en docker Swarm. Por defecto,un servicio Swarm es publicado en modo Ingress. Es posible cambiar de modo Ingress a modo host tan solo utilizando la opción mode=host en el palrámetro '--publish'. Una de las diferencias entre ambas formas de publicar un servicio es que en modo Ingress podremos acceder a un 'servicio:puerto' desde cualquier dockerhost perteneciente al Swarm incluso sin que dicho dockerhost tenga un contenedor servidiendo dicho servicio. En cambio, en modo host solo será posible acceder al servicio expuesto desde el nodo que tiene un contenedor corriendo el servicio. A continuación se muestra la forma de publicar un servicio en modo host:
+
+	"docker service create -d --name serverweb \
+		--publish published=5000,target=80,mode=host \
+		nginx"
+
+
+El modo Ingress nos permite acceder desde cualquier host debido a que hace uso de la capa 4 de routing mesh llamada Service Mesh o Swarm Mode Service Mesh.
+
+16. Swarm: control plane vs data plane
+
+En Swarm, el control plane es el encargado de manter el cluster, es decir, es el conjunto de servicios ofrecidos por los nodos managers (incluída la base de datos) que hacen posible el spreading de información entre los nodos managers, mantener el estado de todos los nodos, almacenar la información de estado de los nodos, recibir ordenes de DockerCLI y ejecutarlas en el cluster, etc... Cuando creamos un cluster de Swarm el control plane es automaticamente encriptado bajo TLS (AES en Google Cloud Platform) cuyas claves son rotadas cada 12 horas. En cambio llamamos data plane a toda la data que se intercambia entre nodos y aplicaciones. A groso modo, es toda la información externa al cluster de Swarm y toda la que concierne al uso propio de los servicios expuestos en el cluster como transferencias de datos entre workers y bases de datos, procesadores de datos y colas de mensajería, etc... Por defecto toda esta información corre en plano de un nodo a otro. Podemos encriptar toda la información del data plane con la opción '-o encrypted'. Activar el encriptado del data plane puede suponer una pérdida de rendimiento de la aplicación. Por defecto esta opción es deshabilitada.
+
+	* control plane: tráfico relativo a la administración y gestión del Swarm.
+	* data plane: tráfico de aplicaciones desplegadas como servicios.
+
+17. Swarm: Networking
+
+Cuando iniciamos un cluster de swarm, y creamos una red overlay, por defecto esta red no se extiende a lo largo del cluster. En principio la red la forman los nodos managers. La red overlay será extendida a uno o varios nodos workers cuando estos inicializen un servicio que corre dentro de dicha red. Por ello, cuando iniciamos un nuevo Swarm, agreamos todos los nodos (manager y workers), creamos una red y ejecutamos el siguiente comando, veremos que no todos los nodos están dentro de la red overlay:
+	
+		$ docker network ls
+
+Si inicializáramos un servicio dentro de esta red y replicado en algunos de los nodos workers, veremos ahora como estos nodos si estarán dentro de la red overlay creada para la app. Esto es así para optimizar el rendimiento y evitar mantener muchas redes en nodos que no están haciendo uso de ellas.
+
+18. Persisten data
+
+Normalmente cuando se empieza a trabajar con Docker surgen las primeras dudas al querer almacenar, compartir o utilizar datos persistentes o volátiles. Antes de comentar nada hay que dejar claro que; almacenar datos que queremos persistir, dentro de un contenedor es una mala práctica. Los datos almacenados dentro de un contenedor puede ser eliminados tan pronto como el contenedor sea eliminado además de no poder compartirse estos datos con otros contenedores. Para entender esto hay que tener algo de conocimiento sobre las capas de un contenedor. Aunque mas adelante daremos algunos detalles hay que tener claro que cuando una imagen desde la que se instancian contenedores es creada a partir de su Dockerfile, muchas capas son creadas por lo tanto una imagen está formada por una o mas capas. Estas capas son cada una de las instrucciones dadas dentro del Dockerfile. Aunque no vamos a entrar ahora en ello, decir que no todas las capas de una imagen ocupan espacio en disco y por lo tanto hacen que una imagen pese mas o menos. Todas las capas que se crean a partir del Dockerfile son capas de solo lectura. Cuando instanciamos un contenedor a partir de una imagen, se usan todas esas capas de solo lectura de manera que se puedan compartir entre dos o mas contenedores sin duplicar contenido en el disco del dockerhost. Además de todas las capas que forman la imagen una nueva capa de lectura-escritura es creada en por encima de todas estas capas. Esta capa es la que almacenará todos los datos generados dentro del contenedor y la que hará que un contenedor creza en tamaño una vez instanciado. Estos dantos son almacenados en el disco del dockerhost dentro de un directorio específico. El directorio es el path que identifica al driver utilizado para almacenamiento y un sha256 que identifica al contenedor dentro del directorio del driver:
+
+	$ ls /var/lib/docker/<storage_driver>/<sha256>
+
+Por defecto, el <storage_driver> utilizado es overlay2.
+
+Cuando un contenedor es eliminado (docker container rm <contenedor>) este directorio es eliminado por lo que todos los datos creados dentro del contenedor son eliminados al mismo tiempo. Esto hará que perdamos todos los datos que teníamos generados a partir de los servicios corriendo dentro del contenedor.
+
+Entonces, para almacenar datos que queramos persistir, bien por histórico, por compartirlos con otros servicios para que hagan uso de ellos, para posteriores auditorías, etc... habrá que crear un volumen de almacenamiento ya sea en el propio dockerhost o en una unidad de almacenamiento externa compartida entre varios dockerhost (SAN o NAS).
+
+Otras dudas existenciales entre como persistir datos surgen a la hora de crear o montar el volúmen. Existen dos formas de compartir datos entre el dockerhost y el contenedor. En versiones anteriores, era muy frecuente hacer un bind-mount. Un bind-mount no es mas que cuando montamos un directorio local dentro del contenedor, por ejemplo el directorio en el que estamos trabajando. Esto es muy util para entornos de desarrollo, donde tenemos el código de nuestra app en el directorio de trabajo y lo montamos dentro del contenedor para que sea leído y ejecutada la aplicación. Estos datos son persistentes ya que al eliminar el contenedor, los datos continuarán en nuestro directorio de trabajo. Es mas, todo los cambios producidos por el contenedor en datos de ese directorio serán persistidos al igual que los que hayamos modificado o eliminado desde dentro del contenedor. Esta forma de compartir datos no es la mas adecuada para aplicacones en producción.
+
+Para despliegues en producción lo mejor es hacer uso de los docker volumes. Un docker volumes es una unidad de almacenamiento creada dentro del demonio docker de forma que cualquier contenedor (interno o externo al dockerhost) pueda hacer uso de los datos almacenados. Para crear un docker volume tan solo deberemos de utilizar uno de los drivers pertinentes en función del tipo de volume que queramos crear y hacer un attach del volumen dentro del contenedor.
+
+Nota: hay que saber diferenciar entre los storage drivers y los volume drivers. Los primeros son los que soportan las escrituras en el sistema de archivo del propio docker host y son overlay2 (ubuntu/rhel), aufs (ubuntu), btrfs (suse) y devicemapper (rhel). Se recomienda en versiones mas modernas de Linux utilizar el storage driver overlay2.
+
+Cuando un docker volume es creado dentro de un dockerhost, por defecto se guarda el contendio bajo el directorio '/var/lib/docker/volumes/<nombre_volumen>/_data'. Aunque no es recomendable, podríamos crear, modificar o eliminar contenido dentro de este directorio y automáticamente aparecería o desaparecería del contenedor que hace uso de este docker volume.
+
+Cuando creamos un volumen por defecto son creados con el driver local por lo que ese volumen solo podrá ser utilizado por ese docker host. Para crear un docker volume que pueda ser utilizado por varios docker host habrá que especificar con la el parametro '-d,--driver' el volume driver a utilizar. Existen drivers de terceros para permitir la compartición de volumen como storage drivers, SAN o NAS.
+
+Para ver el volume driver con el que un volumen fue creado utilizaremos el siguiente comando:
+
+	$ docker volume inspect <volume_name> --format '{{.Driver}}'
+
+	Nota: usa '{{.Scope}}' para ver el alcance.
+
+Existen muchos drivers de almacenamiento que podemos instalar mediante los plugins de Dockerhub. Acude a Dockerhub, busca y filtra por plugins en vez de por imágenes y encuentra el driver de almacenamiento que mejor sea ajuste a tus necesidades. Existen drivers que nos permiten crear volúmenes en cabinas de almacenamiento externas y usarlas de almacenamiento compartido entre muchos docker hosts. Encuentra tu plugin e instálalo con el siguiente comando:
+
+	$ docker plugin install <plugin>
+
+Uno de los mayores problemas con la compartición de discos entre diferente dockerhost es la corrupción de datos. Supongamos una app en un contenedor en host1, esta app escribe datos pero el OS anfitrion realmente los tiene en su buffer y aun no los ha descargado al volumen. Mientras, app2 en host2 está escribiendo sobre los mismos datos del mismo volúmen y en este caso host2 'flushea' los datos al volumen antes de que host1 lo haga. A continuación, host1 escribe los datos desde su buffer al volumen, en ese momento app2 no es consciente de que los datos que fueron escritos por ella fueron sobreescritors por los de la app1. A partir de ese momento se producirá una insconsistencia de datos y comportamiento anómalo en app2. 
+
+19. Swarm: Networking
+
+Los puertos a tener en cuenta en cualquier router existente entre nodos del Swarm son:
+
+	- 2377/tcp: comunicación segura (HTTPS) entre clientes y Swarm
+	- 7946/tcp y udp: comomunicaciones seguras del control plane
+	- 4789/udp: conexiones relacionadas con VXLAN de las redes overlay
+
+20. Swarm: init
+
+Cuando inicializamos un cluster de Swarm, existen dos parámetros relacionados con las IP que aceptan conexiones y que son altamente recomendables definir, ya sea por claridad o porque el nodo manager dispone de mas de una interfaz de red activa.
+
+Uno de lo parámetros a tener en cuenta durante la ejecución del comando docker swarm init es el que indica la IP donde el endpoint de la API de Swarm aceptará conexiones. Esta IP será en la que escuche cada una de las peticiones de administración del cluster vía API el parámetro es --advertise-addr. En caso de querer balancear las peticiones entre diferentes nodos, podemos utilizar un load balancer para esta IP.
+
+El segundo parámetro importante es el que define la IP por la que los nodos comparten el tráfico. Este parámetro es obligatorio si el primero es un load balancer. El parámetro es --listen-addr.
+
+21. Swarm: Split-brain
+
+Un split brain se produce cuando en un cluster existe un número par de nodos managers, por ejemplo 2 o 4, y por cualquier motivo se produce un "Network partition", es decir, la conexión entre un nodo y otro (en caso de ser dos) o entre dos nodos y otros dos nodos (si fuesen cuatro) se pierde. Está situación puede darse en los casos en los que contamos con dos nodos en una zona de disponibilidad y otros dos nodos en otra zona de disponibilidad y entre todos forman un clúster. En este momento cada una de las partes quiere asumir el role de leader y comienzan ha aceptar peticiones de lectura y escritura. Cuando la conexión entre ambas zonas de disponibilidad se reestablece y todos los nodos vuelven a formar una única unidad, existirá una incongruencia de datos. Ninguna de las partes podrá asegurar que su administración ha sido la correcta ya que el número de nodos es el mismo en ambas partes, por decirlo informalmente, no hay ningún nodo que dé el voto final para llevar la balanza a un lado u a otro. En este momento se ha producido un split-brain dentro del cluster.
+
+Para evitar los split-brain en los cluster se utilizó la definición de quorum. Un quorum es un cluster de un número impar de nodos. Al ser impar el número de nodos managers, cuando un split brain se produce, y siguiendo con el ejemplo de dos zonas de disponibilidad, ahora en una de las zonas existirá una mayoría de nodos, por ejemplo 1vs2, o 2vs3, etc... que asumirán el liderazgo del cluster y dando por bueno los datos que en él se han modificado, creado o eliminados. Cuando la comunicación entre ambas zonas de disponibilidad se restablece, la zona que alberga mayor número de nodos managers asumirá que es la que mantiene la información correcta para continuar con el buen funcionamiento del cluster. La zona que mantiene un menor número de nodos managers tendrá que actualizar su información para reproducir la misma que tengan los nodos de la otra zona de disponibilidad. 
+
+
+22. Swarm init
+
+Existen dos modos diferentes de inicializar servicios en un Swarm; replicated o global. Si optamos por iniciar servicios seleccionando el modo 'replicated' (modo por defecto) decidiremos cuantas replicas queremos propagar por todo el cluster, incluso aunque el número sea mayor que el número de nodos. Si en cambio seleccionamos el modo 'global' una replica será desplegada por cada nodo activo en el Swarm, es decir, el número de réplicas será el mismo que el número de nodos workers disponibles.
+
+23. Swarm autolock
+
+Swarm autolock es la función que nos ofrece la posibilidad de bloquear la entrada de nuevos nodos managers al Swarm. Para bloquear el número de nodos managers de nuestro Swarm utilizaremos el parámetro 'autolock'. 
+
+Recordemos que si un nodo manager es añadido al cluster, la información del cluster será propagada a este (secrets, nodos, estado, etc..) de manera que podrían robarnos información añadiendo un nuevo nodo manager malicioso al cluster. También en ciertas ocasiones puede ser interesante mantener un número exacto de nodos managers en el cluster y de quedar un host fuera del clúster, alertar y recuperar esto de una forma manual.
+
+Quizás en entornos productivos, como medida de seguridad, mantener el número de managers bloqueadas pueda ser interesante. Podemos activar el autolock en un Swarm en cualquier momento utilizando el comando:
+
+	$ docker service update --autolock=tru
+
+Un aspecto importante a tener en cuenta es que al bloquear un cluster se nos proporcionará una clave, clave que será muy importante tener bien asegurada ya que para desbloquear el cluster nos hará falta. En principio manteniendo mas nodos en ejecución podríamos recuperarla con la API pero si por cualquier motivo solo estuviese un nodo manager disponible y es precisamente desde el que queremos desbloquear el autlock, no tendremos opción de recuperar el cluster. Para desbloquear el cluster utilizaremos el siguiente comando:
+
+	$ docker swarm unlock
+	Please enter unlock key: 
+
+24. Swarm: stack
+
+Para actualizar servicios de un cluster Swarm que ha sido desplegado mediante 'docker stack' es muy recomendable que sea actualizado mediante su propio archivo YAML de despliegue, es decir, de forma declarativa. Esto es porque el archivo debería de estar siempre versionado, y cualquier modificación tomará efecto en el proximo despliegue. 
+
+Supongamos que tenemos un despliegue por archivo YAML, luego modificamos los servicios mediante comandos 'docker service', 'docker network', 'docker volume', etc... es decir actualizamos el estado del stack de forma imperativa. La proxima vez que tengamos que redesplegar el cluster completo por cualquier motivo, habremos perdido todos esos cambios que en su momento se realizaron por alguna casuistica concreta.
+
+Es importante tener en cuenta que cuando desplegamos un stack de Swarm, todos los servicios podrán ser administrados por los comandos pertinentes: por ejemplo los volumenes con docker volumes <accion>, docker network <accion>, docker service <acción>, etc...
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-TODO
-
-6. Estudiar el tema de como usar variables de entornos en Docker y sobretodo como administrar secrets, fuera parte de los métodos de swarm y kubernetes. El entrypoint de mysql oficial tiene algo curioso que no termino de descifrar.
 
 
 MICROSERVICIOS
 
 Microservicios: twelve-Factor APP (12factor.net)
-
+ 
 	1. Codebase
 		 Usa repositorios de código. Un repositorio por cada app. Despliega en varios entornos desde un mismo repositorio utilizando distintas ramas del repositorio.
 	2. Dependencias: para cumplir la metodología 12factor, se deberian de declarar las variables explicitamente mediante un archivo manifest Gemfile en ruby o requirements.txt en Pip (python) y ademas deben de permanecer aisladas, es decir, no se permite una instalacion a nivel de sistema (system-wide), bundle exec en ruby o virtualenv para python. Así mismo no se debe de utilizar herramientas como curl 
@@ -494,28 +743,118 @@ Microservicios: twelve-Factor APP (12factor.net)
 
 
 
+
+
+
+################ Cosas que mirar y posibilidades para linea gráfica PHP. ###############
+
 * Mirar extensiones de docker.. ¿docker-php-ext-configure?
+
+* Php: Here's some resources for PHP developers.
+
+		* https://github.com/BretFisher/php-docker-good-defaults
+
+		* https://www.bretfisher.com/docker-certified-associate/
+
+		* https://success.docker.com/certification
+
+		* https://patreon.com/BretFisher
+
+		* www.bretfisher.com/newsletter
+
+		* https://www.udemy.com/course/docker-mastery/?couponCode=JULY20C1
+
+		*  https://www.udemy.com/course/kubernetesmastery/?couponCode=JULY20C4
+
+
+Netwroking-certificates:
 
 * mirar let's encrypt, es una página buena para saber que debemos y que no hacer con la generacion de certificados en local.
 
 * mirar stack-proxy-global para temas decertificados en proxy, etc...
 
-* otra práctica es iniciar un stack de aplicaciones en orden. Para esto Bret menciona que están disponible los comandos de compose como respawn, depend_on, etc... 
+
+
+Buscar libros para
+
+* Patterns
+	* Web: Autopilot Pattern Applications
+
+* Características avanzadas
+	* Tres carácteristicas avanzadas de docker que la gente no usa: oreilly.com -> 3-docker-compose-features-for-improving-team-development-workflow
+
+	Nota: una de ellas es muy importante que es la de definir ubn bloque de código y luego usarlo a traves de una variable en el mismo archivo Dockerfile
+
+
+Prácticas:
+
+* Estudiar el tema de como usar variables de entornos en Docker y sobretodo como administrar secrets, fuera parte de los métodos de swarm y kubernetes. El entrypoint de mysql oficial tiene algo curioso que no termino de descifrar.
+* otra práctica es iniciar un stack de aplicaciones en orden. Para esto Bret menciona que están disponible los comandos de compose como respawn, depend_on, etc...
+* integraciones dockerhub+github, jenkins+github+dockerhub+docker, etc...
+* En que momento es necesario integrar docker con ansible o puppet?
+
+
+
+Imágenes movil docker
 
 
 
 
-CORREGIR EN EL LIBRO
 
- * corregir en el libro docker para todos las capas de las que está formado docker. libcontainer ha sustituido a LXC y las capas desarrolladas son:
 
+Añadir arriba
+
+1. Docker Network: Como hacer para que los contenedores que están dentro de una red overlay tenga acceso a internet -> configurar un DNS externo. => probar
+2. Docker Network: Las redes Docker en Linux hacen uso de IPVS para redirigir el tráfico desde un host a servicios que corren en otro host de la misma red/clúster. 
+
+	¿Que es IPVS Kernel Linux? => IP Virtual Server: IPVS está construído sobre Netfilter (framework que permite diversas operaciones de networking en Linux) e implementa una capa de transporte comunmente llamada "Layer 4 LAN Switching". Es parte del Kernel de Linux y es configurado con la útilidad "user-space" (ipvsadm). Lo que nos permite es crear un balanceador de carga en uno de los host perteneciente a un clúster de host físicos (o por encima del clúster) y permitir la redirección de tráfico TCP y UDP a servicios instalados en otros host físicos del clúster tratándolos como servicios virtuales localizados en un única dirección IP
+3. Docker Network:
+	
+	Docker libnetwork: libnetwork implementa el CNM o Container Network Model, es decir, todo lo necesario para hacer posible la conectividad de los contenedores Docker a la vez que crea una capa de abstracción que permite el uso de diferentes drivers de red. El CNM está formado principalmente por tres componentes:
+		- Network Sandbox: configuración del stack de networking del propio contenedor. Incluye la interfaz de configuración, IP, MAC, la tabla de rutas y la configuración de servidores DNS. Un Sandbox puede contener uno o mas endpoints dependiendo del número de redes diferentes al que el contenedor esté conectado.
+		- Network Endpoint: es la interfaz que sirve de conector en la red. En una capa física correspondería a la interfaz de red de nuestro PC que nos conecta por cable a nuestro router. En el contexto Docker, el endpoint podría ser "veth pair" es decir, el par de interfaces virtuales de red que permiten crear un "bridge" entre una red en un namespace con otra red en otro namespace. Un contenedor puede tener uno o mas endpoints pero un endpoint solo puede pertenecer a una red. El servicio de un contenedor estará conectado con el servicio de otro contenedor a través de una red virtual formada por un veth pair.
+		- Network: Es una red de endpoints que permite la conexión entre unos y otros directamente. Un ejemplo podría ser una VLAN, un Bridge, etc..
+
+		.. imagen: cnm-model.jpg
+
+	Además de los componentes anteriores CNM incluye otros objetos como:
+		- NetworkController: API que se expone para la administración de libnetwork (docker-engine).
+		- Driver: permite la propia implementación de la red mediante un conjunto de programas y configuraciones construídos dentro de docker-engine (bridge, host, overlay...) o instalados como plugins. Los drivers son administrados por libnetwork.
+
+	El ciclo de vida de CNM es administrado mediante la API que expone el NetworkController y sigue el siguiente ciclo:
+		1. El Driver a utilizar es registrado con el NetworkController. Si el Driver es "Docker built-in" es registrado por libnetwork mientras que si es instalado vía plugin, es registrado en libnetwork pero utilizando mecanismos externos propios del driver (plugin-mechanism, WIP). Cada Driver maneja un networkType particular.
+		2. Se crea un nuevo objetco de NetworkController via libnetwork.New().
+		3. La red es creada usando el controlador Network() y a partir de los argumentos Name y networkType, además del Driver que es pasado como argumento del networkType. A partir de este momento cualquier operación de red es gestionada por el Driver.
+		4. controller.NewNetwork() puede asumir ciertos parametros opcionales vía "options" y "Labels". Es el Driver quien hace uso de estos parámetros para que la red se comporte de una u otra forma.
+		5. network.CreateEndpoint(). Dada una red, el endpoint es creado. El Driver igualmente hace uso de arumentos opcionales para definir un rango de IP, la dirección IP del endpoint, puertos expuestos, etc...
+		6. endpoint.Join() hace el "attach" entre el contenedor y el endpoint, creando el Sandbox si no existiese.
+		7. endpoint.Leave() puede ser invocado cuando un contenedor es detenido. El Driver eliminará información relativa al estado pero no eliminará el Sandbox a menos de que sea el último endpoint activo del sandbox. También la IP será conservada mientras el endpoint no sea elimnado para garantizar que los contenedores reutilizan los recursos cuando son parados e iniciados. Ojo, en esta fase el endpoint no es eliminado!.
+		8. endpoint.Delete(). Cuando se ejecuta está función, el endpoint será eliminado definitivamente así como toda la información en sandbox.Info.
+		9. network.Delete(). La eliminación definitiva de la red y toda su información. Solo se podrá eliminar definitivamente una red cuando no exista ningún endpoint asignado a dicha red.
+
+4. Docker Network: diferencias entre un load balancer stateless y statefull.
+
+	Con respecto a la información almacenada relativa a una petición entrante, existen dos tipos de balancear la carga entre diferentes servidores; almacenando información de la petición, por ejemplo de sesión, o sin guardar absolutamente nada. El primer caso se implementa con un balanceador de carga stateful mientras que la segunda forma es balanceador de carga de tipo stateless.
+
+	Load balancer en modo stateful: el balanceador de carga almacena la tabla de rutas e información de cada sesión. Cuando la sesión es iniciada, el balanceador utiliza un algoritmo de distribución de carga para elegir el servidor destino enviando a este el resto de peticiones entrantes con el mismo destino.
+
+	Load balancer en modo stateless: por su parte este tipo de balanceador de carga no tiene en cuenta ningún dato de la sesión iniciada por la solicitud. Este modo de balancear hace uso de un hashing, formado a partir de la dirección IP y puerto origen que luego es asignado a un servidor. Según la implementación del algoritmo de balanceo (round robin, Least connection, Weighted, etc...) las futuras redirecciones irán a un servidor u a otro.
+
+
+
+
+ Para que nos hagamos un COntainerd llama a runc para crear el contenedor y en cuanto es creado runc muere como proceso y 
+pasa el control a Shim, una capa de containerd que finalmente nos ha permitido desacoplar por completo la gestión del contenedor por medio de docker-engine, 
 	docker client -> docker engine (API, manejo de plugins, interacción cliente-capas inferiores) -> containerd (encargado del lifecycle de los contenedores; start, stop, pause, rm, uso de imágenes, creación de la capa de red y persistencia...) -> runc (encargado de instanciar contenedores sobre o haciendo uso de libcontainer, namespaces, cgroups...) -> shim (aunque containerd lanza la creación de los contenedores através de runc, cuando runc crea el contenedor, deja de ser el proceso padre de estos y entonces el proceso runc desaparece y shim toma el control por lo que desacopla el contenedor del demonio docker-engine. Shim maneja las STDIN y STDOUT asi como el estado del contenedor
 
 	Hablar de OCI layer.
 
-Lo bueno de containerd es que permite crear contenedores en windows al no usarse la tecnologia nativa de linux LXC. También aunque empezó con proposito de una capa de poco peso, se le fueron añadiendo mas funcionalidades como el manejo de persistencia y redes. Ahora containerd se ha vuelto la tecnologia defacto a usar en kubernetes dando la posibilidad de usar solo aquellas funcionalidades necesarias. También containerd es ejecutado por docker-engine atraves de su api la cual fue instanciada desde el cliente de docker. COntainerd llama a runc para crear el contenedor y en cuanto es creado runc muere como proceso y pasa el control a Shim, una capa de containerd que finalmente nos ha permitido desacoplar por completo la gestión del contenedor por medio de docker-engine, a diferencia de versiones previas a la 1.11 donde docker-engine administraba todo como aplicación monolitica. Ahora podemos aplicar actualizaciones al demonio de docker sin necesidad de parar toda la infraestructura como container.
 
-El demonio de docker a pesar de haber abandonado muchas funcionalidades en pro de containerd, sigue manteniendo las relacionadas a la construccion de imagenes, networking, orquestacion, api y seguridad.
+
+
 
 * Eliminar todas las imagenes: docker image rm $(docker image ls -q)
 * Eliminar todos los contenedores (desaconsejado en producción): $ docker container rm $(docker container ls -aq) -f
+	..
+
+
