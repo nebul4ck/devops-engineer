@@ -65,7 +65,6 @@ DOCKER DAEMON
 		  User ubuntu
 		  IdentityFile ~/.ssh/my_ssh_context.pem
 
-
 2. DOCKERFILE
 
 	2.1 ENTRYPOINT vs CMD
@@ -168,7 +167,6 @@ DOCKER DAEMON
 
 		En realidad se suele utilizar una mezcla de ambas formas según la instrucción utilizada.
 
-	
 	2.4 Diferencia entre ADD y COPY
 
 		Aunque ambas instrucciones las utilizamos en el Dockerfile para añadir nuevos archivos a un directorio específico de la imagen, en la mayoría de los casos deberíamos de usar la instrucción COPY.
@@ -181,7 +179,6 @@ DOCKER DAEMON
 			* Para copiar archivos desde una fuente local a un destino, utilice COPY como única instrucción.
 			* Para descargar archivos desde una fuente, descomprimir su contenido y eliminar los archivos/directorios innecesarios (por ejemplo tras una compilación), utilice una única instrucción RUN con varios comandos Linux conectados por tuberías.
 			* Para descomprimir un archivo TAR local directamente en directorio de la imagen, utilice ADD.
-
 
 	2.3 Caché
 
@@ -200,10 +197,6 @@ DOCKER DAEMON
 					apt install package1=0.1.2
 
 		El caracter '\' se utiliza como separador de línea, ayuda a esclarecer el texto.
-
-
-
-
 
 DOCKER IMAGES
 
@@ -240,7 +233,6 @@ Para automatizar este proceso de ahora en adelante es posible forzar al dockerho
 	export DOCKER_CONTENT_TRUST=1
 
 A partir de este momento el dockerhost no podrá descargar imagenes sin firmar (unsigned).
-
 
 8.4 Instrucciones vs imagen layers
 
@@ -288,11 +280,6 @@ A partir de este momento el dockerhost no podrá descargar imagenes sin firmar (
 		El hash de un contenido comprimido y el hash del mismo contenido pero descomprimido son diferentes. Cuando ejecutamos un push, el contenido es compromido y subido a Docker registr, por lo tanto el hash difiere del almacenado en la cache local. De la misma manera cuando hacemos pull desde el registry, el contenido es descargado y descomprimido. En realidad la imagen es la misma en Docker registry que en local pero el hash no lo es. Como sabe entonces docker-engine y docker hub (registry) cuando hacemos un pull o pull que el contenido de la imagen es diferente o el mismo si los hash son distintos?. Para que la comprobación que hace Dockerhub o docker-engine entre ambas imágenes (contenido) no de como resultado un falso positivo, es decir, diferente hash, diferente contenido, Docker agrega un hash por capa llamado "distribution hash" el cual es un hash de la versión comprimida y es incluído en cada capa de la imagen ya este descomprimida o comprimida. De esta forma, esté en remoto o en local, el digest de cada capa coincidirá (o no) y entonces al hacer push o pull docker sabrá que está cacheado y que no.
 
 		En realidad la explicación y la teoría es algo mas compleja por lo que os recomiendo que si estáis interesados, busquéis algo de información extra por la web.
-
-
-
-
-
 
 DOCKERFILE
 
@@ -845,7 +832,7 @@ Añadir arriba
 
  Para que nos hagamos un COntainerd llama a runc para crear el contenedor y en cuanto es creado runc muere como proceso y 
 pasa el control a Shim, una capa de containerd que finalmente nos ha permitido desacoplar por completo la gestión del contenedor por medio de docker-engine, 
-	docker client -> docker engine (API, manejo de plugins, interacción cliente-capas inferiores) -> containerd (encargado del lifecycle de los contenedores; start, stop, pause, rm, uso de imágenes, creación de la capa de red y persistencia...) -> runc (encargado de instanciar contenedores sobre o haciendo uso de libcontainer, namespaces, cgroups...) -> shim (aunque containerd lanza la creación de los contenedores através de runc, cuando runc crea el contenedor, deja de ser el proceso padre de estos y entonces el proceso runc desaparece y shim toma el control por lo que desacopla el contenedor del demonio docker-engine. Shim maneja las STDIN y STDOUT asi como el estado del contenedor
+
 
 	Hablar de OCI layer.
 
@@ -858,3 +845,4 @@ pasa el control a Shim, una capa de containerd que finalmente nos ha permitido d
 	..
 
 
+	
