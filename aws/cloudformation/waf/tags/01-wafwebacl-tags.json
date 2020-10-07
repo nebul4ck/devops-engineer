@@ -1,0 +1,42 @@
+[
+    {
+        "Key" : "ApplicationID",
+        "Value" : "ef-dev-base-wafsecurewebacl"
+    },
+    {
+        "Key" : "Compliance",
+        "Value" : "yes"
+    },
+    {
+        "Key" : "CECO",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "Confidentiality",
+        "Value" : "yes"
+    },
+    {
+        "Key" : "Role",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "Environment",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "StartTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "EndTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "Operation",
+        "Value" : "ef"
+    },
+    {
+        "Key" : "SLA",
+        "Value" : "24x7"
+    }
+]

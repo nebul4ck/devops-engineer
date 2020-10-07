@@ -1,0 +1,22 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "ef-dev-base"
+    },
+    {
+        "ParameterKey": "RepoName",
+        "ParameterValue": "aws-lambda"
+    },
+    {
+        "ParameterKey": "RepoDescription",
+        "ParameterValue": "AWS Lambda repository."
+    },
+    {
+        "ParameterKey": "snsProto",
+        "ParameterValue": "email-json"
+    },
+    {
+        "ParameterKey": "snsEmailSubscriber",
+        "ParameterValue": "alberto.gonzalez@euigs.com"
+    }
+]

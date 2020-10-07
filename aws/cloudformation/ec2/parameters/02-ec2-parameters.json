@@ -1,0 +1,91 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "euigs-dev-tlt"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "template-test"
+    },
+    {
+        "ParameterKey": "ASGAMIId",
+        "ParameterValue": "ami-06ce3edf0cff21f07"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "DesiredASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "MinimumASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "MaximumASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-0ea7dbd21cdf22ce8"
+    },
+    {
+        "ParameterKey": "EUIGSCidrIp",
+        "ParameterValue": "10.93.0.0/16"
+    },
+    {
+        "ParameterKey": "Private1a",
+        "ParameterValue": "subnet-0bc2e5a9b0e4438e9"
+    },
+    {
+        "ParameterKey": "Private1b",
+        "ParameterValue": "subnet-018189f361ef7de57"
+    },
+    {
+        "ParameterKey": "TagRole",
+        "ParameterValue": "testing"
+    },
+    {
+        "ParameterKey": "TagEnvironment",
+        "ParameterValue": "dev"
+    },
+    {
+        "ParameterKey": "TagSLA",
+        "ParameterValue": "8x5"
+    },
+    {
+        "ParameterKey": "TagStartTime",
+        "ParameterValue": "08:00"
+    },
+    {
+        "ParameterKey": "TagEndTime",
+        "ParameterValue": "17:00"
+    },
+    {
+        "ParameterKey": "TagCECO",
+        "ParameterValue": "euigs"
+    },
+    {
+        "ParameterKey": "TagOperation",
+        "ParameterValue": "euigs"
+    },
+    {
+        "ParameterKey": "TagCompliance",
+        "ParameterValue": "no"
+    },
+    {
+        "ParameterKey": "TagConfidentiality",
+        "ParameterValue": "no"
+    },
+    {
+        "ParameterKey": "TagCommongSGPolicy",
+        "ParameterValue": "no"
+    },
+    {
+        "ParameterKey": "TagFirewallGlobalSecurityPolicy",
+        "ParameterValue": "no"
+    }
+]
+

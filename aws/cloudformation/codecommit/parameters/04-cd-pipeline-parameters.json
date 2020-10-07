@@ -1,0 +1,48 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "euigs-dev-tlt"
+    },
+    {
+        "ParameterKey": "DeploymentGroupName",
+        "ParameterValue": "euigs-dev-tlt-HardenedSOCServices"
+    },
+    {
+        "ParameterKey": "S3BucketArtifacts",
+        "ParameterValue": "euigs-dev-tlt-codepipeline-artifacts-s3"
+    },
+    {
+        "ParameterKey": "RegionOfRepositorySource",
+        "ParameterValue": "eu-west-1"
+    },
+
+    {
+        "ParameterKey": "CodeDeployApplicationName",
+        "ParameterValue": "euigs-dev-tlt-ApacheServerHardening-cd"
+    },
+    {
+        "ParameterKey": "RerunPipelineAfterUpdate",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "CodePipelineServiceRole",
+        "ParameterValue": "arn:aws:iam::691268106430:role/service-role/euigs-dev-tlt-codePipelineServiceRole-role"
+    },
+    {
+        "ParameterKey": "PipelineForApp",
+        "ParameterValue": "ApacheHardeningArtifact"
+    },
+    {
+        "ParameterKey": "VersionOfSource",
+        "ParameterValue": "1"
+    },
+
+    {
+        "ParameterKey": "RepositorySource",
+        "ParameterValue": "euigs-dev-tlt-aws-ApacheHardeningProject-cc-repository"
+    },
+    {
+        "ParameterKey": "BranchOfRepositorySource",
+        "ParameterValue": "develop"
+    }
+]

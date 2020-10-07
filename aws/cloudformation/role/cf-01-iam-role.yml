@@ -1,0 +1,202 @@
+---
+
+##
+# Alberto González Mesas, <alberto.gonzalez@euigs.com>
+# Tue Ene 14 10:30:00 CEST 2020 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Deploy a new compliance EC2 instance.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: Set up account configuration.
+        Parameters:
+          - AccountName
+          - EnvType
+          - RoleName
+          - ARNPolicy
+
+      - Label:
+          default: Tagging
+        Parameters:
+          - Role
+          - Environment
+          - SLA
+          - StartTime
+          - EndTime
+          - CECO
+          - Operation
+          - Compliance
+          - Confidentiality
+
+    ParameterLabels:
+      AccountName:
+        default: Account Name
+      EnvType:
+        default: Deployment environment
+      RoleName:
+        default: Role Name
+      ARNPolicy:
+        default: ARN Policy
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Description: 'The account name, ie ''euigs-dev-base'''
+    Type: String
+    MinLength: 1
+  EnvType: 
+    Description: 'Environment where the App will be deployed.'
+    Type: String
+    Default: development
+    AllowedValues: 
+      - development
+      - integration
+      - production
+  RoleName:
+    Description: 'The Role name'
+    Type: String
+    MinLength: 1
+  ARNPolicy:
+    Description: 'The ARN of the Policy to attachment'
+    Type: String
+    Default: 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+  # The tags can be replaced by cf-euigs-tags.json
+  Role:
+    Type: String
+    Description: 'Tag: Role of resource.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - pro
+  Environment:
+    Type: String
+    Description: 'Tag: Environment where the resource is spawned.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - pro
+  SLA:
+    Type: String
+    Description: 'Tag: Service-level agreement.'
+    Default: 24x7
+    AllowedValues:
+      - '24x7'
+      - '8x5'
+  StartTime:
+    Type: String
+    Description: 'When is the resource spawned?, ie ''00:00''.'
+    Default: '00:00'
+  EndTime:
+    Type: String
+    Description: 'When is the resource terminated?, ie ''18:30''.'
+    Default: '00:00'
+  CECO:
+    Type: String
+    Description: 'Operation owner of resource deployed, ie ''the same as Operation tag''.'
+    Default: euigs
+  Operation:
+    Type: String
+    Description: 'Operation owner of resource deployed.'
+    Default: euigs
+    AllowedValues:
+      - euigs
+      - as
+      - ct 
+      - eg
+  Compliance:
+    Type: String
+    Description: Compliance.
+    Default: 'no'
+    AllowedValues:
+      - 'no'
+      - 'yes'
+  Confidentiality:
+    Type: String
+    Description: Confidentiality.
+    Default: 'no'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+
+##############################################################################################
+# Conditions                                                                                 #
+##############################################################################################
+
+#Conditions:
+#  isNotPublicAccess: !Equals [!Ref S3PublicAccess, Private]
+#  isWebSite: !Equals [!Ref S3PublicAccess, PublicRead]
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  # Create Role
+  EC2AssumeRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: IAM Role for enable SSM Managed Instance Core
+      RoleName: !Sub '${RoleName}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref ARNPolicy
+      Tags:
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AccountName}-${RoleName}-role'
+        - Key: ApplicationID
+          Value: !Sub '${AccountName}-${RoleName}-role'
+        - Key: Role
+          Value: !Sub '${Role}'
+        - Key: Environment
+          Value: !Sub '${Environment}'
+        - Key: SLA
+          Value: !Sub '${SLA}'
+        - Key: StartTime
+          Value: !Sub '${StartTime}'
+        - Key: EndTime
+          Value: !Sub '${EndTime}'
+        - Key: CECO
+          Value: !Sub '${CECO}'
+        - Key: Operation
+          Value: !Sub '${Operation}'
+        - Key: Compliance
+          Value: !Sub '${Compliance}'
+        - Key: Confidentiality
+          Value: !Sub '${Confidentiality}'
+
+  InstanceProfile:
+    # Create Instance Profile
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles: 
+        - !Ref EC2AssumeRole
+
+# Note: Use the InstanceProfileName into ec2 template "IamInstanceProfile" property.

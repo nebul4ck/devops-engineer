@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "euigs-dev-tlt"
+    },
+    {
+        "ParameterKey": "EnvType",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "RoleName",
+        "ParameterValue": "euigs-dev-tlt-CodeDeployForPipelines-role"
+    },
+    {
+        "ParameterKey": "ARNCDPolicy",
+        "ParameterValue": "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+    }
+]

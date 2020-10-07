@@ -1,11 +1,11 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": "nebul4ck-account"
+        "ParameterValue": "euigs-dev-base"
     },
     {
         "ParameterKey": "S3BucketArn",
-        "ParameterValue": "arn:aws:s3:::nebul4ck-account-kinesis-waf-logging-s3"
+        "ParameterValue": "arn:aws:s3:::euigs-dev-base-kinesis-waf-logging-s3"
     },
     {
         "ParameterKey": "CloudWatchLoggingEnable",
@@ -45,10 +45,10 @@
     },
     {
         "ParameterKey": "KinesisIAMRoleARN",
-        "ParameterValue": "arn:aws:iam::123456789009876:role/nebul4ck-account-kinesis-delivery-stream-role"
+        "ParameterValue": "arn:aws:iam::963145608254:role/euigs-dev-base-kinesis-delivery-stream-role"
     },
     {
         "ParameterKey": "CloudWatchLogGroupName",
-        "ParameterValue": "nebul4ck-account-deliveryStream-loggroup"
+        "ParameterValue": "euigs-dev-base-deliveryStream-loggroup"
     }
 ]

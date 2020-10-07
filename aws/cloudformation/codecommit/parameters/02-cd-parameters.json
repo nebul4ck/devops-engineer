@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "euigs-dev-tlt"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "ApacheServerHardening"
+    },
+    {
+        "ParameterKey": "ComputePlatform",
+        "ParameterValue": "Server"
+    }
+]
