@@ -1,15 +1,15 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": "ef-dev-base"
+        "ParameterValue": "ef-shared-base"
     },
     {
         "ParameterKey": "RepoName",
-        "ParameterValue": "aws-lambda"
+        "ParameterValue": "cloudformation-templates"
     },
     {
         "ParameterKey": "RepoDescription",
-        "ParameterValue": "AWS Lambda repository."
+        "ParameterValue": "AWS CloudFormation Templates Repository for AWS LO Proyects."
     },
     {
         "ParameterKey": "snsProto",

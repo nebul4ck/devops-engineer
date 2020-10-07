@@ -1,15 +1,15 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": "euigs-dev-tlt"
+        "ParameterValue": "ef-shared-base"
     },
     {
         "ParameterKey": "EnvType",
-        "ParameterValue": "development"
+        "ParameterValue": "shared"
     },
     {
         "ParameterKey": "RoleName",
-        "ParameterValue": "euigs-dev-tlt-SSMandCodeCommitRoleForInstances-role"
+        "ParameterValue": "ef-shared-base-SSMCodeCommitRoleForInstances-role"
     },
     {
         "ParameterKey": "ARNSSMPolicy",

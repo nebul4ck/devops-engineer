@@ -1,0 +1,47 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "ef-shared-base"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "jenkinest"
+    },
+    {
+        "ParameterKey": "GoldenAMI",
+        "ParameterValue": "ami-06ce3edf0cff21f07"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "ApplicationInstanceProfile",
+        "ParameterValue": "arn:aws:iam::040636626092:instance-profile/ef-shared-base-create-SSMInstanceProfile-cf-cf-InstanceProfile-7CVJUDCE11ZU"
+    },
+    {
+        "ParameterKey": "DesiredASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "MinimumASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "MaximumASGCapacity",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "ApplicationTargetGroupARN",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "Subnets",
+        "ParameterValue": "subnet-0979c8dd43305659b,subnet-0298489ff7892af11"
+    },
+    {
+        "ParameterKey": "ApplicationEC2SecurityGroup",
+        "ParameterValue": ""
+    }
+]
+

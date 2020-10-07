@@ -67,11 +67,12 @@ Parameters:
   EnvType: 
     Description: 'Environment where the App will be deployed.'
     Type: String
-    Default: development
+    Default: shared
     AllowedValues: 
-      - development
-      - integration
-      - production
+      - dev
+      - int
+      - pro
+      - shared
   RoleName:
     Description: 'The Role name'
     Type: String

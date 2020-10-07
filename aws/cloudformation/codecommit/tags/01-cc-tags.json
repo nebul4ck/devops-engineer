@@ -1,7 +1,7 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "ef-dev-base"
+        "Value" : "ef-shared-base"
     },
     {
         "Key" : "Compliance",
@@ -9,19 +9,19 @@
     },
     {
         "Key" : "CECO",
-        "Value" : "dev"
+        "Value" : "shared"
     },
     {
         "Key" : "Confidentiality",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "Role",
-        "Value" : "dev"
+        "Value" : "shared"
     },
     {
         "Key" : "Environment",
-        "Value" : "dev"
+        "Value" : "shared"
     },
     {
         "Key" : "StartTime",

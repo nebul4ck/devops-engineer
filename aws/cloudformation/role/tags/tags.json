@@ -1,27 +1,27 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "nebul4ck"
+        "Value" : "ApplicationSSMCCCDInstanceProfile"
     },
     {
         "Key" : "Compliance",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "CECO",
-        "Value" : "pro"
+        "Value" : "ef"
     },
     {
         "Key" : "Confidentiality",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "Role",
-        "Value" : "pro"
+        "Value" : "shared"
     },
     {
         "Key" : "Environment",
-        "Value" : "production"
+        "Value" : "shared"
     },
     {
         "Key" : "StartTime",
@@ -33,7 +33,7 @@
     },
     {
         "Key" : "Operation",
-        "Value" : "nebul4ck"
+        "Value" : "ef"
     },
     {
         "Key" : "SLA",
