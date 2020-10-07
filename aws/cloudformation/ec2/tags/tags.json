@@ -1,7 +1,7 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "nebul4ck-account"
+        "Value" : "testing"
     },
     {
         "Key" : "Compliance",
@@ -9,7 +9,7 @@
     },
     {
         "Key" : "CECO",
-        "Value" : "dev"
+        "Value" : "ef"
     },
     {
         "Key" : "Confidentiality",
@@ -17,11 +17,11 @@
     },
     {
         "Key" : "Role",
-        "Value" : "dev"
+        "Value" : "shared"
     },
     {
         "Key" : "Environment",
-        "Value" : "development"
+        "Value" : "shared"
     },
     {
         "Key" : "StartTime",
@@ -33,7 +33,7 @@
     },
     {
         "Key" : "Operation",
-        "Value" : ""
+        "Value" : "ef"
     },
     {
         "Key" : "SLA",

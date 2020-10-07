@@ -51,7 +51,7 @@ test_stack () {
 
 	# Sintax validator
 
-    ${aws_cmd} cloudformation validate-template \
+    ${aws_cmd} --no-verify-ssl cloudformation validate-template \
     --profile "${account}" \
     --region "${region}" \
     --template-body "${template}"
@@ -62,7 +62,7 @@ test_stack () {
 create_stack () {
 
 	# Create a new Stack
-    ${aws_cmd} cloudformation create-stack \
+    ${aws_cmd} --no-verify-ssl cloudformation create-stack \
     --profile "${account}" \
     --stack-name "${full_stack_name}" \
     --template-body "${template}" \
@@ -84,7 +84,7 @@ create_stack () {
 show_available_stacks () {
 
 	# Select a stackname
-	stacks=$(aws cloudformation describe-stacks \
+	stacks=$(aws --no-verify-ssl cloudformation describe-stacks \
         --profile ${account} \
         --query "Stacks[].StackName" | tr -d "[|]|,|\"")
 
@@ -100,7 +100,7 @@ stack_deploy_info () {
 
 	# Check the stack deployment status
 
-	for event in $(aws cloudformation describe-stack-events \
+	for event in $(aws --no-verify-ssl cloudformation describe-stack-events \
 		--stack-name "${full_stack_name}" \
 		--profile "${account}" \
 		--query "StackEvents[].ResourceStatus");
@@ -109,7 +109,7 @@ stack_deploy_info () {
 	    	then
 				echo -e "\n Status: `echo ${event}|tr -d ','`\n"
 
-				select_failed=$(aws cloudformation describe-stack-events \
+				select_failed=$(aws --no-verify-ssl cloudformation describe-stack-events \
 					--stack-name ${full_stack_name} \
 					--profile ${account} \
 					--query "StackEvents[?ResourceStatus == 'CREATE_FAILED'].ResourceStatusReason")
@@ -117,7 +117,7 @@ stack_deploy_info () {
 		    	echo -e "`echo  ${select_failed}|tr -d '[|]'`"
 	    	elif [[ ${event} =~ 'CREATE_COMPLETE' ]];
 	   		then
-	    		select_complete=$(aws cloudformation describe-stack-events \
+	    		select_complete=$(aws --no-verify-ssl cloudformation describe-stack-events \
 	    			--stack-name ${full_stack_name} \
 	    			--profile ${account} \
 	    			--query "StackEvents[?ResourceStatus == 'CREATE_COMPLETE'].ResourceStatus[] | [0]")
@@ -135,7 +135,7 @@ delete_stack () {
 
 	# Delete a selected stack
 
-	aws cloudformation delete-stack \
+	aws --no-verify-ssl cloudformation delete-stack \
 	--stack-name "${full_stack_name}" \
 	--profile "${account}"
 
