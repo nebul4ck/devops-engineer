@@ -1,27 +1,27 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "testing"
+        "Value" : "ef-dev-base-wafsecurewebacl"
     },
     {
         "Key" : "Compliance",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "CECO",
-        "Value" : "ef"
+        "Value" : "dev"
     },
     {
         "Key" : "Confidentiality",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "Role",
-        "Value" : "shared"
+        "Value" : "dev"
     },
     {
         "Key" : "Environment",
-        "Value" : "shared"
+        "Value" : "dev"
     },
     {
         "Key" : "StartTime",

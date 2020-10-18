@@ -1,15 +1,15 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "testing"
+        "Value" : "euigs-dev-tlt"
     },
     {
         "Key" : "Compliance",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "CECO",
-        "Value" : "ef"
+        "Value" : "dev"
     },
     {
         "Key" : "Confidentiality",
@@ -17,11 +17,11 @@
     },
     {
         "Key" : "Role",
-        "Value" : "shared"
+        "Value" : "dev"
     },
     {
         "Key" : "Environment",
-        "Value" : "shared"
+        "Value" : "development"
     },
     {
         "Key" : "StartTime",
@@ -33,7 +33,7 @@
     },
     {
         "Key" : "Operation",
-        "Value" : "ef"
+        "Value" : "euigs"
     },
     {
         "Key" : "SLA",

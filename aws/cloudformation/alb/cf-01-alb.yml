@@ -1,0 +1,468 @@
+ 
+---
+
+##
+# Alberto Gonz?lez Mesas, <alberto.gonzalez@euigs.com>
+# lun Oct 07 16:00:00 CEST 2019
+#
+# !The next resource properties is hardcoded:
+#    - Security Group (SecurityGroups)
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This AWS CloudFormation template creates an Amazon Application Load Balancer.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Set up account configuration.
+        Parameters:
+          - AccountName
+      - Label:
+          default: Configure TargetGroup
+        Parameters:
+          - TargetGroupName
+          - CheckIntervalSeconds
+          - CheckProtocol
+          - CheckTimeoutSeconds
+          - ThresholdCount
+          - TargetGroupHttpCodeRange
+          - TargetGroupHttpPort
+          - TargetGroupHttpProtocol
+          - TargetId
+          - TargetType
+          - TargetPort
+          - TargetVpcId
+      - Label:
+          default: Configure Security Group
+        Parameters:
+          - IngressCidrIpRule1
+          - IngressDescriptionRule1
+          - IngressPortFromRule1
+          - IngressIpProtocolRule1
+          - IngressPortToRule1
+          - IngressCidrIpRule2
+          - IngressDescriptionRule2
+          - IngressPortFromRule2
+          - IngressIpProtocolRule2
+          - IngressPortToRule2
+          - SecurityGroupVpcId
+          - SecurityGroupDescription
+          - SecurityGroupName
+      - Label:
+          default: Configure Elastic Load Balancer.
+        Parameters:
+          - ApplicationLoadBalancerName
+          - Network1a
+          - Network1b
+          - ElasticLoadBalancingType
+          - ApplicationLoadBalancerType
+          - LoadBalancerIdleTimeout
+          - AccessLogsS3Enabled
+          - DeletionALBProtectionEnabled
+          - AccessLLogsS3BucketName
+          - RoutingHTTP2Enabled
+          - AccessS3Logs
+      - Label:
+          default: Configure ALB Listener
+        Parameters:
+          - LoadBalancerPort
+          - LoadBalancerProtocol
+          - LoadBalancerDefaultAction
+    ParameterLabels:
+      AccountName:
+        default: Account Name
+
+      ApplicationLoadBalancerName:
+        default: Application Load Balancer Name
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+Parameters:
+  AccountName:
+    Description: 'A prefix to tag the generated resources.'
+    Type: String
+    MinLength: 1
+  ApplicationLoadBalancerName:
+    Description: Application Load Balancer Name.
+    Type: String
+    MinLength: 1
+  ElasticLoadBalancingType:
+    Description: 'The kind of Elastic Load Balancer. ALB by default.'
+    Type: String
+    Default: application
+    AllowedValues:
+      - application
+      - network
+  ApplicationLoadBalancerType:
+    Description: 'Set up the type of Application Load Balancer.'
+    Type: String
+    Default: internal
+    AllowedValues:
+      - 'internal'
+      - 'internet-facing'
+  LoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds. The valid range is 1-4000 seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
+  AccessLogsS3Enabled:
+    Description: 'Indicates whether access logs are enabled.'
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+  AccessLLogsS3BucketName:
+    Description: 'The name of the S3 bucket for the access logs.'
+    Type: String
+    MinLength: 5
+    Default: euigs-dev-tlt-loadbalaceraccesslogs-s3
+  AccessS3Logs:
+    Description: 'The prefix for the location in the S3 bucket for the access logs.'
+    Type: String
+    Default: alblogs
+  DeletionALBProtectionEnabled:
+    Description: 'Indicates whether deletion protection is enabled.'
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+  RoutingHTTP2Enabled:
+    Description: 'Indicates whether HTTP/2 is enabled.'
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  TargetGroupName:
+    Type: String
+    Description: 'Default TG Name'
+    MinLength: 5
+  Network1a:
+    Type: String
+    Description: 'The Private 2A Subnet in your Virtual Private Cloud (VPC).'
+    Default: "subnet-0bc2e5a9b0e4438e9"
+  Network1b:
+    Type: String
+    Description: 'The Private 2B Subnet in your Virtual Private Cloud (VPC).'
+    Default: "subnet-018189f361ef7de57"
+  CheckIntervalSeconds:
+    Description: >-
+      'The approximate amount of time, in seconds, between health checks of an individual target.
+      For HTTP and HTTPS health checks, the range is 5–300 seconds.'
+    Type: Number
+    Default: 30
+    MinValue: 5
+    MaxValue: 300
+  CheckProtocol:
+    Description: >-
+      The protocol the load balancer uses when performing health checks on targets.
+      For Application Load Balancers, the default is HTTP. For Network Load Balancers, the default is TCP.
+    Type: String
+    Default: HTTP
+    AllowedValues:
+      - HTTP
+      - HTTPS
+      - TCP
+      - TCP_UDP
+      - TLS
+      - UDP
+  CheckTimeoutSeconds:
+    Description: >-
+      The amount of time, in seconds, during which no response from a target means a failed health check.
+      For target groups with a protocol of HTTP or HTTPS, the default is 5 seconds.
+    Type: Number
+    Default: 5
+    MinValue: 2
+    MaxValue: 120
+  ThresholdCount:
+    Description: >-
+      The number of consecutive health checks successes required before considering an unhealthy target healthy.
+      For target groups with a protocol of HTTP or HTTPS, the default is 5.
+    Type: Number
+    Default: 5
+    MinValue: 2
+    MaxValue: 10
+  TargetGroupHttpCodeRange:
+    Description: 'For Application Load Balancers, you can specify values between 200 and 499, and the default value is 200.'
+    Type: String
+    Default: 200-299
+  TargetGroupHttpPort:
+    Description: 'The port on which the targets receive traffic. This port is used unless you specify a port override when registering the target.'
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  TargetGroupHttpProtocol:
+    Description: >-
+      The protocol to use for routing traffic to the targets. For Application Load Balancers, the supported protocols are HTTP and HTTPS.
+      For Network Load Balancers, the supported protocols are TCP, TLS, UDP, or TCP_UDP.
+    Type: String
+    Default: HTTP
+    AllowedValues:
+      - HTTP
+      - HTTPS
+      - TCP
+      - TCP_UDP
+      - TLS
+      - UDP
+  TargetId:
+    Description: >-
+      'Specifies a target to add to a target group. The ID of the target. If the target type of the target group is instance, specify an instance ID.
+      If the target type is ip, specify an IP address. If the target type is lambda, specify the ARN of the Lambda function.
+      If there is more than one target, create a new parameter.'
+    Type: String
+  TargetType:
+    Description: >-
+      The type of target that you must specify when registering targets with this target group.
+      You can not specify targets for a target group using more than one target type.
+    Type: String
+    Default: instance
+    AllowedValues:
+      - instance
+      - ip
+      - lambda
+  TargetPort:
+    Description: >-
+      The port on which the target is listening. Not used if the target is a Lambda function. If there is more than one target and the 
+      port is not the same, create a new parameter.'
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  TargetVpcId:
+    Type: String
+    Description: >-
+      The identifier of the virtual private cloud (VPC). If the target is a Lambda function, this parameter does not apply.
+    Default: vpc-0ea7dbd21cdf22ce8
+  IngressDescriptionRule1:
+    Description: A description for the security group rule 1.
+    Type: String
+  IngressCidrIpRule1:
+    Description: The IPv4 address range, in CIDR format for the rule 1.
+    Type: String
+  IngressIpProtocolRule1:
+    Description: The IP protocol name (tcp, udp, icmp, icmpv6) or number.
+    Type: String
+    Default: tcp
+    AllowedValues:
+      - tcp
+      - udp
+      - icmp
+      - icmpv6
+  IngressPortFromRule1:
+    Description: >-
+      The start of port range for the TCP and UDP protocols, or an ICMP/ICMPv6 type number.
+      A value of -1 indicates all ICMP/ICMPv6 types. 
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  IngressPortToRule1:
+    Description: >-
+      The end of port range for the TCP and UDP protocols, or an ICMP/ICMPv6 code.
+      A value of -1 indicates all ICMP/ICMPv6 codes
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  IngressDescriptionRule2:
+    Description: A description for the security group rule 2.
+    Type: String
+  IngressCidrIpRule2:
+    Description: The IPv4 address range, in CIDR format for the rule 2.
+    Type: String
+  IngressIpProtocolRule2:
+    Description: The IP protocol name (tcp, udp, icmp, icmpv6) or number.
+    Type: String
+    Default: tcp
+    AllowedValues:
+      - tcp
+      - udp
+      - icmp
+      - icmpv6
+  IngressPortFromRule2:
+    Description: >-
+      The start of port range for the TCP and UDP protocols, or an ICMP/ICMPv6 type number.
+      A value of -1 indicates all ICMP/ICMPv6 types. 
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  IngressPortToRule2:
+    Description: >-
+      The end of port range for the TCP and UDP protocols, or an ICMP/ICMPv6 code.
+      A value of -1 indicates all ICMP/ICMPv6 codes
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  SecurityGroupVpcId:
+    Type: String
+    Description: 'The identifier of the virtual private cloud (VPC) where is the Security Group.'
+    Default: vpc-0ea7dbd21cdf22ce8
+  SecurityGroupDescription:
+    Description: A description for the security group. This is informational only.
+    Type: String
+    Default: 'Enable HTTP/S access via port 80/443'
+  SecurityGroupName:
+    Description: The name of the security group
+    Type: String
+    MinLength: 5
+  LoadBalancerPort:
+    Description: 'The port on which the load balancer is listening..'
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+  LoadBalancerProtocol:
+    Description: >-
+      For Application Load Balancers, the supported protocols are HTTP and HTTPS.
+      For Network Load Balancers, the supported protocols are TCP, TLS, UDP, or TCP_UDP.
+    Type: String
+    Default: HTTP
+    AllowedValues:
+      - HTTP
+      - HTTPS
+      - TCP
+      - TCP_UDP
+      - TLS
+      - UDP
+  LoadBalancerDefaultAction:
+    Description: The actions for the default rule. You cannot define a condition for a default rule.
+    Type: String
+    Default: forward
+    AllowedValues:
+      - forward
+      - authenticate-cognito
+      - authenticate-oidc
+      - fixed-response
+      - redirect
+##############################################################################################
+# Conditions                                                                                 #
+##############################################################################################
+#Conditions:
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+Resources:
+
+#############################################################
+# Target Groups                                             #
+#############################################################
+  TargetGroupALB:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      HealthCheckIntervalSeconds: !Sub '${CheckIntervalSeconds}'
+      HealthCheckProtocol: !Sub '${CheckProtocol}'
+      HealthCheckTimeoutSeconds: !Sub '${CheckTimeoutSeconds}'
+      HealthyThresholdCount: !Sub '${ThresholdCount}'
+      Matcher: 
+        HttpCode: !Sub '${TargetGroupHttpCodeRange}'
+      Name: !Sub ${TargetGroupName}-tg
+      Port: !Sub '${TargetGroupHttpPort}'
+      Protocol: !Sub '${TargetGroupHttpProtocol}'
+      #Tags: 
+      #  - Key: Application
+      #    Value: !Ref AWS::StackId
+      #  - Key: Name
+      #    Value: !Sub ${AccountName}-${TargetGroupName}-tg
+      Targets: 
+        - Id: !Sub '${TargetId}'
+          Port: !Sub '${TargetPort}'
+      TargetType: !Sub '${TargetType}'
+      VpcId: !Sub '${TargetVpcId}'
+
+#############################################################
+# Security Group                                            #
+#############################################################
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${SecurityGroupDescription}'
+      GroupName: !Sub ${AccountName}-${SecurityGroupName}-sg
+      SecurityGroupIngress:
+      - CidrIp: !Sub '${IngressCidrIpRule1}'
+        Description: !Sub '${IngressDescriptionRule1}'
+        FromPort: !Sub '${IngressPortFromRule1}'
+        IpProtocol: !Sub '${IngressIpProtocolRule1}'
+        ToPort: !Sub '${IngressPortToRule1}'
+      - CidrIp: !Sub '${IngressCidrIpRule2}'
+        Description: !Sub '${IngressDescriptionRule2}'
+        FromPort: !Sub '${IngressPortFromRule2}'
+        IpProtocol: !Sub '${IngressIpProtocolRule2}'
+        ToPort: !Sub '${IngressPortToRule2}'
+      VpcId: !Sub '${SecurityGroupVpcId}'
+
+#############################################################
+# Application Load Balancer Resources                       #
+#############################################################
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      IpAddressType: ipv4
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: !Sub ${DeletionALBProtectionEnabled}
+        - Key: idle_timeout.timeout_seconds
+          Value: !Sub ${LoadBalancerIdleTimeout}
+        - Key: routing.http2.enabled
+          Value: !Sub ${RoutingHTTP2Enabled}
+        - Key: access_logs.s3.enabled
+          Value: !Sub ${AccessLogsS3Enabled}
+        - Key: access_logs.s3.bucket
+          Value: !Sub ${AccessLLogsS3BucketName}
+        - Key: access_logs.s3.prefix
+          Value: !Sub '${AccessS3Logs}'
+      Name: !Sub ${AccountName}-${ApplicationLoadBalancerName}-alb
+      Scheme: !Sub ${ApplicationLoadBalancerType}
+      SecurityGroups: 
+        - !Ref AlbSecurityGroup
+      Subnets:
+        - !Sub '${Network1a}'
+        - !Sub '${Network1b}'
+      #Tags:
+      #  - Key: Application
+      #    Value: !Ref AWS::StackId
+      #  - Key: Name
+      #    Value: !Sub ${AccountName}-${ApplicationLoadBalancerName}-alb
+      Type: !Sub ${ElasticLoadBalancingType}
+
+#############################################################
+# Application Load Balancer Listener                        #
+#############################################################
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: !Sub '${LoadBalancerPort}'
+      Protocol: !Sub '${LoadBalancerProtocol}'
+      DefaultActions:
+        - Type: !Sub '${LoadBalancerDefaultAction}'
+          TargetGroupArn:
+            Ref: TargetGroupALB
+
+##############################################################################################
+# Outputs                                                                                    #
+##############################################################################################
+Outputs:
+  ApplicationLoadBalancerARN:
+    Value: !Ref ApplicationLoadBalancer
+    Description: Application Load Balancer ID.
+  ApplicationLoadBalancerDNSName:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Description: Application Load Balancer FQDN.
+  ApplicationLoadBalancerName:
+    Value: !GetAtt ApplicationLoadBalancer.LoadBalancerName
+...

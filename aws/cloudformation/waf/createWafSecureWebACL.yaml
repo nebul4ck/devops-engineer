@@ -1,0 +1,688 @@
+---
+
+# Fork from WAF ALB Template
+# URL: https://s3.amazonaws.com/solutions-reference/aws-waf-security-automations/v2.3.3/aws-waf-security-automations-alb.template
+
+##
+# Alberto González Mesas, <alberto.gonzalez@euigs.com>
+# Jue sep 10 10:57:00 CEST 2020
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  AWS WAF Security Automations - ALB v2.3.3: This AWS CloudFormation template helps
+  you provision the AWS WAF Security Automations stack against SQLInjection, Cross-Site Scripting
+  vulnerabilities and BadBot protection.
+
+  **WARNING** This template creates an AWS WAF Web ACL, an Amazon S3 bucket,
+  and an Amazon CloudWatch custom metric. You will be billed for the AWS resources used if you
+  create a stack from this template.
+
+  **INFO** AWS Lambda log parser and/or Amazon Athena log parser can't be activated because
+  euigs-sysadmin-roles are not allowed to create IAM Roles, also Athena is not supported on
+  EUIGS services compliance. Consequently, Scanners and Probes Protection cannot be activated.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Protection List
+        Parameters:
+          - ActivateSqlInjectionProtectionParam
+          - ActivateCrossSiteScriptingProtectionParam
+          - ActivateHttpFloodProtectionParam
+          - ActivateScannersProbesProtectionParam
+          - ActivateReputationListsProtectionParam
+          - ActivateBadBotProtectionParam
+          - ActivatePathTraversalParam
+
+      - Label:
+          default: Settings
+        Parameters:
+          - AccountName
+          - WebAclName
+          - EndpointType
+          - AppAccessLogBucket
+          - WafArnPrefix
+
+      - Label:
+          default: Advanced Settings
+        Parameters:
+          - RequestThreshold
+          - ErrorThreshold
+          - WAFBlockPeriod
+          - KeepDataInOriginalS3Location
+
+    ParameterLabels:
+      ActivateSqlInjectionProtectionParam:
+        default: Activate SQL Injection Protection
+
+      ActivateCrossSiteScriptingProtectionParam:
+        default: Activate Cross-site Scripting Protection
+
+      ActivateHttpFloodProtectionParam:
+        default: Activate HTTP Flood Protection
+
+      ActivateScannersProbesProtectionParam:
+        default: Activate Scanner & Probe Protection
+
+      ActivateReputationListsProtectionParam:
+        default: Activate Reputation List Protection
+
+      ActivateBadBotProtectionParam:
+        default: Activate Bad Bot Protection
+
+      ActivatePathTraversalParam:
+        default: Activate Path Traversal Filesystem
+
+      AccountName:
+        default: The name of the account what the template is on.
+
+      WebAclName:
+        default: WebACL name
+      EndpointType:
+        default: Endpoint Type
+
+      AppAccessLogBucket:
+        default: Application Access Log Bucket Name
+
+      WafArnPrefix:
+        default: A valid WAF Arn Prefix
+
+      RequestThreshold:
+        default: Request Threshold
+
+      ErrorThreshold:
+        default: Error Threshold
+
+      WAFBlockPeriod:
+        default: WAF Block Period
+      
+      KeepDataInOriginalS3Location:
+        default: Keep Data in Original s3 location
+
+Parameters:
+  ActivateSqlInjectionProtectionParam:
+    Type: String
+    Default: 'yes'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+    Description: Choose yes to enable the component designed to block common SQL injection attacks.
+
+  ActivateCrossSiteScriptingProtectionParam:
+    Type: String
+    Default: 'yes'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+    Description: Choose yes to enable the component designed to block common XSS attacks.
+
+  ActivateHttpFloodProtectionParam:
+    Type: String
+    Default: 'yes - AWS WAF rate based rule'
+    AllowedValues:
+      - 'yes - AWS WAF rate based rule'
+#      - 'yes - AWS Lambda log parser'
+#      - 'yes - Amazon Athena log parser'
+      - 'no'
+    Description: Choose yes to enable the component designed to block HTTP flood attacks.
+
+  ActivateScannersProbesProtectionParam:
+    Type: String
+    Default: 'no'
+    AllowedValues:
+#      - 'yes - AWS Lambda log parser'
+#      - 'yes - Amazon Athena log parser'
+      - 'no'
+    Description: Choose yes to enable the component designed to block scanners and probes.
+
+  ActivateReputationListsProtectionParam:
+    Type: String
+    Default: 'yes'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+    Description: >-
+      Choose yes to block requests from IP addresses on third-party reputation lists (supported
+      lists: spamhaus, torproject, and emergingthreats).
+
+  ActivateBadBotProtectionParam:
+    Type: String
+    Default: 'yes'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+    Description: Choose yes to enable the component designed to block bad bots and content scrapers.
+
+  ActivatePathTraversalParam:
+    Type: String
+    Default: 'yes'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+
+  AccountName:
+    Type: String
+    Description: >-
+      Set the name of the account where the resource will be create. It is used like prefix 
+      in the resource name.
+
+  WebAclName:
+    Type: String
+    Description: >-
+      Set a name for the WebACL. The account name and resource type will be append like 
+      prefix and suffix (respectively).
+
+  EndpointType:
+    Type: String
+    Default: 'ALB'
+    AllowedValues:
+      - 'CloudFront'
+      - 'ALB'
+    Description: Select the type of resource being used.
+
+  WafArnPrefix:
+    Type: String
+    Default: 'arn:aws:waf-regional'
+    Description: Default WAF Arn prefix.
+
+# Ignore this, Activate Scanners & Probes Protection parameter is disabled by default.
+  AppAccessLogBucket:
+    Type: String
+    Default: ''
+    AllowedPattern: '(^$|^([a-z]|(\d(?!\d{0,2}\.\d{1,3}\.\d{1,3}\.\d{1,3})))([a-z\d]|(\.(?!(\.|-)))|(-(?!\.))){1,61}[a-z\d]$)'
+    Description: >-
+      (Ignore this, Activate Scanners & Probes Protection parameter is disabled by default). If you chose yes
+      for the Activate Scanners & Probes Protection parameter, enter a name for the Amazon S3 bucket where you
+      want to store access logs for your CloudFront distribution or Application Load Balancer.
+      More about bucket name restriction here: http://amzn.to/1p1YlU5. If you chose to deactivate this protection,
+      ignore this parameter. 
+
+# Set a value of at least 100. Only AWS WAF rate based rule is allowed.
+  RequestThreshold:
+    Type: Number
+    Default: 100
+    MinValue: 0
+    Description:  >-
+      (Set a value of at least 100. Only AWS WAF rate based rule is allowed). If you chose yes
+      for the Activate HTTP Flood Protection parameter, enter the maximum acceptable requests
+      per FIVE-minute period per IP address. Please note that AWS WAF rate based rule requires
+      values greater than 100 (if you chose Lambda/Athena log parser options, you can use any
+      value greater than zero). If you chose to deactivate this protection, ignore this parameter.
+
+# Ignore this, Activate Scanners & Probes Protection parameter is disabled by default.
+  ErrorThreshold:
+    Type: Number
+    Default: 50
+    MinValue: 0
+    Description:  >-
+      (Ignore this, Activate Scanners & Probes Protection parameter is disabled by default).
+      If you chose yes for the Activate Scanners & Probes Protection parameter, enter the maximum
+      acceptable bad requests per minute per IP. If you chose to deactivate this protection, 
+      ignore this parameter.
+
+# Ignore this, log parsing is not allowed.
+  WAFBlockPeriod:
+    Type: Number
+    Default: 240
+    MinValue: 0
+    Description: >-
+      (Ignore this, log parsing is not allowed). If you chose yes for the Activate Scanners & Probes Protection or HTTP Flood Lambda/Athena log
+      parser parameters, enter the period (in minutes) to block applicable IP addresses. If you
+      chose to deactivate log parsing, ignore this parameter.
+
+# Ignore this, Athena is not allowed.
+  KeepDataInOriginalS3Location:
+    Type: String
+    Default: 'No'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Description: >-
+      (Ignore this, Athena is not allowed). If you chose Amazon Athena log parser for the Activate Scanners & Probes Protection parameter, 
+      partitioning will be applied to log files and Athena queries. By default log files will be moved
+      from their original location to a partitioned folder structure in s3. Choose Yes if you also want
+      to keep a copy of the logs in their original location. Selecting "Yes" will duplicate your log
+      storage. If you did not choose to activate Athena log parsing, ignore this parameter.
+
+Conditions:
+  SqlInjectionProtectionActivated: !Equals
+    - !Ref ActivateSqlInjectionProtectionParam
+    - 'yes'
+
+  CrossSiteScriptingProtectionActivated: !Equals
+    - !Ref ActivateCrossSiteScriptingProtectionParam
+    - 'yes'
+
+  PathTraversalActivated: !Equals
+    - !Ref ActivatePathTraversalParam
+    - 'yes'
+
+  HttpFloodLambdaLogParser: !Equals
+    - !Ref ActivateHttpFloodProtectionParam
+    - 'yes - AWS Lambda log parser'
+
+  HttpFloodAthenaLogParser: !Equals
+    - !Ref ActivateHttpFloodProtectionParam
+    - 'yes - Amazon Athena log parser'
+
+  HttpFloodProtectionLogParserActivated: !Or
+    - Condition: HttpFloodLambdaLogParser
+    - Condition: HttpFloodAthenaLogParser
+
+  ScannersProbesLambdaLogParser: !Equals
+    - !Ref ActivateScannersProbesProtectionParam
+    - 'yes - AWS Lambda log parser'
+
+  ScannersProbesAthenaLogParser: !Equals
+    - !Ref ActivateScannersProbesProtectionParam
+    - 'yes - Amazon Athena log parser'
+
+  ScannersProbesProtectionActivated: !Or
+    - Condition: ScannersProbesLambdaLogParser
+    - Condition: ScannersProbesAthenaLogParser
+
+  LogParser: !Or
+    - Condition: HttpFloodProtectionLogParserActivated
+    - Condition: ScannersProbesProtectionActivated
+
+  ReputationListsProtectionActivated: !Equals
+    - !Ref ActivateReputationListsProtectionParam
+    - 'yes'
+
+  BadBotProtectionActivated: !Equals
+    - !Ref ActivateBadBotProtectionParam
+    - 'yes'
+
+  AthenaLogParser: !Or
+    - Condition: HttpFloodAthenaLogParser
+    - Condition: ScannersProbesAthenaLogParser
+
+  CustomResourceLambdaAccess: !Or
+    - Condition: ReputationListsProtectionActivated
+    - Condition: AthenaLogParser
+
+Resources:
+  WAFWhitelistSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Properties:
+      Name: !Sub '${WebAclName} - Whitelist Set'
+
+  WAFBlacklistSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Properties:
+      Name: !Sub '${WebAclName} - Blacklist Set'
+
+  WAFHttpFloodSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Condition: HttpFloodProtectionLogParserActivated
+    Properties:
+      Name: !Sub '${WebAclName} - HTTP Flood Set'
+
+  WAFScannersProbesSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Condition: ScannersProbesProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - Scanners & Probes Set'
+
+  WAFReputationListsSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Condition: ReputationListsProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - IP Reputation Lists Set'
+
+  WAFBadBotSet:
+    Type: 'AWS::WAFRegional::IPSet'
+    Condition: BadBotProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - IP Bad Bot Set'
+
+  WAFSqlInjectionDetection:
+    Type: 'AWS::WAFRegional::SqlInjectionMatchSet'
+    Condition: SqlInjectionProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - SQL injection Detection'
+      SqlInjectionMatchTuples:
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Cookie
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Cookie
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Authorization
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Authorization
+          TextTransformation: HTML_ENTITY_DECODE
+
+  WAFXssQueryAndUriDetection:
+    Type: 'AWS::WAFRegional::XssMatchSet'
+    Condition: CrossSiteScriptingProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - XSS Query and URI Detection'
+      XssMatchTuples:
+        - FieldToMatch:
+            Type: ALL_QUERY_ARGS
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: ALL_QUERY_ARGS
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: ALL_QUERY_ARGS
+          TextTransformation: CMD_LINE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: CMD_LINE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: CMD_LINE
+
+  WAFXssHeaderAndBodyDetection:
+    Type: 'AWS::WAFRegional::XssMatchSet'
+    Condition: CrossSiteScriptingProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - XSS Header and Body Detection'
+      XssMatchTuples:
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Cookie
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: Cookie
+          TextTransformation: HTML_ENTITY_DECODE
+
+  WAFPathsStringSet:
+    Type: AWS::WAFRegional::ByteMatchSet
+    Condition: PathTraversalActivated
+    Properties:
+      Name: !Sub '${WebAclName} - Match RFI LFI Traversal'
+      ByteMatchTuples:
+        - FieldToMatch:
+            Type: URI
+          PositionalConstraint: CONTAINS
+          TargetString: ../
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          PositionalConstraint: CONTAINS
+          TargetString: ../
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          PositionalConstraint: CONTAINS
+          TargetString: ../
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          PositionalConstraint: CONTAINS
+          TargetString: ../
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: URI
+          PositionalConstraint: CONTAINS
+          TargetString: ://
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          PositionalConstraint: CONTAINS
+          TargetString: ://
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          PositionalConstraint: CONTAINS
+          TargetString: ://
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          PositionalConstraint: CONTAINS
+          TargetString: ://
+          TextTransformation: HTML_ENTITY_DECODE
+
+  WAFPathsRule:
+    Type: AWS::WAFRegional::Rule
+    Condition: PathTraversalActivated
+    Properties:
+      Name: !Sub '${WebAclName} - Detect-RFI-LFI-Traversal'
+      MetricName:  !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'DetectrfilfiRule']]
+      Predicates:
+        - DataId: !Ref WAFPathsStringSet
+          Negated: false
+          Type: ByteMatch
+          
+  WAFWhitelistRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Properties:
+      Name: !Sub '${WebAclName} - Whitelist Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'WhitelistRule']]
+      Predicates:
+        - DataId: !Ref WAFWhitelistSet
+          Negated: false
+          Type: IPMatch
+
+  WAFBlacklistRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Properties:
+      Name: !Sub '${WebAclName} - Blacklist Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'BlacklistRule']]
+      Predicates:
+        - DataId: !Ref WAFBlacklistSet
+          Negated: false
+          Type: IPMatch
+
+  WAFHttpFloodRegularRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: HttpFloodProtectionLogParserActivated
+    Properties:
+      Name: !Sub '${WebAclName} - HTTP Flood Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'HttpFloodRule']]
+      Predicates:
+        - DataId: !Ref WAFHttpFloodSet
+          Negated: false
+          Type: IPMatch
+
+  WAFScannersProbesRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: ScannersProbesProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - Scanners & Probes Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'ScannersProbesRule']]
+      Predicates:
+        - DataId: !Ref WAFScannersProbesSet
+          Negated: false
+          Type: IPMatch
+
+  WAFIPReputationListsRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: ReputationListsProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - WAF IP Reputation Lists Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'IPReputationListsRule']]
+      Predicates:
+        - DataId: !Ref WAFReputationListsSet
+          Negated: false
+          Type: IPMatch
+
+  WAFBadBotRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: BadBotProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - Bad Bot Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'BadBotRule']]
+      Predicates:
+        - DataId: !Ref WAFBadBotSet
+          Negated: false
+          Type: IPMatch
+
+  WAFSqlInjectionRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: SqlInjectionProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - SQL Injection Rule'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'SqlInjectionRule']]
+      Predicates:
+        - DataId: !Ref WAFSqlInjectionDetection
+          Negated: false
+          Type: SqlInjectionMatch
+
+  WAFXssQueryAndUriRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: CrossSiteScriptingProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - XSS Rule: Query and URI String'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'XssQueryAndUriRule']]
+      Predicates:
+        - DataId: !Ref WAFXssQueryAndUriDetection
+          Negated: false
+          Type: XssMatch
+
+  WAFXssHeadersAndBodyRule:
+    Type: 'AWS::WAFRegional::Rule'
+    Condition: CrossSiteScriptingProtectionActivated
+    Properties:
+      Name: !Sub '${WebAclName} - XSS Rule: Headers and Body'
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'XssHeadersAndBodyRule']]
+      Predicates:
+        - DataId: !Ref WAFXssHeaderAndBodyDetection
+          Negated: false
+          Type: XssMatch
+
+  WAFWebACL:
+    Type: 'AWS::WAFRegional::WebACL'
+    Properties:
+      Name: !Sub '${AccountName}-${WebAclName}-webacl'
+      DefaultAction:
+        Type: ALLOW
+      MetricName: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'MaliciousRequesters']]
+      Rules:
+        - Action:
+            Type: ALLOW
+          Priority: 1
+          RuleId: !Ref WAFPathsRule
+        - Action:
+            Type: ALLOW
+          Priority: 10
+          RuleId: !Ref WAFBlacklistRule
+        - Action:
+            Type: ALLOW
+          Priority: 11
+          RuleId: !Ref WAFSqlInjectionRule
+        - Action:
+            Type: ALLOW
+          Priority: 12
+          RuleId: !Ref WAFXssQueryAndUriRule
+        - Action:
+            Type: ALLOW
+          Priority: 13
+          RuleId: !Ref WAFXssHeadersAndBodyRule
+        - Action:
+            Type: ALLOW
+          Priority: 14
+          RuleId: !Ref WAFBadBotRule
+        - Action:
+            Type: ALLOW
+          Priority: 15
+          RuleId: !Ref WAFIPReputationListsRule
+
+Outputs:
+  WAFWhitelistSet:
+    Value: !Ref WAFWhitelistSet
+
+  WAFBlacklistSet:
+    Value: !Ref WAFBlacklistSet
+
+  WAFHttpFloodSet:
+    Value: !Ref WAFHttpFloodSet
+    Condition: HttpFloodProtectionLogParserActivated
+
+  WAFScannersProbesSet:
+    Value: !Ref WAFScannersProbesSet
+    Condition: ScannersProbesProtectionActivated
+
+  WAFReputationListsSet:
+    Value: !Ref WAFReputationListsSet
+    Condition: ReputationListsProtectionActivated
+
+  WAFBadBotSet:
+    Value: !Ref WAFBadBotSet
+    Condition: BadBotProtectionActivated
+
+  WAFPathsRule:
+    Value: !Ref WAFPathsRule
+
+  WAFWhitelistRule:
+    Value: !Ref WAFWhitelistRule
+
+  WAFBlacklistRule:
+    Value: !Ref WAFBlacklistRule
+
+  WAFIPReputationListsRule:
+    Value: !Ref WAFIPReputationListsRule
+    Condition: ReputationListsProtectionActivated
+
+  WAFBadBotRule:
+    Value: !Ref WAFBadBotRule
+    Condition: BadBotProtectionActivated
+
+  WAFSqlInjectionRule:
+    Value: !Ref WAFSqlInjectionRule
+    Condition: SqlInjectionProtectionActivated
+
+  WAFXssQueryAndUriRule:
+    Value: !Ref WAFXssQueryAndUriRule
+    Condition: CrossSiteScriptingProtectionActivated
+
+  WAFXssHeadersAndBodyRule:
+    Value: !Ref WAFXssHeadersAndBodyRule
+    Condition: CrossSiteScriptingProtectionActivated
+    
+  WAFWebACL:
+    Value: !Ref WAFWebACL
+
+  WAFWebACLArn:
+    Value: !Sub '${WafArnPrefix}:${AWS::Region}:${AWS::AccountId}:webacl/${WAFWebACL}'
+
+  WAFWebACLMetricName:
+    Value: !Join ['', [!Join ['', !Split ['-', !Sub '${WebAclName}']], 'MaliciousRequesters']]

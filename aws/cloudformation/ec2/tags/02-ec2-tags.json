@@ -1,0 +1,42 @@
+[
+    {
+        "Key" : "ApplicationID",
+        "Value" : "euigs-dev-tlt"
+    },
+    {
+        "Key" : "TagCompliance",
+        "Value" : "no"
+    },
+    {
+        "Key" : "TagCECO",
+        "Value" : "euigs"
+    },
+    {
+        "Key" : "TagConfidentiality",
+        "Value" : "no"
+    },
+    {
+        "Key" : "TagRole",
+        "Value" : "testing"
+    },
+    {
+        "Key" : "TagEnvironment",
+        "Value" : "dev"
+    },
+    {
+        "Key" : "TagStartTime",
+        "Value" : "08:00"
+    },
+    {
+        "Key" : "TagEndTime",
+        "Value" : "18:00"
+    },
+    {
+        "Key" : "TagOperation",
+        "Value" : "euigs"
+    },
+    {
+        "Key" : "TagSLA",
+        "Value" : "8x5"
+    }
+]

@@ -1,0 +1,215 @@
+---
+
+##
+# Alberto González Mesas, <alberto.gonzalez@euigs.com>
+# Fri May 8 14:30:00 CEST 2020 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Create a CodePipeline Roles with the policies used in trust relationship with pipelines and 
+  triggering pipelines from cloudwatch events.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: Set up account configuration.
+        Parameters:
+          - AccountName
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Description: 'The account name, ie ''euigs-dev-base'''
+    Type: String
+    MinLength: 1
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: IAM Role for enable CodeDeploy Pipelines.
+      RoleName: !Sub ${AccountName}-codePipelineServiceRole-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/service-role/"
+      # Tags:
+      #   - Key: Application
+      #     Value: !Ref 'AWS::StackId'
+
+  CodePipelineRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      # The name of the policy document.
+      PolicyName: !Sub ${AccountName}-codePipelineTrustRelationship-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'iam:PassRole'
+            Resource: '*'
+            Condition:
+              StringEqualsIfExists:
+                'iam:PassedToService':
+                  - 'cloudformation.amazonaws.com'
+                  - 'elasticbeanstalk.amazonaws.com'
+                  - 'ec2.amazonaws.com'
+                  - 'ecs-tasks.amazonaws.com'
+          - Effect: Allow
+            Action:
+              - 'codecommit:CancelUploadArchive'
+              - 'codecommit:GetBranch'
+              - 'codecommit:GetCommit'
+              - 'codecommit:GetUploadArchiveStatus'
+              - 'codecommit:UploadArchive'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'codedeploy:CreateDeployment'
+              - 'codedeploy:GetApplication'
+              - 'codedeploy:GetApplicationRevision'
+              - 'codedeploy:GetDeployment'
+              - 'codedeploy:GetDeploymentConfig'
+              - 'codedeploy:RegisterApplicationRevision'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'codestar-connections:UseConnection'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'elasticbeanstalk:*'
+              - 'ec2:*'
+              - 'elasticloadbalancing:*'
+              - 'autoscaling:*'
+              - 'cloudwatch:*'
+              - 's3:*'
+              - 'sns:*'
+              - 'cloudformation:*'
+              - 'rds:*'
+              - 'sqs:*'
+              - 'ecs:*'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+              - 'lambda:ListFunctions'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 's3:GetObject'
+              - 's3:GetObjectVersion'
+              - 's3:GetBucketVersioning'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+            Resource:
+              - 'arn:aws:s3:::codepipeline*'
+              - 'arn:aws:s3:::elasticbeanstalk*'
+          - Effect: Allow
+            Action:
+              - 'opsworks:CreateDeployment'
+              - 'opsworks:DescribeApps'
+              - 'opsworks:DescribeCommands'
+              - 'opsworks:DescribeDeployments'
+              - 'opsworks:DescribeInstances'
+              - 'opsworks:DescribeStacks'
+              - 'opsworks:UpdateApp'
+              - 'opsworks:UpdateStack'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'cloudformation:CreateStack'
+              - 'cloudformation:DeleteStack'
+              - 'cloudformation:DescribeStacks'
+              - 'cloudformation:UpdateStack'
+              - 'cloudformation:CreateChangeSet'
+              - 'cloudformation:DeleteChangeSet'
+              - 'cloudformation:DescribeChangeSet'
+              - 'cloudformation:ExecuteChangeSet'
+              - 'cloudformation:SetStackPolicy'
+              - 'cloudformation:ValidateTemplate'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'codebuild:BatchGetBuilds'
+              - 'codebuild:StartBuild'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'devicefarm:ListProjects'
+              - 'devicefarm:ListDevicePools'
+              - 'devicefarm:GetRun'
+              - 'devicefarm:GetUpload'
+              - 'devicefarm:CreateUpload'
+              - 'devicefarm:ScheduleRun'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'servicecatalog:ListProvisioningArtifacts'
+              - 'servicecatalog:CreateProvisioningArtifact'
+              - 'servicecatalog:DescribeProvisioningArtifact'
+              - 'servicecatalog:DeleteProvisioningArtifact'
+              - 'servicecatalog:UpdateProduct'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ecr:DescribeImages'
+            Resource: '*'
+      Roles: 
+        - !Ref CodePipelineServiceRole
+
+  CodePipelineCloudWatchEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: >-
+        Allows Amazon CloudWatch Events to automatically start a new execution in the MyPipelineA pipeline when a change occurs.
+      RoleName: !Sub ${AccountName}-StartPipelineFromCloudWatchEvents-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - events.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/service-role/"
+      # Tags:
+      #   - Key: Application
+      #     Value: !Ref 'AWS::StackId'
+
+  StartPipelineFromCWEventsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      # The name of the policy document.
+      PolicyName: !Sub ${AccountName}-startPipelineFromCWEventsPolicy-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'codepipeline:StartPipelineExecution'
+            Resource: 'arn:aws:codepipeline:eu-west-1:691268106430:*'
+      Roles: 
+        - !Ref CodePipelineCloudWatchEventRole

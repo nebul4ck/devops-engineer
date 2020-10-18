@@ -1,7 +1,7 @@
 [
     {
         "ParameterKey": "AccountName",
-        "ParameterValue": "nebul4ck-account"
+        "ParameterValue": "euigs-dev-base"
     },
     {
         "ParameterKey": "CloudWatchLogGroupName",

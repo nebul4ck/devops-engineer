@@ -1,15 +1,15 @@
 [
     {
         "Key" : "ApplicationID",
-        "Value" : "testing"
+        "Value" : "ef-dev-base"
     },
     {
         "Key" : "Compliance",
-        "Value" : "no"
+        "Value" : "yes"
     },
     {
         "Key" : "CECO",
-        "Value" : "ef"
+        "Value" : "dev"
     },
     {
         "Key" : "Confidentiality",
@@ -17,11 +17,11 @@
     },
     {
         "Key" : "Role",
-        "Value" : "shared"
+        "Value" : "dev"
     },
     {
         "Key" : "Environment",
-        "Value" : "shared"
+        "Value" : "dev"
     },
     {
         "Key" : "StartTime",
@@ -34,9 +34,5 @@
     {
         "Key" : "Operation",
         "Value" : "ef"
-    },
-    {
-        "Key" : "SLA",
-        "Value" : "24x7"
     }
 ]
