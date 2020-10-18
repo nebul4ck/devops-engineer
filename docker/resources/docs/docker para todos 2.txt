@@ -357,17 +357,23 @@ DOCKERFILE
  		2: reserved - do not use this exit code
 
 
+LOGS
+	Para rastrear cualquier error de conectividad podemos hacer uso del siguiente comando si estamos utilizando systemd:
 
+		 $ journald -u docker.service
 
+	Otras alternativas pueden ser /var/log/message para rhel, /var/log/upstart/docker.log para el sistema ubuntu-upstart o /var/log/daemon.log en debian.
 
-DOCKER NETWORK
+	No olvides configurar el logging en /etc/docker/daemon.json a debug: true y el log-level: debug|info|warn|error|fatal.
 
-14. Service-discovery
+	Para mirar el log de los contenedores
 
-Service discovery es el servicio de DNS nativo de docker. Para que dos contenedores puedan encontrarse por su nombre de servicio dentro de la misma red, ambos contenedores deben de tener un nombre de servicio (--name) o alias (--net-alias). En docker Swarm hay dos maneras de nombrar el servicio que corre en un contenedor, o bien haciendo uso de la directiva 'service' del archivo compose o mediante el parámetro '--name' en tiempo de ejecución.
+		$ docker container logs <contenedor>
+		$ docker service logs <servicio>
 
-Podemos usar servidore DNS alternativos en caso de que queramos resolver nombres de servicios o IP contra servidores DNS externos. Para ello utilizaremos el parámetro '--dns=<ip-dns-server>' al instanciar el servicio o añadiendo los servidores DNS al archivo daemon.json. 
+	Recordemos que estos ultimos comandos solo funcionan si hemos configurado el demonio con los drivers "jorunald" o "json-file".
 
+	También podemos machacar o crear una configuración de log especifica para un contenedor o servicio pasando los parámetros '--log-driver y --log-opts'.
 
 
 3. Preguntas frecuentes:
@@ -530,60 +536,7 @@ Restaurar el Backup.
 	Dos particularidades a tener en cuenta a la hora de restaurar un backup; tanto la versión de Docker como la IP del nodo manager deben de ser exactamente las mismas que cuando se tomó el "Snapshot" (backup) del directorio Swarm.
 
 
-NETWORKING
 
-12. Docker Driver Networking
-
-Los drivers que se incluyen en docker-engine para el netorking son los siguientes:
-	- linux: bridge, overlay and macvlan (transparent en windows).
-	- Windows: nat, overlay, transparent and 12bridge
-
-13. Tipos de redes en docker linux
-
-	- single-host:
-		- bridge network: solo pueden conectarse contenedores existentes en un mismo docker host y es una implementación del protocolo 802.1d bridge de la capa 2 switch y se crea usando el driver bridge en linux o nat en windows, '-d,--driver bridge'. En windows se implementa de forma nativa la red nat, que a efectos prácticos funcionan igual. Esta es la red donde por defecto serán creados los contenedores a menos que se especifique el parámetro --network.
-	
-		Esta red recibe el nombre de bridge en docker-engine y docker0 en el sistema anfitrión. Ambas, podríamos decir que son la misma solo que cada una de ellas es administrada por los comandos nativos, bien de docker-engine (docker network inspect, create, etc...) o de Linux (ifconfig, ip, brctl) y controladas por sus librerías, libnetwork endocker-engine o las nativas del sistema para el anfitrión. Las dos redes son conectadas a la interfaz física NIC del dockerhost y mapeadas vía port mapping.
-
-	- Multi-host:
-		- overlay network: permite crear una red propagada por diferentes doker host en la que todos los contenedores asignados a una red creada con este drivers y repartidos por diferentes host podrán conectarse entre si. Se usa el driver overlay (-d,--driver overlay).
-		- Para aplicaciones mixtas, donde las apps corren en contenedores pero otras no, existe el driver macvlan o transparent en windows para poder conectar todas las app bajo una misma red. Este driver permite a un contenedor tomar su propia dirección MAC e IP. Aunque el rendimiento es bueno, una desventaja es que obliga al docker host a poner su NIC en promiscuous mode, algo que no siempre está permitido en las organizaciones. Por ello, es posible que la organización lo permita en data centers o redes privadas pero muy posiblemente no puedas hacer uso de este driver en nubes públicas.
-
-	A continuación un ejemplo práctico.
-
-		"Suponemos que tenemos una red fisica con dos VLAN (100: 10.0.0.0/24 y 200: 192.168.1.0/24) y ahora agregamos un docker host a la red fisica. Uno de los requisitos es que los contenedores que aquí creemos deben de tener conectividad con las app de la VLAN 100. Por ello creamos una macvlan:
-
-			$ docker network create -d macvlan \
-				--subnet=10.0.0.0/24 \
-				--ip-range=10.0.0.0/25 \
-				--gateway=10.0.0.1 \
-				-o parent=eth0.100 \
-				macvlan100
-
-			Nota:
-				10.0.0.0/25 : es importante que este rango este reservado para docker y no haya otros servidores dhcp que hagan uso de el.
-				-o parent=eth0.100 :es necesario añadir el tagueo de la interfaz ya que es requisito de linux para poder puentear la interfaz virtual del docker host, con la NIC del host.
-
-		Ahora podremos crear contenedores dentro de esta red y se verán entre ellos a través de su MAC e IP.
-
-		También podemos crear una segunda macvlan asignada a la misma eth0 (eth0.200) haciendo uso de VLAN truncking"
-
-	Para rastrear cualquier error de conectividad podemos hacer uso del siguiente comando si estamos utilizando systemd:
-
-		 $ journald -u docker.service
-
-	Otras alternativas pueden ser /var/log/message para rhel, /var/log/upstart/docker.log para el sistema ubuntu-upstart o /var/log/daemon.log en debian.
-
-	No olvides configurar el logging en /etc/docker/daemon.json a debug: true y el log-level: debug|info|warn|error|fatal.
-
-	Para mirar el log de los contenedores
-
-		$ docker container logs <contenedor>
-		$ docker service logs <servicio>
-
-	Recordemos que estos ultimos comandos solo funcionan si hemos configurado el demonio con los drivers "jorunald" o "json-file".
-
-	También podemos machacar o crear una configuración de log especifica para un contenedor o servicio pasando los parámetros '--log-driver y --log-opts'.
 
 
 SWARM
@@ -828,13 +781,6 @@ Añadir arriba
 	Load balancer en modo stateless: por su parte este tipo de balanceador de carga no tiene en cuenta ningún dato de la sesión iniciada por la solicitud. Este modo de balancear hace uso de un hashing, formado a partir de la dirección IP y puerto origen que luego es asignado a un servidor. Según la implementación del algoritmo de balanceo (round robin, Least connection, Weighted, etc...) las futuras redirecciones irán a un servidor u a otro.
 
 
-
-
- Para que nos hagamos un COntainerd llama a runc para crear el contenedor y en cuanto es creado runc muere como proceso y 
-pasa el control a Shim, una capa de containerd que finalmente nos ha permitido desacoplar por completo la gestión del contenedor por medio de docker-engine, 
-
-
-	Hablar de OCI layer.
 
 
 
