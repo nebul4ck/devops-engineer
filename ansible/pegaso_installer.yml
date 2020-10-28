@@ -1,0 +1,8 @@
+---
+    - name: Pegaso Environment Orquestrator
+      hosts: localhost
+      connection: local
+      gather_facts: yes
+      become: yes
+      roles:
+       - pegaso

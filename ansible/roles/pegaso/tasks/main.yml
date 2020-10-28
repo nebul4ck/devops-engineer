@@ -1,0 +1,70 @@
+---
+# tasks file for pegaso
+
+# Install python3 and pyhon3-pip
+# - name: Install python3.
+#   apt:
+#     name: python3
+#     allow_unauthenticated: no
+#     update_cache: yes
+#     cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+#     state: present
+#     install_recommends: no
+
+# - name: Install python3-pip.
+#   apt:
+#     name: python3-pip
+#     allow_unauthenticated: no
+#     update_cache: yes
+#     cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+#     state: present
+#     install_recommends: no
+
+# Install Docker Engine from Official Repository
+# - name: Add the Docker Apt signing key repository.
+#   apt_key:
+#     url: "{{ docker_apt_key }}"
+#     state: present
+
+# - name: Add Docker repository into sources list
+#   apt_repository:
+#     repo: "deb [arch=amd64] {{ docker_repository_base_path }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+#     state: present
+
+# - name: Install Docker Engine.
+#   apt:
+#     name: "{{ docker_package }}"
+#     allow_unauthenticated: no
+#     update_cache: yes
+#     cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+#     state: present
+#     install_recommends: no
+
+# Install kubectl
+# - name: Add k8s Apt signing key repository.
+#   apt_key:
+#     url: "{{ k8s_apt_key }}"
+#     state: present
+
+# - name: Add k8s repository into sources list
+#   apt_repository:
+#     repo: "deb [arch=amd64] {{ k8s_repository_base_path }}"
+#     update_cache: yes
+#     state: present
+
+# - name: Install Kubectl.
+#   apt:
+#     name: "{{ kubectl_package }}"
+#     allow_unauthenticated: no
+#     update_cache: yes
+#     cache_valid_time: "{{ cache_valid_time|default(3600) }}"
+#     state: present
+#     install_recommends: no
+
+
+
+# debug
+- name: debug
+  debug:
+    msg: "{{ ansible_distribution_release }}"
+  tags: test

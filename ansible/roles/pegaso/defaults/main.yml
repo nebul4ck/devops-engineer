@@ -1,0 +1,11 @@
+---
+# defaults file for pegaso
+
+# Docker
+docker_apt_key: "https://download.docker.com/linux/ubuntu/gpg"
+docker_repository_base_path: "https://download.docker.com/linux"
+docker_package: "docker-ce"
+# Kubernetes
+k8s_apt_key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+k8s_repository_base_path: "https://apt.kubernetes.io/ kubernetes-xenial main"
+kubectl_package: "kubectl"

@@ -1,5 +1,8 @@
 # Note the important restriction in the relationship between hosts and services since services such as spark, elasticsearch and hdfs, execute their services on the same machine. 
 
+[local]
+127.0.0.1 ansible_connection=local
+
 [platform_streaming]
 ansible-poc-01  myid=1  dns=true  kibana=true	vernemq=true
 

@@ -10,6 +10,49 @@
   title_transmit_bg_color = "#2390b3"
   window_state = maximise
 [keybindings]
+  broadcast_all = <Alt>g
+  broadcast_group = <Alt>a
+  cycle_prev = None
+  cycle_next = None
+  edit_tab_title = None
+  edit_terminal_title = None
+  edit_window_title = None
+  go_down = None
+  go_up = None
+  go_next = None
+  go_prev = None
+  group_all = None
+  group_tab = None
+  help = None
+  hide_window = None
+  insert_number = None
+  insert_padded = None
+  layout_launcher = None
+  move_tab_left = None
+  move_tab_right = None
+  new_terminator = None
+  next_tab = <Primary>Right
+  page_down = None
+  prev_tab = None
+  reset = None
+  rotate_ccw = None
+  rotate_cw = None
+  scaled_zoom = None
+  search = None
+  switch_to_tab_1 = <Primary><Alt>1
+  switch_to_tab_10 = <Primary><Alt>0
+  switch_to_tab_2 = <Primary><Alt>2
+  switch_to_tab_3 = <Primary><Alt>3
+  switch_to_tab_4 = <Primary><Alt>4
+  switch_to_tab_5 = <Primary><Alt>5
+  switch_to_tab_6 = <Primary><Alt>6
+  switch_to_tab_7 = <Primary><Alt>7
+  switch_to_tab_8 = <Primary><Alt>8
+  switch_to_tab_9 = <Primary><Alt>9
+  toggle_scrollbar = None
+  toggle_zoom = None
+  ungroup_all = None
+  ungroup_tab = None
 [layouts]
   [[default]]
     [[[child0]]]
