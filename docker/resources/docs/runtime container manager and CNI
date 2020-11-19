@@ -1,0 +1,8 @@
+- runc -> CLI para la administración a bajo nivel ciclo de vida de contenedores (create, start, stop...)
+- dockerd, containerd y crio -> API/demonios que trabajan sobre runc enviando las peticiones que desde el cliente (UI/CLI) se reciben.
+- shim -> es un pequeño demonio con el que se ha conseguido desacoplar el demonio de contenedores (crio, dockerd o containerd) y runc, de manera que aunque el demonio se reinicie
+se puedan seguir controlando los contenedores. Todas las comunicaciones entre el demonio y los contenedores ocurren através de shim. El proceso shim está vinculado al proceso del contenedor pero desvinculado totalmente del proceso de administrador de contenedores (dockerd, containerd o crio)
+- Por otra parte están los plugins de red que deben de estar definidos por los estándares de la Container Network Interface. Estos son plugins que se instalar junto con orquestadores
+o administradores de contenedores para delegar todo lo concerniente al ciclo de vida del networking (gestion IP, creación de interfaces, etc...) a estos plugins de manera
+que cada administrador de contenedores no tenga que crear la suya propia. Para kubernetes los plugins mas famosos son Project calico y weave.
+ 

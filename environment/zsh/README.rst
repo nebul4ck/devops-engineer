@@ -66,3 +66,9 @@ Configure ZSH
 * https://github.com/Powerlevel9k/powerlevel9k/wiki/Stylizing-Your-Prompt
 
 **En el README.rst principal del repositorio hay un par de screenshot con el resultado final del zshrc aquí presente**
+
+5. Instalar xclip para utilizar clipboard como en MacOS
+
+    $ sudo apt install xclip -y
+    $ echo -e 'alias pbcopy='xclip -selection clipboard"\nalias pbpaste="xclip -selection clipboard -o"' >> ~/.zshrc
+
