@@ -4,6 +4,9 @@
 * Eliminar una palabra:
     cursor antes: Esc+d
     cursor despues: Alt+delete (<--)
+
+* Eliminar/añadir sudo en el comando
+    Ctrl+Esc
     
 ## Terminator
 ### Window
