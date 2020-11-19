@@ -5,6 +5,9 @@
     cursor antes: Esc+d
     cursor despues: Alt+delete (<--)
 
+* Añadir/eliminar sudo en un comando:
+    Ctrl+Esc
+
 ## Terminator
 ### Window
 * Maximizar ventana (no borders): F11

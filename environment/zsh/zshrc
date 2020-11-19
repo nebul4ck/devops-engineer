@@ -122,8 +122,13 @@ function killer() {
     echo "\t ie mata chrome"
   else
     local app="$1"
-    local pid_app=$(ps aux |grep -E "/.*$app.*" |awk 'FNR == 1 {print $2}')
-    kill $pid_app
+    local pid=$(pidof $app)
+    #local pid_app=$(ps aux |grep -E "/.*$app.*" |awk 'FNR == 1 {print $2}')
+    for id in ${pid[@]};
+    do
+      echo $id
+    done
+    #kill $pid_app
   fi
 }
 
@@ -203,6 +208,7 @@ POWERLEVEL9K_VCS_CLEAN_BACKGROUND='green1'
 AWS_DEFAULT_PROFILE=""
 
 # Initializes Oh My Zsh
+export ZSH_COMPDUMP=/tmp/zcompdump-$USER
 export ZSH="/home/${DEFAULT_USER}/.oh-my-zsh"
 source $ZSH/oh-my-zsh.sh
 
