@@ -93,10 +93,10 @@ $ docker service inspect <service> --pretty
 ```
 $ docker service ps <service>
 ```
-14. How to find out more details of the container running these tasks of the service?
+14. How to find out more details of the container running the tasks of the service?
 ```
 // run the following command on the particular node
-$ docker ps
+$ docker container ps --filter name=<name_of_service>
 ```
 15. How to get the logs from a service?
 ```
@@ -113,9 +113,9 @@ Raft Consensus Algorithm
 ```
 18. What is a quorum and why it is important?
 ```
-Quorun ensure that the cluster state stays consistent in the presence of failures by requiring a majority of nodes to agree on values.
+Quorum ensure that the cluster state stays consistent in the presence of failures by requiring a majority of nodes to agree on values.
 Raft tolerates up to (N-1)/2 failures and requires a majority or quorum of (N/2)+1 members to agree on values proposed to the cluster.
-without quorun swarm wont be able to serve the requests to schedule additional tasks.
+without quorum swarm wont be able to serve the requests to schedule additional tasks.
 ```
 ### Describe the difference between running a container and running a service.
 19. What is the difference between running a container and runnning a service?
@@ -159,13 +159,17 @@ services:
 24. Explain the several commands associated with Docker stack?
 ```
 // deploy the new stack or update
-$ docker stack deploy -c <compose file>
+$ docker stack deploy -c <compose file> <stack name>
+
 // list services in the stack
 $ docker stack services
+
 // list the tasks in the stack
 $ docker stack ps
+
 // remove the stack
 $ docker stack rm
+
 //List stack
 $ docker stack ls
 ```
@@ -210,7 +214,7 @@ Yes
 33. How to filter the services in the stack?
 ```
 // with the help of --filter flag
-docker stack service nginx-web --filter name=web 
+docker stack services --filter name=<stack_name>_<service_name> <stack_name>
 ```
 34. How to format the output of the docker stack services command?
 ```
@@ -221,7 +225,7 @@ $ docker stack services --format "{{.ID}}: {{.Mode}} {{.Replicas}}"
 // With the scale command
 $ docker service scale SERVICE-1=REPLICAS [SERVICE-2=REPLICAS]
 // you can also scale with the update command
-$ docker service update --replicas=50 frontend
+$ docker service update --replicas=50 <service_name>
 ```
 36. How to revert the changes for the service configuration?
 ```
@@ -238,7 +242,7 @@ $ docker service rollback my-service
 ```
 38. What are the networks available for the docker services?
 ```
-* verlay networks: manage communications among the Docker daemons participating in the swarm.You can attach a service to one or more existing overlay networks as well, to enable service-to-service communication.
+* overlay networks: manage communications among the Docker daemons participating in the swarm.You can attach a service to one or more existing overlay networks as well, to enable service-to-service communication.
 * ingress network: is a special overlay network that facilitates load balancing among a service’s nodes. When any swarm node receives a request on a published port, it hands that request off to a module called IPVS. IPVS keeps track of all the IP addresses participating in that service, selects one of them, and routes the request to it, over the ingress network.
 * docker_gwbridge: is a bridge network that connects the overlay networks (including the ingress network) to an individual Docker daemon’s physical network.
 ```
@@ -279,10 +283,46 @@ Yes
 ```
 45. How to find which networks the service is connected to?
 ```
-$ docker network inspect my-network
-               or
-$ docker service ls // for the name
-$ docker service ps <SERVICE> // to list the networks
+1)
+
+  a. Get the Docker service name
+    $ docker service ls
+
+  b. Get the nodes that the container is running on
+    $ docker service ps \
+      --filter desired-state=running \
+      <service_name>
+
+  c. From one node, get the container full name
+    $ docker container ps \
+      --filter name=<service_name> \
+
+  d. Finally inspect the networks for that container
+    $ docker container inspect \
+      --format='{{range $k, $v := .NetworkSettings.Networks}}
+      {{$k}}{{end}}' \
+      <full_container_name>
+
+Note: in a docker service, the container name is fill with the service_name plus the number of replica plus the container ID. ie webprox.2.npyyc2vmit8o35lzw1v7cydro
+
+2)
+
+  a. Get the Docker service name
+    $ docker service ls
+
+  b. Get the name of the tasks that are running on the service:
+    $ docker service ps \
+      frontend_nginx \
+      --format='{{.Node}}: {{.Name}}'
+    node2: frontend_nginx.1
+    node1: frontend_nginx.2
+
+  Note: node* and frontend_* tasks are an example.
+
+  c. Go to a node where the task is running on (ie node1) and run the following command:
+    $ docker inspect --format='{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' frontend_nginx.2<TAB>
+
+  Note: paste de name of the task and press TAB to select the full container name.
 ```
 46. Customize the ingress network involves removing and creating a new one and you need to do that before you create any services in the swarm. Is this statement correct?
 ```
@@ -294,10 +334,10 @@ $ docker network rm ingress
 $ docker network create \
   --driver overlay \
   --ingress \
-  --subnet=10.11.0.0/16 \
-  --gateway=10.11.0.2 \
-  --opt com.docker.network.mtu=1200 \
-  my-ingress
+  --subnet=10.11.0.0/16 \ //optional
+  --gateway=10.11.0.2 \ //optional
+  --opt com.docker.network.mtu=1200 \ //optional
+  ingress
 ```
 48. How can you expose ports?
 ```
@@ -307,6 +347,7 @@ you can map ports between docker host and container using the following flags:
 * -p 192.168.1.100:8080:80 -> Map TCP port 80 in the container to port 8080 on the Docker host for connections to host IP 192.168.1.100.
 * -p 8080:80/udp -> Map UDP port 80 in the container to port 8080 on the Docker host.
 * -p 8080:80/tcp -p 8080:80/udp -> Map TCP port 80 in the container to TCP port 8080 on the Docker host, and map UDP port 80 in the container to UDP port 8080 on the Docker host.
+* -P : Map port in the container (see EXPOSE in the Dockerfile of the image that te container is created from) to random user ports or registered ports (1024-49151)
 ```
 ### Mount volumes
 49. What is the difference between -v and --mount flags in terms of creating volumes?
@@ -315,8 +356,9 @@ Originally, the -v or --volume flag was used for standalone containers and the -
 ```
 50. How to create a service with volume?
 ```
-$ docker service create -d \
-  --replicas=4 \
+$ docker service create \
+  -d \
+  --replicas=3 \
   --name devtest-service \
   --mount source=myvol2,target=/app \
   nginx:latest
@@ -332,22 +374,105 @@ Volume drivers allow you to abstract the underlying storage system from the appl
 ```
 53. How to create a volume with the volume driver?
 ```
-$ docker volume create --driver vieux/sshfs \
+$ docker volume create \
+  --driver vieux/sshfs \
   -o sshcmd=test@node2:/home/test \
   -o password=testpassword \
   sshvolume
 ```
-54. How to create a service with volume driver?
+54. How to create a shared volumes with volume driver?
 ```
-$ docker service create -d \
-  --name nfs-service \
-  --mount 'type=volume,source=nfsvolume,target=/app,volume-driver=local,volume-opt=type=nfs,volume-opt=device=:/var/docker-nfs,volume-opt=o=addr=10.0.0.10' \
-  nginx:latest
+We can share data by different ways, it depends the architecture you have.
+
+1. Exporting folder from a traditional NFS server and mount shared folder into Docker host:
+
+  1) Create a NFS server to share a folder (/nfs/data)
+
+      // On dedicated NFS server (nfs.server.org)
+      # apt install -y nfs-kernel-server \
+        nfs-common
+
+      $ sudo mkdir /shared-docker
+      $ sudo chmod 777 /shared-docker
+      $ sudo exportfs -a
+
+      # vim /etc/exports
+      /shared-docker <ip-docker-host>(rw,fsid=0,insecure,no_subtree_check,async)
+      
+      Note: /shared-docker is the directory that we want to share.
+
+      # systemctl restart nfs-kernel-server
+
+      # netstat -puta |grep nfs
+      tcp        0        0 0.0.0.0:nfs        0.0.0.0:*        
+      LISTEN        -
+
+  Note: you could create a nfs-service as well:
+
+    a. create the compose file:
+
+      version: "2.1"
+      services:
+        # https://hub.docker.com/r/itsthenetwork/nfs-server-alpine
+        nfs:
+          image: itsthenetwork/nfs-server-alpine:12
+          container_name: nfs
+          restart: unless-stopped
+          privileged: true
+          environment:
+            - SHARED_DIRECTORY=/data
+          volumes:
+            - /shared-docker:/data
+          ports:
+            - 2049:2049
+    
+    b. Run the service:
+      $ docker-compose up -d
+
+    c. Install nfs-client on Docker hosts.
+      $ sudo apt install nfs-client -y
+    
+    d. Mount the folder into Docker host or create a volume, run standalone containers, etc.. as we are going to learn now
+
+      $ sudo mount -v -o vers=4,loud <container-ip>:/ /mnt
+
+      // or
+
+      $ sudo vim /etc/fstab
+      <container-ip>:/   /mnt   nfs4    _netdev,auto  0  0
+ 
+2. Mount the shared folder into containers.
+
+  2.1 Create a volume which mount the NFS shared folder into Docker Host
+
+      $ docker volume create \
+        --driver local \
+        --opt type=nfs \
+        --opt o=addr=nfs.server.org \
+        --opt device=:/shared-docker \
+        mynfs
+
+    and create a standalone container mouting the NFS shared folder
+
+      $ docker container run \
+        --name nginx \
+        -d \
+        -p 8081:80 \
+        --mount type=volume,src=mynfs,dst=/usr/share/nginx/html \
+        nginx:1.19.3    
+
+    or create a service:
+
+      $ docker service create \
+        -d \
+        --name webnginx \
+        --mount 'type=volume,source=nfsvol,target=/usr/share/nginx/html,volume-driver=local,volume-opt=type=nfs,volume-opt=device=:/shared-docker,volume-opt=o=addr=nfs.server.org' \
+        nginx:1.19.3
 ```
 ### Describe and demonstrate how to run replicated and global services
 55. What is the difference between replicated and global services?
 ```
-For a replicated service, you specify the number of identical tasks you want to run while in a global service the service runs one task on every node. Each time you add a node to the swarm, the orchestrator creates a task and the scheduler assigns the task to the new node.
+For a replicated service, you specify the number of identical tasks you want to run while in a global service, the service runs one task on every node. Each time you add a node to the swarm, the orchestrator creates a task and the scheduler assigns the task to the new node.
 ```
 56. I created a deployment that runs exactly one task on every node. which type of service deployment is this?
 ```
@@ -375,20 +500,29 @@ you can use labels to add metadata about the node
 ```
 61. How to add a label to the node?
 ```
-$ docker node update --label-add foo worker1
+$ docker node update \
+  --label-add foo \
+  <node>
+
 // add multiple labels
-$ docker node update --label-add foo --label-add bar worker1
+$ docker node update \
+  --label-add foo \
+  --label-add bar \
+  <node>
 ```
 62. How to remove the label from the node?
 ```
-$ docker node update --label-rm foo worker1
+$ docker node update \
+  --label-rm foo \
+  <node>
 ```
 63. How to set up the service to divide tasks evenly over different categories of nodes?
 ```
 with "--placement-pref" option.
 
-// example: if we have three datacenters 3 replicas will be placed on each datacenter
-docker service create \
+// example: if we have three datacenters and we want to spread three replicas over each of them:
+
+$ docker service create \
   --replicas 9 \
   --name redis_2 \
   --placement-pref 'spread=node.labels.datacenter' \
@@ -399,7 +533,8 @@ docker service create \
 with "--constraint" option.
 
 // example: the following limits tasks for the redis service to nodes where the node type label equals queue
-docker service create \
+
+$ docker service create \
   --name redis_2 \
   --constraint 'node.labels.type == queue' \
   redis:3.0.6
@@ -407,13 +542,15 @@ docker service create \
 ### Describe and demonstrate how to use templates with “docker service create”
 65. What are the supported flags for creating services with templates?
 ```
---env
---mount
---hostname
+* --env
+* --mount
+* --hostname
+
 // example
-service create --name hosttempl \
-    --hostname="{{.Node.Hostname}}-{{.Node.ID}}-{{.Service.Name}}"\
-      busybox top
+$ docker service create \
+  --name host_template \
+  --hostname="{{.Node.Hostname}}-{{.Node.ID}}-{{.Service.Name}}" \
+  redis
 ```
 ### Identify the steps needed to troubleshoot a service not deploying
 66. If you want to troubleshoot the Universal Control Plane (UCP) clusters what is the best method?
@@ -422,12 +559,28 @@ it's always best practice to use client bundle to troubleshoot UCP clusters
 ```
 67. What is the general flow when troubleshooting services or clusters?
 ```
+// display all services (get services name)
 $ docker service ls
-$ docker service ps <service>
+
+// print the logs of the service (use the service name)
+$ docker service logs <service>
+
+// inspect the service (use the service name)
 $ docker service inspect <service>
+
+// show the tasks of the service (get the tasks_id, the task_name and the node_name)
+$ docker service ps <service>
+
+// inspect the task of the current node or go to the node which runs the task which you want inspect (use the short task_id). Get the full_task_id
 $ docker inspect <task>
-$ docker inspect <container>
-$ docker logs <container>
+
+// inspect the container. Use the task_name + . + full_task_id
+$ docker container inspect <container>
+
+Note: the task_name + . + full_task_id is the container where the task is running on, ie: frontend_nginx.2.h4kxogc9m961hp8htluu04tci
+
+// Get the logs of the process that is running inside of the container
+$ docker container logs <container>
 ```
 ## Kubernetes
 ### Describe how to deploy containerized workloads as Kubernetes pods and deployments
@@ -436,38 +589,39 @@ All Kubernetes objects can and should be described in manifests called Kubernete
 
 1. wrote a very basic Kubernetes YAML (ie, in this Kubernetes YAML file, we have two objects, separated by the "---"):
 
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-    name: bb-demo
-    namespace: default
-    spec:
-    replicas: 1
-    selector:
-        matchLabels:
-        bb: web
-    template:
-        metadata:
-        labels:
-            bb: web
-        spec:
-        containers:
-        - name: bb-site
-            image: bulletinboard:1.0
-    ---
-    apiVersion: v1
-    kind: Service
-    metadata:
+  $ vim bb.yaml
+  apiVersion: v1
+  kind: Service
+  metadata:
     name: bb-entrypoint
     namespace: default
-    spec:
+  spec:
     type: NodePort
     selector:
-        bb: web
+      bb: web
     ports:
-    - port: 8080
+      - port: 8080
         targetPort: 8080
         nodePort: 30001
+  ---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: bb-demo
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        bb: web
+    template:
+      metadata:
+        labels:
+          bb: web
+      spec:
+        containers:
+          - name: bb-site
+            image: bulletinboard:1.0
 
 Kubernetes YAM always follows the same pattern:
 
@@ -478,15 +632,15 @@ Kubernetes YAM always follows the same pattern:
 
 2. Deploy your application to Kubernetes:
 
-$ kubectl apply -f bb.yaml
+  $ kubectl apply -f bb.yaml
 
 3. List your deployments:
 
-$ kubectl get deployments
+   $ kubectl get deployments
 
-4. Check for your services:
+4. List your services:
 
-$ kubectl get services
+  $ kubectl get services
 
 5. Open a browser and visit your bulletin board at localhost:30001
 6. Once satisfied, tear down your application:
@@ -501,7 +655,7 @@ Kubernetes has two types of objects that can inject configuration data into a co
 
 We need to setup a environment variable (MYSQL_ROOT_PASSWORD) and configuration file into our MariaDB image container. We will use secret in order to set the environment variable and ConfigMap to share del MariaDB configuration.
 ```
-68. How can you create a secret in kubernetes?
+68. How to create a secret in kubernetes?
 ```
 // you can create secrets in kubernetes from two ways:
 
@@ -527,7 +681,7 @@ $ kubectl describe secret mariadb-root-password
 2. Create a Secret using kubectl create secret command
 
 $ kubectl create secret generic mariadb-user-creds \
-      --from-literal=MYSQL_USER=kubeuser\
+      --from-literal=MYSQL_USER=kubeuser \
       --from-literal=MYSQL_PASSWORD=kube-still-rocks
 secret/mariadb-user-creds created
 
@@ -536,17 +690,15 @@ secret/mariadb-user-creds created
 ```
 69. How can you decode a kubernetes secret?
 ```
-// If the password is not encrypted (example two from above question)
-$ kubectl get secret mariadb-root-password -o jsonpath='{.data.MYSQL_PASSWORD}' | base64 --decode -
-kube-still-rocks
+1. $ kubectl get secret \
+  mariadb-root-password \
+  -o jsonpath='{.data.password}' |base64 --decode -
+  KubernetesRocks!
 
-// if the password is base64 encripted (example one from above question)
-# Returns the base64 encoded secret string
-$ kubectl get secret mariadb-root-password -o jsonpath='{.data.password}'
-S3ViZXJuZXRlc1JvY2tzIQ==
-
-$ kubectl get secret mariadb-root-password -o jsonpath='{.data.password}' | base64 --decode -
-KubernetesRocks!
+2. $ kubectl get secret \
+  mariadb-user-creds \
+  -o jsonpath='{.data.MYSQL_PASSWORD}' |base64 --decode -
+  kube-still-rocks
 ```
 70. How can you create a ConfigMap on kubernetes?
 ```
@@ -554,22 +706,29 @@ KubernetesRocks!
 
 1. Create config map from configuration file
 
-vi max_allowed_packet.cnf 
+$ vi max_allowed_packet.cnf 
 [mysqld]
 max_allowed_packet = 64M
 
-$ kubectl create configmap mariadb-config --from-file=max_allowed_packet.cnf
+$ kubectl create configmap mariadb2-config \
+  --from-file=max_allowed_packet.cnf
 configmap/mariadb-config created
 
 $ kubectl get configmap mariadb-config
 
-Note: You can define a key other than the file name to use in the data section of your ConfigMap when using the --from-file argument: 
+Note: you can define a key other than the file name to use in the data section of your ConfigMap when using the --from-file argument: 
 
-$ kubectl create configmap mariadb-config --from-file=max_pkts_allowed=max_allowed_packet.cnf
+$ kubectl create configmap \
+  mariadb-config \
+  --from-file=mycnf=max_allowed_packet.cnf
+configmap/mariadb-config created
 
 2. Create from CLI:
 
-$ kubectl create configmap mariadb-config --from-literal=mariadb.max_allowed_packet=64M
+$ kubectl create configmap \
+  mariadb-config \
+  --from-literal=mariadb.max_allowed_packet=64M
+configmap/maria-config created
 ```
 71. How use the secret created on the above questions?
 ```
@@ -607,13 +766,10 @@ spec:
 
 // You can add your ConfigMap as a source by adding it to the volume list and then adding a volumeMount for it to the container definition:
 
-<...>
-
+...
   volumeMounts:
   - mountPath: /etc/mysql/conf.d
     name: mariadb-config
-
-<...>
 
 volumes:
 - configMap:
@@ -622,29 +778,29 @@ volumes:
       - key: max_allowed_packet.cnf
         path: max_allowed_packet.cnf
   name: mariadb-config-volume
-
-<...>
-
 ```
 ### Kubernetes administration questions.
 73. True or False? In a pod .yaml file, resource limit of cpu: 0.1 is allowed.
 ```
-True.  This can also be written as 100m.
+True. This can also be written as 100m.
 ```
 74. We have the below key:value pairs in a .yaml. How do we give a pod access to the secret via a volume?
 ```
+--------------------------------
 metadata.name: user-pid
 data.pid-password: cUae83JHes=
+--------------------------------
+
 apiVersion: v1
 kind: Pod
 spec:
     volumes:
- - name: secrets
-   secret:
-     secretName: user-pid
+      - name: secrets
+    secret:
+      secretName: user-pid
       volumeMounts:
-   - name: secrets
-     mountPath: /etc/user-pid
+       - name: secrets
+         mountPath: /etc/user-pid
 ```
 75. True or False? A secret can be visible to only one container in a pod.
 ```
@@ -652,14 +808,14 @@ True.  This may be done for security reason, such as this example: https://kuber
 ```
 76. What are four main types of services?
 ```
-* ClusterIP (Expose the service on a cluster-internal IP, not exposed to anything external to Kubernetes cluster)
-* NodePort (Expose the service on each Node's IP at a static port.  External callers can call the service)
-* LoadBalancer (Provision an external IP to act as a load balancer for the service.  Exposes a service to external callers)
-* ExternalName (Maps a service to a DNS name.  The service doesn't change IP addresses, but it routes traffic to an external service that does have a dynamic IP)
+* ClusterIP: expose the service on a cluster-internal IP, not exposed to anything external to Kubernetes cluster.
+* NodePort: expose the service on each Node's IP at a static port. External callers can call the service.
+* LoadBalancer: provision an external IP to act as a load balancer for the service. Exposes a service to external callers.
+* ExternalName: maps a service to a DNS name. The service doesn't change IP addresses, but it routes traffic to an external service that does have a dynamic IP.
 ```
 77. What kubectl command will give you information such as what node and IP address a pod is on? And any failure events?
 ```
-$ kubectl describe pod my-nginx
+$ kubectl describe pod <my-pod-name>
 ```
 78. What are some of the benefits of Deployments?
 ```
@@ -667,11 +823,11 @@ Deployments support zero-downtime updates by creating and destroying replica set
 ```
 79. What is the name of the AWS volume type?
 ```
-awsElasticBlockStore
+awsElasticBlockStore: AWS EBS
 ```
 80. What command will create three pod replicas?
 ```
-$ kubectl scale deployment my-deployement --replicas=3
+$ kubectl scale deployment --replicas=3 <deployment-name>
 ```
 81. What specifies that data in a storage provider should not be erased if a PVC is deleted?
 ```
@@ -691,7 +847,7 @@ A LimitRange specifies min and max limits on cpu and memory for pods in a namesp
 ```
 85. What access mode allows only one client (i.e. one pod) to write to a PV?
 ```
-* ReadWriteOnce
+ReadWriteOnce
 ```
 86. How does Kubernetes accomplish a no downtime deployment?
 ```
@@ -710,12 +866,12 @@ Blue-Green and Canary deployments, among others
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-name: pvc-1
-spec:
-  volumes:
-  - name: blob1
-    persistentVolumeClaim:
-      claimName: pvc-1
+  name: pvc-1
+  spec:
+    volumes:
+    - name: blob1
+      persistentVolumeClaim:
+        claimName: pvc-1
 ```
 90. What are the two types of Kubernetes probes?
 ```
@@ -723,7 +879,7 @@ Liveness and readiness
 ```
 91. What is the annotations.last-applied-configuration.key in a .yaml file?
 ```
-It gives details of the resource's configurations.  This allows changes to be made to a Pod using kubectl apply
+It gives details of the resource's configurations. This allows changes to be made to a Pod using kubectl apply
 ```
 92. What is a StatefulSet?
 ```
@@ -735,7 +891,7 @@ It remains in the PENDING state.
 ```
 94. What is a risk of using a hostPath volume?
 ```
-It is dependent on the host.  If the host dies, the data is inaccessible and potentially lost.
+It is dependent on the host. If the host dies, the data is inaccessible and potentially lost.
 ```
 95. What command will show all running pods, replicasets, and deployments?
 ```
@@ -745,7 +901,7 @@ $ kubectl get all
 ```
 tmpfs
 ```
-97. Will ‘kubectl delete pod [pod-name]’ remove and recreate a pod, or just remove?
+97. Will 'kubectl delete pod [pod-name]' remove and recreate a pod, or just remove?
 ```
 It will remove and recreate if there is an active deployment
 ```
@@ -759,7 +915,7 @@ It is the file system type to use for the volume.
 ```
 100. What does Secret type:Opaque signify?
 ```
-The secret may contain unstructured data.  There are no constraints on the data.
+The secret may contain unstructured data. There are no constraints on the data.
 ```
 101. What field indicates the query by which nodes are selected to create a local storage PV on?
 ```
@@ -771,11 +927,11 @@ azureFile
 ```
 103. What is the difference between a memory request (spec.containers[].resources.requests.memory) and a memory limit (spec.containers[].resources.limits.memory) in a pod .yaml?
 ```
-A pod can use more memory than the memory request amount.  However, if the memory request amount is higher than the available memory on the node, the pod will throw an Out Of Memory error.  A memory limit is the maximum amount of memory that a pod will be allowed to use, even if the node has more available.
+A pod can use more memory than the memory request amount. However, if the memory request amount is higher than the available memory on the node, the pod will throw an Out Of Memory error. A memory limit is the maximum amount of memory that a pod will be allowed to use, even if the node has more available.
 ```
-104. If a pod has a memory request of 512MiB and a memory limit of 1 GiB, how many pods of this type could be run on a node with 2 GiB of avaiable memory?
+104. If a pod has a memory request of 512MiB and a memory limit of 1GiB, how many pods of this type could be run on a node with 2 GiB of avaiable memory?
 ```
-4.  As the docs say: "A Container is guaranteed to have as much memory as it requests, but is not allowed to use more memory than its limit".  https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
+4. As the docs say: "A Container is guaranteed to have as much memory as it requests, but is not allowed to use more memory than its limit".  https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
 ```
 105. What field in a StorageClass .yaml determines what volume plugin is used for creating PVs?
 ```
@@ -787,27 +943,27 @@ $ kubectl describe secrets/pid-acct
 ```
 107. What kind of volume is useful for sharing transient data between two containers running on a pod?
 ```
-emptyDir.  This directory will be tied to the lifecycle of the pod.
+emptyDir. This directory will be tied to the lifecycle of the pod.
 ```
 108. What command will show you the details of all ConfigMaps?
 ```
 $ kubectl get cm
 ```
-109. What does the command ‘kubectl get deployments -l tier=frontend’ do?
+109. What does the command 'kubectl get deployments -l tier=frontend' do?
 ```
 It lists all deployements with label: tier: frontend
 ```
 110. True or False? A ConfigMap can be loaded through a volume?
 ```
-True.  In the pod .yaml file, specify spec.volumes and spec.spec.containers.volumeMounts to point to the appropriate ConfigMap
+True. In the pod .yaml file, specify spec.volumes and spec.spec.containers.volumeMounts to point to the appropriate ConfigMap
 ```
 111. True or False? Information stored as a Secret is available to pods on all nodes whether the pod requests it or not.
 ```
-False.  The pod has to specifically request the Secret.  This reduces the risk of an attacker getting access to the information contained in a secret.
+False. The pod has to specifically request the Secret. This reduces the risk of an attacker getting access to the information contained in a secret.
 ```
 112. Which of the following is a cluster-wide storage unit provisioned by an administrator and has a lifecycle independent of pods?
 ```
-PersistentVolume.  (A pod uses a PersistentVolumeClaim to connect to the persistent volume.)
+PersistentVolume. A pod uses a PersistentVolumeClaim to connect to the persistent volume.
 ```
 113. What flag in the yaml file will deny a container the ability to write to a volume?
 ```
@@ -815,7 +971,9 @@ volumeMounts.readOnly: true
 ```
 114. What is the difference between port, targetPort, and nodePort keys in a NodePort service .yaml?
 ```
-targetPort is the port the container is running on, port is the port the service is exposed on in the cluster, and nodePort is the port made avaiable to external consumers of the service.
+* targetPort is the port the container is running on.
+* port is the port the service is exposed on in the cluster
+* nodePort is the port made avaiable to external consumers of the service.
 ```
 115. What command will show any limits placed on a deployment?
 ```
@@ -823,12 +981,20 @@ $ kubectl describe deployment [deployment-name]
 ```
 116. What two commands can be used to create a service from file my.service.yml?
 ```
-$ kubectl apply -f my.service.yml OR kubectl create -f my.service.yml
+$ kubectl apply -f my.service.yml 
+$ kubectl create -f my.service.yml
 ```
-117. If I have a ConfigMap .yaml with value metadata.name: db-confg, what value in a pod .yaml will link to this ConfigMap?
+117. If I have a ConfigMap .yaml file with the value 'metadata.name: db-confg', what value in a pod .yaml file will link to this ConfigMap?
 ```
-spec.spec.env[].valueFrom.configMapKeyRef.key: db-confg  OR  spec.spec.env[].envFrom.configMapRef.name: db-confg
-The first command is paired with a specific variable name to load one variable.  The second is used to load all variables from a ConfigMap.
+* The command is paired with a specific variable name to load one variable:
+
+spec.spec.env[].valueFrom.configMapKeyRef.key: db-confg
+
+// OR  
+
+* The command is used to load all variables from a ConfigMap.
+
+spec.spec.env[].envFrom.configMapRef.name: db-confg
 ```
 118. What command will show a pod’s .yaml file?
 ```
@@ -844,7 +1010,7 @@ $ kubectl logs demo
 ```
 121. What .yaml key will ensure a pod does NOT get any traffic for X amount of seconds after deployment?
 ```
-minReadySeconds
+minReadySeconds:
 ```
 122. What command will delete a service created from my.service.yml?
 ```
@@ -852,27 +1018,28 @@ $ kubectl delete -f my.service.yml
 ```
 123. What is needed to allow the docker container to use the docker-socket volume in the following .yaml?
 ```
-    socket.yaml:
-    apiVersion: v1
-    kind: Pod
-    spec:
+socket.yaml
+
+  apiVersion: v1
+  kind: Pod
+  spec:
     volumes:
-    — name: docker-socket
-    hostPath:
-    path: /var/run/docker.socket
-    type: Socket
+      — name: docker-socket
+        hostPath:
+          path: /var/run/docker.socket
+        type: Socket
     containers:
-    — name: docker
-    image: docker
-    command: [“sleep”]
-    args: [“100000”]
-    volumeMounts:
-        - name: docker-socket
+      — name: docker
+        image: docker
+        command: [“sleep”]
+        args: [“100000”]
+        volumeMounts:
+          - name: docker-socket
             mountPath: /var/run/docker.socket
 ```
 124. What is the acceptable naming convention for port names?
 ```
-Port names must only contain lowercase alphanumeric characters and '-'. Port names must also start and end with an alphanumeric character.
+Port names must only contain lowercase, alphanumeric characters and '-'. Port names must also start and end with an alphanumeric character.
 ```
 125. What is a container MountPath?
 ```
@@ -880,11 +1047,11 @@ The directory where the volume storage resides.
 ```
 126. What entity facilitates dynamic provisioning of Persistent Volumes?
 ```
-Storage Classes.  These can be used to provision Persistent Volumes programatically instead of having an administrator create the PV.
+Storage Classes. These can be used to provision Persistent Volumes programatically instead of having an administrator create the PV.
 ```
 127. What is the default binding mode for a StorageClass?
 ```
-Immediate.  This means that volume binding and dynamic provisioning occur on creating of the PVC
+Immediate. This means that volume binding and dynamic provisioning occur on creating of the PVC
 ```
 128. What flag controls when Kubernetes pulls an image?
 ```
