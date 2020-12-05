@@ -51,7 +51,7 @@ Configure ZSH
         $ vi 10-symbols.conf
         sobreescribe "PragmataPro" por FontAwesome
         $ cp 10-symbols ~/.config/fontconfig/conf.d
-        $ source ~/.fonts/*.sh
+        $ source ~/.fonts/\*.sh
         $ vi ~/.zshrc
         añadimos la línea -> source ~/.zshrc
         y la línea (si no existiese) -> POWERLEVEL9K_MODE="awesome-fontconfig"
