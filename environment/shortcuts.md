@@ -15,7 +15,6 @@
 * Pantalla completa: F11
 * Cerrar ventana: Ctrl+Shift+Q
 
-
 ### Tab
 * Crear una nueva pestaña: Ctr+Shift+T
 * Cambiar de pestaña: Ctrl+Alt+Num / Ctrl+Derecha/Izquierda
@@ -44,4 +43,6 @@
 * Difundir comandos a todas las terminales de una pestaña: Alt+G
 * Anular difundir comandos: Alt+O
 
-
+## Vim
+* Abrir/Cerrar explorador de archivos: <F5>
+* Abrir terminal: <F12>  
