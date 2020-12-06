@@ -1,0 +1,173 @@
+# Install and configure ZSH with plugins and fonts
+
+# - name: zsh
+#    description: ZSH, also called the Z shell, is an extended version of the Bourne Shell (sh), with plenty of new features, and support for plugins and themes.
+#    package: zsh
+
+# - name: Oh My Zsh.
+#   description: Oh My Zsh is an open source, community-driven framework for managing your zsh configuration.
+#   url: https://ohmyz.sh/
+
+# - name: Powerlevel10k Theme
+#   description: Powerlevel10k is a theme for Zsh. It emphasizes speed, flexibility and out-of-the-box experience.
+#   url: https://github.com/romkatv/powerlevel10k
+
+# - name: Powerline Fonts and Symbols
+#   description: Powerline is a statusline plugin for vim, and provides statuslines and prompts for several other applications, including zsh, bash, fish, tmux, IPython, Awesome, i3 and Qtile.
+#   url: https://github.com/powerline/powerline/raw/develop/font/PowerlineSymbols.otf | https://github.com/powerline/powerline/raw/develop/font/10-powerline-symbols.conf
+
+# - name: awesome-terminal-fonts
+#   description: Use fancy symbols in your standard monospace font.
+#   url: https://github.com/gabrielelana/awesome-terminal-fonts.git
+
+# - name: fonts-powerline by apt/yum
+#   description: powerline symbols font.
+#   url: Debian/RedHat repositories
+
+# - name: python-fontforge
+#   descritpion: font editor - Python bindings
+#   url: Debian/RedHat repositories
+
+# - name: Install xclip.
+#   description: Create xclip Alia to use clipboard as MacOS.
+#   url: by zsh aliases.
+
+- name: Install and configure ZSH.
+  hosts: localhost
+  gather_facts: yes
+  become: no
+  vars:
+    powerlevel10k_repo: "https://github.com/romkatv/powerlevel10k.git"
+    powerlevel10k_basedir: "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+    zshrc_path: "~/.zshrc"
+    powerline_fonts_artifact: "https://github.com/powerline/powerline/raw/develop/font/PowerlineSymbols.otf"
+    powerline_fonts_basedir: "/usr/share/fonts/X11/Type1/"
+    powerline_symbols_artifact: "https://github.com/powerline/powerline/raw/develop/font/10-powerline-symbols.conf"
+    powerline_symbols_basedir: "~/.config/fontconfig/conf.d/"
+    awesome_terminal_fonts_repo: "https://github.com/gabrielelana/awesome-terminal-fonts.git"
+  tasks:
+    - name: Install ZSH
+      package:
+        name:
+          - zsh
+        state: present
+      become: yes
+      tags:
+        - install_packages
+        
+    - name: Install Oh My Zsh.
+      shell: sh -c "$(wget https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+      ignore_errors: yes
+      tags:
+        - install_packages
+
+    - name: Install Powerlevel10k
+      git:
+        repo: "{{ powerlevel10k_repo }}"
+        dest: "{{ powerlevel10k_basedir }}"
+        depth: 1
+        clone: yes
+        update: yes
+        ssh_opts: 
+          - "-o StrictHostKeyChecking=no"
+      tags:
+        - install_packages
+
+    - name: Create powerline basedir if they don't exist.
+      file:
+        path: "{{ powerline_fonts_basedir }}"
+        state: directory
+        recurse: no
+        mode: 0755
+      become: yes
+      tags:
+        - install_packages
+
+    - name: Install powerline fonts.
+      get_url:
+        url: "{{ powerline_fonts_artifact }}"
+        dest: "{{ powerline_fonts_basedir }}"
+      become: yes
+      tags:
+        - install_packages
+
+    - name: Clone awesome-terminal-fonts git repository.
+      git:
+        repo: "{{ awesome_terminal_fonts_repo }}"
+        dest: "/tmp/awesome-terminal-fonts"
+        depth: 1
+        clone: yes
+        update: yes
+        ssh_opts: 
+          - "-o StrictHostKeyChecking=no"
+      tags:
+        - install_packages
+
+    - name: Install awesome-terminal-fonts from master branch.
+      shell: ./install.sh
+      args:
+        chdir: "/tmp/awesome-terminal-fonts"
+      tags:
+        - install_packages
+
+    - name: Install powerline symbols.
+      get_url:
+        url: "{{ powerline_symbols_artifact }}"
+        dest: "{{ powerline_symbols_basedir }}"
+      tags:
+        - install_packages
+
+    - name: Install fonts-powerline
+      package:
+        name:
+          - fonts-powerline
+        state: present
+      become: yes
+      tags:
+        - install_packages
+
+    - name: Install python-fontforge.
+      package:
+        name:
+          - python-fontforge
+        state: present
+      become: yes
+      tags:
+        - install_packages
+
+    - name: Set ZSH as default Shell.
+      user:
+        name: "{{ lookup('env', 'USER') }}"
+        shell: /usr/bin/zsh
+      become: yes
+      tags:
+        - configure
+
+    - name: Ensure the .zshrc file is in place.
+      copy:
+        src: zshrc
+        dest: "{{ zshrc_path }}"
+        backup: yes
+        mode: 0640
+      tags:
+        - configure
+
+    - name: Install xclip to use clipboard as MacOS (optional).
+      package:
+        name:
+          - xclip
+        state: present
+      become: yes
+      tags:
+        - optional
+
+    - name: Create xclip Alias (optional).
+      blockinfile:
+        path: ~/.zshrc
+        block: |
+          alias pbcopy="xclip -selection clipboard"
+          alias pbpaste="xclip -selection clipboard -o"
+        backup: yes
+        insertafter: '# Example aliases'
+      tags:
+        - optional

@@ -1,0 +1,27 @@
+# Install and configure @nebul4ck terminator.
+
+- name: Install and configure terminator.
+  hosts: localhost
+  gather_facts: yes
+  become: no
+  vars:
+    terminator_basedir: '~/.config/terminator'
+  tasks:
+    - name: Install terminator on Debian os family.
+      package:
+        name: 
+          - terminator
+        state: present
+      become: yes
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - install_packages
+
+    - name: Ensure terminator config is in place.
+      copy:
+        src: config
+        dest: "{{ terminator_basedir }}"
+        backup: yes
+        mode: 0640
+      tags:
+        - configure
