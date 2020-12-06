@@ -4,9 +4,7 @@
 
 The following packages will be downloaded/cloned, installed and configured.
 
-* name: zsh
-  description: ZSH, also called the Z shell, is an extended version of the Bourne Shell (sh), with plenty of new features, and support for plugins and themes.
-package: zsh
+* **name**: zsh, **description**: ZSH, also called the Z shell, is an extended version of the Bourne Shell (sh), with plenty of new features, and support for plugins and themes., **package**: zsh
 
 - name: Oh My Zsh.
 description: Oh My Zsh is an open source, community-driven framework for managing your zsh configuration.
