@@ -121,26 +121,30 @@ tools/mongostats
 environment/
 ============
 
-Main configuration files to customize the following app:
+Clone this repo and move to each main app folder (vim, terminator, zsh or visualstudiocode), then run the ansible playbooks in order to install and configure the applications.
+
+* visualstudiocode
 
 * terminator
 
 .. image:: images/zsh4.png
 
 * vim
-* Visual Studio Code
+
+.. image:: images/vimtunning.png
+
 * zsh
 
 .. image:: images/zsh1.png
 .. image:: images/zsh2.png
 
-Los iconos que han sido utilizados en el prompt para Github han sido:
+The icons which we have inserted into zsh prompt are:
 
 .. image:: images/zsh3.png
 
 .. image:: images/zsh5.png
 
-Podemos ver todos los iconos disponibles con:
+we can see all available icons with:
 
 .. code:: console
 
