@@ -28,9 +28,15 @@ Visual Studio Code
 
 
 
-Community Material Them High contrast
-Material Theme
-Solarized Dark
+Para abrir los themes disponibles Ctrl+K, Ctrl+T
+
+  \*Community Material Theme
+  Community Material Them High contrast
+  Material Theme
+  VsCode Dark
+  Solarized Dark
+  Monokai dimmed
+
 
 Cambiar iconos: File > Preferences > FIle Icons Thems 
 	Material them icons light
