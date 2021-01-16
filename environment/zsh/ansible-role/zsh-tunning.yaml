@@ -126,10 +126,10 @@
       tags:
         - install_packages
 
-    - name: Install python-fontforge.
+    - name: Install python3-fontforge.
       package:
         name:
-          - python-fontforge
+          - python3-fontforge
         state: present
       become: yes
       tags:
