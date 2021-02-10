@@ -36,3 +36,6 @@ set ignorecase
 
 " Include only uppercase words with uppercase search term
 set smartcase
+
+" Disable vim automatic visual mode on mouse select
+set mouse-=a
