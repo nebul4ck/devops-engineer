@@ -1,0 +1,43 @@
+# Install and configure @nebul4ck SSH Client.
+
+- name: Install and configure ssh-client.
+  hosts: localhost
+  gather_facts: yes
+  become: no
+  vars:
+    terminator_basedir: '~/.config/terminator'
+  tasks:
+    - name: Install terminator on Debian os family.
+      package:
+        name: 
+          - terminator
+        state: present
+      become: yes
+      when: ansible_facts['os_family'] == 'Debian'
+      tags:
+        - install_packages
+
+    - name: Check if terminator base dir exist.
+      stat:
+        path: "{{terminator_basedir}}"
+      register: terminatorbasedir
+      tags:
+        - install_packages
+
+    - name: Ensure terminator base dir exits.
+      file:
+        path: "{{ terminator_basedir }}"
+        state: directory
+        mode: 0775
+      when: terminatorbasedir.stat.exists == false 
+      tags:
+        - install_packages
+
+    - name: Ensure terminator config is in place.
+      copy:
+        src: config.j2
+        dest: "{{ terminator_basedir }}/config"
+        backup: yes
+        mode: 0640
+      tags:
+        - configure

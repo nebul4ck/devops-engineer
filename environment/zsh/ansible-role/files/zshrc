@@ -92,6 +92,7 @@ plugins=(
   pip
   sudo
   zsh_reload
+  fzf
 )
 
 # Doc
