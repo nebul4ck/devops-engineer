@@ -1,0 +1,25 @@
+---
+# Autoinstaller: 1_systemConfiguration.yml
+disable_thp: update-rc.d disable-transparent-hugepages defaults
+swappiness: 1
+file_max: 65536
+overcommit_memory: 1
+max_map_count: 262144
+
+# Autoinstaller: 2_installCommonPackages.yml
+awscli_basedir: '/root/.aws'
+
+# Autoinstaller: 3_confEnvironment.yml
+root_bashrc: '/root/.bashrc'
+localtime_file: '/usr/share/zoneinfo/Europe/Madrid'
+sshd_config_file: '/etc/ssh/sshd_config'
+ntp_server: 'es.pool.ntp.org'
+
+# Autoinstaller: 4_addRSA.yml
+authorized_keys_file: '/root/.ssh/authorized_keys'
+
+# Autoinstaller: 10_directAdminInstallation.yml
+da_custombuild_folder: '/usr/local/directadmin/custombuild'
+da_config_folder: '/usr/local/directadmin/conf'
+da_admin_user: 'diradmin'
+da_skin_folder: '/usr/local/directadmin/data/skins/evolution/lang'

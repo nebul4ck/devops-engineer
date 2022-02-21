@@ -1,0 +1,10 @@
+---
+
+- name: "4.1 Add RSA of all members of Hosting team."
+  template:
+    src: 'authorized_keys.j2'
+    dest: "{{ authorized_keys_file }}"
+    owner: 'root'
+    group: 'root'
+    mode: u=rw,g=,o=
+    backup: yes

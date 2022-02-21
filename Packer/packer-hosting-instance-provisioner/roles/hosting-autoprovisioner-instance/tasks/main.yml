@@ -1,0 +1,45 @@
+---
+- name: "1. Include Kernel/OS configuration parameters"
+  include_tasks:
+    file: 1_systemConfiguration.yml
+    apply:
+      tags:
+        - system
+  tags:
+    - system
+
+- name: "2. Include the installation of the common packages"
+  include_tasks:
+    file: 2_installCommonPackages.yml
+    apply:
+      tags:
+        - packages
+  tags:
+    - packages
+
+- name: "3. Include Environment configuration"
+  include_tasks:
+    file: 3_confEnvironment.yml
+    apply:
+      tags:
+        - environment
+  tags:
+    - environment
+
+- name: "4. Include RSA insertion"
+  include_tasks:
+    file: 4_addRSA.yml
+    apply:
+      tags:
+        - rsa
+  tags:
+    - rsa
+
+- name: "5. Install DirectAdmin"
+  include_tasks:
+    file: 5_directAdminInstallation.yml
+    apply:
+      tags:
+        - directadmin
+  tags:
+    - directadmin

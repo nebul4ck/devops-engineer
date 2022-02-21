@@ -1,0 +1,123 @@
+---
+# DirectAdmin install and configure.
+
+# Parameters and/or vars required:
+#   The name of the email account (without domain): info
+#   The main domain of the client: ej, ferrys.es
+
+#- name: "10.1 Calling DirectAdmin License module: ordering a new license..."
+#  uri:
+
+- name: "5.1 Install DirectAdmin requirements..."
+  apt:
+    name:
+      - flex
+      - bison
+      - perl-modules-5.32
+      - libperl-dev
+      - libperl4-corelibs-perl
+      - libwww-perl
+      - libaio-dev
+      - zlib1g-dev
+      - libcap-dev
+      - zip
+      - unzip
+      - automake
+      - autoconf
+      - libtool
+      - cmake
+      - pkg-config
+      - python-is-python2
+      - libdb-dev
+      - libsasl2-dev
+      - libncurses5
+      - libncurses5-dev
+      - libsystemd-dev
+      - bind9
+      - dnsutils
+      - quota
+      - libexpat1-dev
+      - libcrypt-openssl-rsa-perl
+      - libnuma-dev
+      - libwebp-dev
+      - webp
+      - libxpm-dev
+      - build-essential
+      - re2c
+      - libxml2-dev
+      - libsqlite3-dev
+      - libipset13
+      - ipset
+      - libssl-dev
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+    install_recommends: no
+
+- name: "5.2 Ensure {{ da_custombuild_folder }} exists"
+  file:
+    path: "{{ da_custombuild_folder }}"
+    state: directory
+    mode: 0755
+    owner: "root"
+    group: "root"
+
+- name: "5.3 Configure options.conf (without server customization)"
+  template:
+    src: da_options.conf.j2
+    dest: "{{ da_custombuild_folder }}/options.conf"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "5.4 Configure php_extensions.conf"
+  template:
+    src: da_php_extensions.conf.j2
+    dest: "{{ da_custombuild_folder }}/php_extensions.conf"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "5.5 Workaround: Skip license. Order buy DirectAdmin license after the server is provisioned."
+  command: echo 1 > /root/.skip_get_license
+
+- name: "5.6 Set the version of the DirectAdmin Custombuild..."
+  command: echo 2.0 > /root/.custombuild
+
+- name: "5.8 Install DirectAdmin: setup.sh"
+  script: ./files/da_setup.sh auto
+
+- name: "5.9 Install csf"
+  script: ./files/da_install_csf.sh
+
+- name: "5.10 Install Maldetect"
+  script: ./files/da_install_maldet.sh
+
+- name: "5.11 Create a DirectAdmin user package"
+  command: echo "newpackage" > /usr/local/directadmin/data/users/admin/packages.list
+
+- name: "5.12 Download default DirectAdmin package."
+  command: wget -O /usr/local/directadmin/data/users/admin/packages/newpackage.pkg http://almacenator.net/files/directadmin/newpackage.pkg
+
+- name: "5.13 Configure DirectAdmin Virtual Limit"
+  command: echo "2000" > /etc/virtual/limit
+
+- name: "5.14 Configure DirectAdmin User Virtual Limit"
+  command: echo "2000" > /etc/virtual/user_limit
+
+- name: "5.15 Configure directadmin.conf (without server personalization)"
+  template:
+    src: da_directadmin.conf.j2
+    dest: "{{ da_config_folder }}/directadmin.conf"
+    owner: "{{ da_admin_user }}"
+    group: "{{ da_admin_user }}"
+    mode: 0755 
+    backup: yes
+
+- name: "5.16 Download DirectAdmin Skin Evolution Spanish Language pack and uncompress it"
+  unarchive:
+    src: https://orientehosting.com/evolution/lang/es.zip
+    dest: "{{ da_skin_folder }}"
+    remote_src: yes
+    owner: diradmin
+    group: diradmin

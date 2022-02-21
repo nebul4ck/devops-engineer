@@ -1,0 +1,90 @@
+---
+
+- name: "3.1 Check if date in {{ root_bashrc }} is enabled."
+  shell: grep -c "^HISTTIMEFORMAT=" {{ root_bashrc }} || true
+  args:
+    executable: /bin/bash
+  register: date_history_is_enabled
+
+- name: "3.2 Enable date in {{ root_bashrc }}."
+  lineinfile:
+    path: "{{ root_bashrc }}"
+    line: 'HISTTIMEFORMAT="%d/%m/%y %T "'
+  when: date_history_is_enabled.stdout == "0"
+
+- name: "3.3 Delete /etc/localtime link..."
+  file:
+    path: "/etc/localtime"
+    state: absent
+  ignore_errors: true
+
+- name: "3.4 Set the Europe/Madrid timezone."
+  file:
+    src: "{{ localtime_file }}"
+    dest: "/etc/localtime"
+    state: link
+
+- name: "3.5 Check if SSH Password authentication is enabled."
+  shell: grep -c -E '^#?.?PasswordAuthentication.?(no|yes)' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: ssh_passwd_auth_is_enabled
+
+- name: "3.6 Delete older configuration on PasswordAuthentication SSH configuration."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?PasswordAuthentication.?(no|yes)'
+    state: absent
+  when: ssh_passwd_auth_is_enabled.stdout == "1"
+
+- name: "3.7 Ensure SSH Password Authentication is disabled."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: PasswordAuthentication no
+
+- name: "3.8 Check if SSH ClientAliveInterval is Set."
+  shell: grep -c -E '^#?.?ClientAliveInterval' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: client_alive_internal_is_set
+
+- name: "3.9 Delete older configuration of ClientAliveInterval in SSH."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?ClientAliveInterval'
+    state: absent
+  when: client_alive_internal_is_set.stdout == "1"
+
+- name: "3.10 Ensure SSH Client Alive Internal is Set."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: ClientAliveInterval 60
+
+- name: "3.11 Check if SSH ClientAliveCountMax is Set."
+  shell: grep -c -E '^#?.?ClientAliveCountMax' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: client_alive_countmax_is_set
+
+- name: "3.12 Delete older configuration of ClientAliveCountMax in SSH."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?ClientAliveCountMax'
+    state: absent
+  when: client_alive_countmax_is_set.stdout == "1"
+
+- name: "3.13 Ensure SSH ClientAliveCountMax is Set."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: ClientAliveCountMax 100
+  notify: restart sshd
+
+- name: "3.14 Update the local time: {{ ntp_server }}."
+  command: ntpdate -u {{ ntp_server }}
+
+- name: "3.15 Source the environment files."
+  shell: source {{ item }}
+  args:
+    executable: /bin/bash
+  loop:
+    - "{{ root_bashrc }}"
