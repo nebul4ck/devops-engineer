@@ -1,0 +1,118 @@
+---
+
+##
+# Alberto González Mesas, <a.gonzalezmesas@gmail.com.com>
+# Tue Feb 25 10:00:00 CEST 2020
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Kinesis StackSet
+  Purpose: Create a Kinesis Firehose Delivery Stream to move the WAF logging to a S3 Bucket.
+
+    Templates:
+
+      01-s3-kinesis-waf-log.yaml
+      02-cloudwatch-kinesis.yaml
+      03-role-policy-kinesis-firehose.yaml
+      04-kinesis-firehose.yaml
+
+    02-cloudwatch-kinesis.yaml
+
+      - Create CloudWatch LogGroup.
+      
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Setup account configuration.
+        Parameters:
+          - AccountName
+      - Label:
+          default: Configure CloudWatch.
+        Parameters:
+          - CloudWatchLogGroupName
+          - CloudWatchLogStreamName
+          - LoggingRetentionDays
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Type: String
+    Description: 'The account name'
+    MinLength: 1
+  CloudWatchLogGroupName:
+    Type: String
+    Description: >-
+      'The name of the CloudWatch Logs log group that contains the log stream that 
+      Kinesis Data Firehose will use.'
+    AllowedPattern: '[\.\-_/#A-Za-z0-9]+'
+    MinLength: 1
+  CloudWatchLogStreamName:
+    Type: String
+    Description: >-
+      'The name of the CloudWatch Logs log stream that Kinesis Data Firehose uses to send 
+      logs about data delivery.'
+    MinLength: 1
+  LoggingRetentionDays:
+    Type: Number
+    Description: 'The number of days to retain the log events in the specified log group.'
+    Default: 365
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+      - 400
+      - 545
+      - 731
+      - 1827
+      - 3653
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  CloudWatchKinesisLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub ${AccountName}-${CloudWatchLogGroupName}-loggroup
+      RetentionInDays: !Sub ${LoggingRetentionDays}
+
+  CloudWatchKinesisLogStream:
+    DependsOn:
+      - CloudWatchKinesisLogGroup
+    Type: AWS::Logs::LogStream
+    Properties: 
+      LogGroupName: !Sub ${AccountName}-${CloudWatchLogGroupName}-loggroup
+      LogStreamName: !Sub ${CloudWatchLogStreamName}
+
+##############################################################################################
+# Outputs                                                                                    #
+##############################################################################################
+
+# Outputs:
+#   S3Url:
+#     Description: S3 bucket
+#     Value: !Join 
+#       - ''
+#       - - 's3://'
+#         - !Ref S3Bucket
+#     Export:
+#       Name: !Sub '${AWS::StackName}:S3Url'

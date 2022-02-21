@@ -1,0 +1,74 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "euigs-dev-tlt"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "euigs-dev-tlt-ApacheServerHardening-cd"
+    },
+    {
+        "ParameterKey": "DeploymentConfiguration",
+        "ParameterValue": "CodeDeployDefault.OneAtATime"
+    },
+    {
+        "ParameterKey": "DeploymentGroupName",
+        "ParameterValue": "HardenedSOCServices"
+    },
+    {
+        "ParameterKey": "DeploymentType",
+        "ParameterValue": "IN_PLACE"
+    },
+    {
+        "ParameterKey": "DeploymentTrafficControl",
+        "ParameterValue": "WITHOUT_TRAFFIC_CONTROL"
+    },
+    {
+        "ParameterKey": "RollbackEventType",
+        "ParameterValue": "DEPLOYMENT_FAILURE"
+    },
+    {
+        "ParameterKey": "AutomaticRollback",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "ServiceRoleArn",
+        "ParameterValue": "arn:aws:iam::691268106430:role/euigs-dev-tlt-CodeDeployForPipelines-role"
+    },
+    {
+        "ParameterKey": "TagFilterType1",
+        "ParameterValue": "KEY_AND_VALUE"
+    },
+    {
+        "ParameterKey": "CodeDeployTagKeyFilter1",
+        "ParameterValue": "AutoDeploy"
+    },
+    {
+        "ParameterKey": "CodeDeployTagValueFilter1",
+        "ParameterValue": "yes"
+    },
+    {
+        "ParameterKey": "CodeDeployTagKeyFilter2",
+        "ParameterValue": "Environment"
+    },
+    {
+        "ParameterKey": "CodeDeployTagValueFilter2",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "CodeDeployTagKeyFilter3",
+        "ParameterValue": "ApplicationName"
+    },
+    {
+        "ParameterKey": "CodeDeployTagValueFilter3",
+        "ParameterValue": "ApacheServerHardening"
+    },
+    {
+        "ParameterKey": "snsEmailSubscriber",
+        "ParameterValue": "alberto.gonzalez@euigs.com"
+    },
+    {
+        "ParameterKey": "snsProto",
+        "ParameterValue": "email-json"
+    }
+]

@@ -1,0 +1,841 @@
+---
+##
+# Alberto González Mesas, <alberto.gonzalez@lineagrafica.es>
+# Fri Nov 26 12:30:00 CEST 2021 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Create the client network layer:
+    - VPC
+    - IGW -> Internet Access from/to Internet
+    - Public Subnet (x2) -> only for NATWG
+    - Private Subnet (x2) -> all instances
+    - DDBB Subnet (x2) -> only ddbb instances
+    - Public RTs (x2) -> IGW
+    - Private RTs (x2) -> NATGW (for updating packages purpose)
+    - DDBB RTs (x2) -> NATGW (for updating packages purpose)
+    - Public NACL (x2) -> all from/to 0.0.0.0/0
+    - Private NACL (x2) -> all from 1024-65535
+    - DDBB NACL (x2) -> all from 1024-65535
+    - Public NATGW (x2) -> two EIP are necessary
+
+# Metadata
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configure the environment. Also set as tags in tags.json.
+        Parameters:
+          - ClientName
+          - ClientID
+          - Environment
+          - ProjectName
+      - Label:
+            default: Configure VPC Networks.
+        Parameters:
+          - VpcCIDR
+          - PublicSubnetACIDR
+          - PublicSubnetBCIDR
+          - PrivateSubnetACIDR
+          - PrivateSubnetBCIDR
+          - DDBBSubnetACIDR
+          - DDBBSubnetBCIDR
+          - NatGWPublicIPA
+          - NatGWPublicIPB
+      - Label:
+          default: Configure VPC Options.
+        Parameters:
+          - DnsHostnames
+          - DnsSupport
+          - Tenancy
+
+Parameters:
+  # Stack UUID
+  StackUUID:
+    Description: Stack UUID
+    Type: String
+  # Environment
+  ClientName:
+    Type: String
+    Description: The Name of the client.
+    MinLength: 1
+  ClientID:
+    Type: String
+    Description: The ID of the client in WHMCS.
+    MinLength: 1
+  Environment:
+    Type: String
+    Description: The name of the application to tag the generated resources.
+    MinLength: 1
+    AllowedValues:
+      - development
+      - staging
+      - production
+  ProjectName:
+    Type: String
+    Description: The name of the project (product). ie, autoscaling.
+    MinLength: 1
+    AllowedValues:
+      - asg
+
+  # VPC Networks
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.10.0.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  PublicSubnetACIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.10.0.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  PublicSubnetBCIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.10.1.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  PrivateSubnetACIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.10.2.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  PrivateSubnetBCIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.10.3.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  DDBBSubnetACIDR:
+    Description: Please enter the IP range (CIDR notation) for the DDBB subnet in the first Availability Zone
+    Type: String
+    Default: 10.10.4.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  DDBBSubnetBCIDR:
+    Description: Please enter the IP range (CIDR notation) for the DDBB subnet in the second Availability Zone
+    Type: String
+    Default: 10.10.5.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  NatGWPublicIPA:
+    Type: String
+    Description: >
+       Select a valid Elastic Public IP for Internet access purpose from the first
+       availability zone. The allocation ID of the Elastic IP address that's associated with the NAT gateway.
+    Default: 'true'
+  NatGWPublicIPB:
+    Type: String
+    Description: >
+       Select a valid Elastic Public IP for Internet access purpose from the second
+       availability zone. The allocation ID of the Elastic IP address that's associated with the NAT gateway.
+    Default: 'true'
+
+  # VPC Options
+  DnsHostnames:
+    Type: String
+    Description: >
+      Indicates whether the instances launched in the VPC get DNS hostnames.
+      If enabled, instances in the VPC get DNS hostnames; otherwise, they do not.
+    Default: 'true'
+  DnsSupport:
+    Type: String
+    Description: >
+      Indicates whether the DNS resolution is supported for the VPC. If enabled, queries to the Amazon provided DNS server at the 169.254.169.253 IP address, 
+      or the reserved IP address at the base of the VPC network range "plus two" succeed.
+      If disabled, the Amazon provided DNS service in the VPC that resolves public DNS hostnames to IP addresses is not enabled.
+    Default: 'true'
+  Tenancy:
+    Type: String
+    Description: >
+      The allowed tenancy of instances launched into the VPC.
+        - "default": An instance launched into the VPC runs on shared hardware by default, unless you explicitly specify a different tenancy during instance launch.
+        - "dedicated": An instance launched into the VPC is a Dedicated Instance by default, unless you explicitly specify a tenancy of host during instance launch.
+          You cannot specify a tenancy of default during instance launch.
+      Select Default to ensure that instances launched in this VPC use the tenancy attribute specified at launch.
+    Default: default
+
+#Resources
+Resources:
+  # 1. Resource: Virtual Private Cloud
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: !Ref DnsHostnames
+      EnableDnsSupport: !Ref DnsSupport
+      InstanceTenancy: !Ref Tenancy
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-vpc
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 2. Resource: Gateway allow traffic from/to Internet
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-igw
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # 3. Resource: Public A Subnet
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnetACIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-a-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 4. Resource: Public B Subnet
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnetBCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-b-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 5. Resource: Private A Subnet
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnetACIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-a-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 6. Resource: Private B Subnet
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnetBCIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-b-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 7. Resource: DDBB A Subnet
+  DDBBSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref DDBBSubnetACIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-ddbb-a-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 8. Resource: DDBB B Subnet
+  DDBBSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref DDBBSubnetBCIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-ddbb-b-subnet
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 9. Resource: Public RT A
+  PublicRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-a-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 9.1 Resource: Public RT A Route to IGW
+  DefaultPublicRouteA:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # 9.2 Resource: Public RT A PublicSubnetA Association
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      SubnetId: !Ref PublicSubnetA
+
+  # 10. Resource: Public RT B
+  PublicRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-b-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 10.1 Resource: Public RT B Route to IGW
+  DefaultPublicRouteB:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # 10.2 Resource: Public RT B PublicSubnetA Association
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableB
+      SubnetId: !Ref PublicSubnetB
+
+  # 11. Resource: Private RT A
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-a-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 11.1 Resource: Private RT A Route to NATGW
+  DefaultPrivateRouteA:
+    Type: AWS::EC2::Route
+    DependsOn: PrivateRouteTableA
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PublicNatGatewayA
+
+  # 11.2 Resource: Private RT A PrivateSubnetA Association
+  PrivateSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      SubnetId: !Ref PrivateSubnetA
+
+  # 12. Resource: Private RT B
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-b-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 12.1 Resource: Private RT A Route to NATGW
+  DefaultPrivateRouteB:
+    Type: AWS::EC2::Route
+    DependsOn: PrivateRouteTableB
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PublicNatGatewayB
+
+  # 12.2 Resource: Private RT B PrivateSubnetB Association
+  PrivateSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      SubnetId: !Ref PrivateSubnetB
+
+  # 13. Resource: DDBB RT A
+  DDBBRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-DDBB-a-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 13.1 Resource: Private RT A Route to NATGW
+  DefaultDDBBRouteA:
+    Type: AWS::EC2::Route
+    DependsOn: DDBBRouteTableA
+    Properties:
+      RouteTableId: !Ref DDBBRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PublicNatGatewayA
+
+  # 13.2 Resource: DDBB RT A DDBBSubnetA Association
+  DDBBSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DDBBRouteTableA
+      SubnetId: !Ref DDBBSubnetA
+
+  # 14. Resource: DDBB RT B
+  DDBBRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-DDBB-b-rt
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 14.1 Resource: DDBB RT b Route to NATGW
+  DefaultDDBBRouteB:
+    Type: AWS::EC2::Route
+    DependsOn: DDBBRouteTableB
+    Properties:
+      RouteTableId: !Ref DDBBRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref PublicNatGatewayB
+
+  # 14.2 Resource: DDBB RT B DDBBSubnetB Association
+  DDBBSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DDBBRouteTableB
+      SubnetId: !Ref DDBBSubnetB
+
+
+  # 15. Resource: NACL => Public NACL A
+  PublicNACLA:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-a-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 15.1 Resource: NACL => Public NACL A Rules (Ingress & Egress)
+  PublicNACLRule100AllInBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PublicNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  PublicNetworkACLRule100AllOutBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 15.2 Resource: NACL => Public Subnet A Association
+  PublicNACLAssociationA:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref PublicNACLA
+      SubnetId: !Ref PublicSubnetA
+
+  # 16. Resource: NACL => Public NACL B
+  PublicNACLB:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-b-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 16.1 Resource: NACL => Public NACL B Rules (Ingress & Egress)
+  PublicNACLRule100AllInBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PublicNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  PublicNetworkACLRule100AllOutBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 16.2 Resource: NACL => Public Subnet B Association
+  PublicNACLAssociationB:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref PublicNACLB
+      SubnetId: !Ref PublicSubnetB
+
+  # 17. Resource: NACL => Private NACL A
+  PrivateNACLA:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-a-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 17.1 Resource: NACL => Private NACL A Rules (Ingress & Egress)
+  PrivateNACLRule100AllInBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PrivateNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  PrivateNetworkACLRule100AllOutBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PrivateNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 17.2 Resource: NACL => Private Subnet A Association
+  PrivateNACLAssociationA:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref PrivateNACLA
+      SubnetId: !Ref PrivateSubnetA
+
+  # 18. Resource: NACL => Private NACL B
+  PrivateNACLB:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-private-b-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 18.1 Resource: NACL => Private NACL B Rules (Ingress & Egress)
+  PrivateNACLRule100AllInBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PrivateNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  PrivateNetworkACLRule100AllOutBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PrivateNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 18.2 Resource: NACL => Private Subnet B Association
+  PrivateNACLAssociationB:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref PrivateNACLB
+      SubnetId: !Ref PrivateSubnetB
+
+  # 19. Resource: NACL => DDBB NACL A
+  DDBBNACLA:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-DDBB-a-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 19.1 Resource: NACL => DDBB NACL A Rules (Ingress & Egress)
+  DDBBNACLRule100AllInBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref DDBBNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  DDBBNetworkACLRule100AllOutBoundTrafficA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref DDBBNACLA
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 19.2 Resource: NACL => DDBB Subnet A Association
+  DDBBNACLAssociationA:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref DDBBNACLA
+      SubnetId: !Ref DDBBSubnetA
+
+  # 20. Resource: NACL => DDBB NACL B
+  DDBBNACLB:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-DDBB-b-nacl
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 20.1 Resource: NACL => DDBB NACL B Rules (Ingress & Egress)
+  DDBBNACLRule100AllInBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref DDBBNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+  DDBBNetworkACLRule100AllOutBoundTrafficB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties: 
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref DDBBNACLB
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  # 20.2 Resource: NACL => DDBB Subnet B Association
+  DDBBNACLAssociationB:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties: 
+      NetworkAclId: !Ref DDBBNACLB
+      SubnetId: !Ref DDBBSubnetB
+
+  # 21. Elastic Public IP Attachement
+  NatGatewayIPAAttachment:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  NatGatewayIPBAttachment:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  # 22. Resource NATGW => Public NatGateway A
+  PublicNatGatewayA:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      #AllocationId: !Ref NatGWPublicIPA
+      AllocationId: !Ref NatGatewayIPAAttachment
+      ConnectivityType: public
+      SubnetId: !Ref PublicSubnetA
+      Tags: 
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-a-natgw
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 23. Resource NATGW => Public NatGateway B
+  PublicNatGatewayB:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      #AllocationId: !Ref NatGWPublicIPB
+      AllocationId: !Ref NatGatewayIPBAttachment
+      ConnectivityType: public
+      SubnetId: !Ref PublicSubnetB
+      Tags: 
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-public-b-natgw
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  VPCId:
+    Description: The ID of the VPC that this stack is deployed in.
+    Value: !Ref VPC
+    Export:
+      Name: AsgVpcId
+      # Name: !Sub
+      #   - ${StackUUID}:VPCId
+      #   - { StackUUID: !Ref 'StackUUID' }
+
+  PublicSubnets:
+    Description: A list of the public subnets
+    Value: !Join [ ",", [ !Ref PublicSubnetA, !Ref PublicSubnetB ]]
+    Export:
+      Name: AsgPublicSubnets
+
+  PublicSubnetA:
+    Description: A reference to the public subnet in the A Availability Zone
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: AsgPublicSubnetA
+      # Name: !Sub
+      #   - ${StackUUID}:PublicSubnetA
+      #   - { StackUUID: !Ref 'StackUUID' }
+
+  PublicSubnetB:
+    Description: A reference to the public subnet in the B Availability Zone
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: AsgPublicSubnetB
+      # Name: !Sub
+      #   - ${StackUUID}:PublicSubnetB
+      #   - { StackUUID: !Ref 'StackUUID' }
+
+  PrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref PrivateSubnetA, !Ref PrivateSubnetB ]]
+    Export:
+      Name: AsgPrivateSubnets
+
+  PrivateSubnetA:
+    Description: A reference to the private subnet in the A Availability Zone
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: AsgPrivateSubnetA
+      # Name: !Sub
+      #   - ${StackUUID}:PrivateSubnetA
+      #   - { StackUUID: !Ref 'StackUUID' }
+
+  PrivateSubnetB:
+    Description: A reference to the private subnet in the B Availability Zone
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: AsgPrivateSubnetB
+      # Name: !Sub
+      #   - ${StackUUID}:PrivateSubnetB
+      #   - { StackUUID: !Ref 'StackUUID' }
+
+  DDBBSubnets:
+    Description: A list of the DDBB subnets
+    Value: !Join [ ",", [ !Ref DDBBSubnetA, !Ref DDBBSubnetB ]]
+    Export:
+      Name: AsgDDBBSubnets
+
+  DDBBSubnetA:
+    Description: A reference to the DDBB subnet in the A Availability Zone
+    Value: !Ref DDBBSubnetA
+    Export:
+      Name: AsgDDBBSubnetA
+
+  DDBBSubnetB:
+    Description: A reference to the DDBB subnet in the B Availability Zone
+    Value: !Ref DDBBSubnetB
+    Export:
+      Name: AsgDDBBSubnetB

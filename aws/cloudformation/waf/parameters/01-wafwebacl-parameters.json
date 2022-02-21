@@ -1,0 +1,54 @@
+[
+    {
+        "ParameterKey": "ActivateSqlInjectionProtectionParam",
+        "ParameterValue": "yes"
+    },
+    {
+        "ParameterKey": "ActivateCrossSiteScriptingProtectionParam",
+        "ParameterValue": "yes"
+    },
+    {
+        "ParameterKey": "ActivateHttpFloodProtectionParam",
+        "ParameterValue": "yes"
+    },
+    {
+        "ParameterKey": "ActivateScannersProbesProtectionParam",
+        "ParameterValue": "no"
+    },
+    {
+        "ParameterKey": "ActivateReputationListsProtectionParam",
+        "ParameterValue": "yes"
+    },
+        {
+        "ParameterKey": "ActivateBadBotProtectionParam",
+        "ParameterValue": "yes"
+    },
+        {
+        "ParameterKey": "EndpointType",
+        "ParameterValue": "ALB"
+    },
+        {
+        "ParameterKey": "AppAccessLogBucket",
+        "ParameterValue": "ef-dev-base-appaccesslogbucket-s3"
+    },
+        {
+        "ParameterKey": "WafArnPrefix",
+        "ParameterValue": "arn:aws:waf-regional"
+    },
+        {
+        "ParameterKey": "RequestThreshold",
+        "ParameterValue": "100"
+    },
+        {
+        "ParameterKey": "ErrorThreshold",
+        "ParameterValue": "50"
+    },
+            {
+        "ParameterKey": "WAFBlockPeriod",
+        "ParameterValue": "240"
+    },
+            {
+        "ParameterKey": "KeepDataInOriginalS3Location",
+        "ParameterValue": "no"
+    }
+]

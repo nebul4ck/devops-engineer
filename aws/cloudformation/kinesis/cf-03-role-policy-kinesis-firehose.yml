@@ -1,0 +1,284 @@
+---
+
+##
+# Alberto González Mesas, <alberto.gonzalez@euigs.com>
+# Tue Feb 25 10:00:00 CEST 2020
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Kinesis StackSet
+  Purpose: Create a Kinesis Firehose Delivery Stream to move the WAF logging to a S3 Bucket.
+
+    Templates:
+
+      01-s3-kinesis-waf-log.yaml
+      02-cloudwatch-kinesis.yaml
+      03-role-policy-kinesis-firehose.yaml
+      04-kinesis-firehose.yaml
+
+    03-role-policy-kinesis-firehose.yaml
+
+      - Create an IAM Role which Kinesis Data Firehose assumes and 
+    gains access to the specified bucket, #// CloudWatch log group and streams. //#
+      - Create an IAM Policy which grants access to S3 Bucket #// and CloudWatch LogGroup //#
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Setup account configuration.
+        Parameters:
+          - AccountName
+          - Region
+          - AccountId
+      - Label:
+          default: Configure IAM Policy.
+        Parameters:
+          - KinesisIAMRoleName
+          - KinesisIAMPolicyName
+      - Label:
+          default: >-
+            Configure Kinesis dependencies (S3BucketName, #// CloudWatchLogGroupName, DeliveryStreamName and 
+            CloudWatchLogStreamName //#)
+        Parameters:
+          # El parametro S3 ARN se saca del template del s3 en stackset
+          - S3BucketName
+          # Este parametro depende de la plantilla de cloudwatch (stackset)
+          - CloudWatchLogGroupName
+          - CloudWatchLogStreamName
+          - DeliveryStreamName
+      - Label:
+          default: Tagging
+        Parameters:
+          - Role
+          - Environment
+          - SLA
+          - StartTime
+          - EndTime
+          - CECO
+          - Operation
+          - Compliance
+          - Confidentiality
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Type: String
+    Description: 'The account name, ie ''euigs-dev-base'''
+    MinLength: 1
+  Region:
+    Type: String
+    Description: 'Insert a valid AWS Region. Ireland by default (eu-west-1)'
+    Default: eu-west-1
+  AccountId:
+    Type: String
+    Description: 'Insert a valid Account ID.'
+    Default: '963145608254'
+  KinesisIAMPolicyName:
+    Type: String
+    Description: 'The name of the policy document.'
+    MinLength: 1
+  KinesisIAMRoleName:
+    Type: String
+    Description: 'Naming Kinesis IAM Role'
+    MinLength: 1
+  # Con stackset esto lo recogemos del output del S3 template
+  S3BucketName:
+    Type: String
+    Description: 'Select a valid S3 Bucket ARN'
+    MinLength: 1
+  # eSTE PARAMETRO SE SACA DEL OUTPUT DEL STACKSET
+  CloudWatchLogGroupName:
+    Type: String
+    Description: 'Select a Cloud Watch Log Group Name'
+    MinLength: 1
+  DeliveryStreamName:
+    Type: String
+    Description: 'Select a Devilery Stream Kinesis'
+    MinLength: 1
+  CloudWatchLogStreamName:
+    Type: String
+    Description: >-
+      'The name of the CloudWatch Logs log stream that Kinesis Data Firehose uses to send 
+      logs about data delivery.'
+    MinLength: 1
+  Role:
+    Type: String
+    Description: 'Tag: Role of resource.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - int
+      - pro
+  Environment:
+    Type: String
+    Description: 'Tag: Environment where the resource is spawned.'
+    Default: dev
+    AllowedValues:
+      - dev
+      - int
+      - pro
+  SLA:
+    Type: String
+    Description: 'Tag: Service-level agreement.'
+    Default: 24x7
+    AllowedValues:
+      - '24x7'
+      - '8x5'
+  StartTime:
+    Type: String
+    Description: 'When is the resource spawned?, ie ''00:00''.'
+    Default: '00:00'
+  EndTime:
+    Type: String
+    Description: 'When is the resource terminated?, ie ''18:30''.'
+    Default: '00:00'
+  CECO:
+    Type: String
+    Description: 'Operation owner of resource deployed, ie ''the same as Operation tag''.'
+    Default: euigs
+  Operation:
+    Type: String
+    Description: 'Operation owner of resource deployed.'
+    Default: euigs
+    AllowedValues:
+      - euigs
+      - as
+      - ct 
+      - ef
+  Compliance:
+    Type: String
+    Description: Compliance.
+    Default: 'no'
+    AllowedValues:
+      - 'no'
+      - 'yes'
+  Confidentiality:
+    Type: String
+    Description: Confidentiality.
+    Default: 'no'
+    AllowedValues:
+      - 'yes'
+      - 'no'
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  KinesisIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: IAM Role which KinesisFirehose gains access to S3 Bucket, LogGroup and KMS Key.
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: "/"
+      RoleName: !Sub ${AccountName}-${KinesisIAMRoleName}-role
+      Tags: 
+        - Key: Application
+          Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: !Sub '${AccountName}-${KinesisIAMRoleName}-role'
+        - Key: ApplicationID
+          Value: !Sub '${AccountName}-${KinesisIAMRoleName}-role'
+        - Key: Role
+          Value: !Sub '${Role}'
+        - Key: Environment
+          Value: !Sub '${Environment}'
+        - Key: SLA
+          Value: !Sub '${SLA}'
+        - Key: StartTime
+          Value: !Sub '${StartTime}'
+        - Key: EndTime
+          Value: !Sub '${EndTime}'
+        - Key: CECO
+          Value: !Sub '${CECO}'
+        - Key: Operation
+          Value: !Sub '${Operation}'
+        - Key: Compliance
+          Value: !Sub '${Compliance}'
+        - Key: Confidentiality
+          Value: !Sub '${Confidentiality}'
+
+  KinesisIAMPolicyAccess:
+    DependsOn:
+      - KinesisIAMRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${AccountName}-${KinesisIAMPolicyName}-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:AbortMultipartUpload"
+              - "s3:GetBucketLocation"
+              - "s3:GetObject"
+              - "s3:ListBucket"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:PutObject"
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  #- !Ref s3bucket
+                  - !Sub '${S3BucketName}'
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  #- !Ref s3bucket
+                  - !Sub '${S3BucketName}'
+                  - '/*'
+
+          # Next policy applies to Kinesis Stream (this is a Firehose Delivery Stream)
+          #
+          - Effect: Allow
+            Action:
+              - "kinesis:DescribeStream"
+              - "kinesis:GetShardIterator"
+              - "kinesis:GetRecords"
+            Resource:
+              - !Sub "arn:aws:kinesis:${Region}:${AccountId}:stream/aws-waf-logs-${DeliveryStreamName}"
+          - Effect: Allow
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource:
+              - "arn:aws:kms:region:account-id:key/key-id"
+          - Effect: Allow
+            Action:
+              - "logs:PutLogEvents"
+            Resource:
+              - !Sub "arn:aws:logs:${Region}:${AccountId}:log-group:${CloudWatchLogGroupName}:log-stream:${CloudWatchLogStreamName}"
+
+      Roles: 
+        - !Ref KinesisIAMRole
+
+##############################################################################################
+# Outputs                                                                                    #
+##############################################################################################
+
+# Outputs:
+#   S3Url:
+#     Description: S3 bucket
+#     Value: !Join 
+#       - ''
+#       - - 's3://'
+#         - !Ref S3Bucket
+#     Export:
+#       Name: !Sub '${AWS::StackName}:S3Url'

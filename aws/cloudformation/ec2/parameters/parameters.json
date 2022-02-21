@@ -1,0 +1,54 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "nebul4ck-account"
+    },
+    {
+        "ParameterKey": "EnvType",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "InstanceName",
+        "ParameterValue": "testLastNginxVersion"
+    },
+    {
+        "ParameterKey": "VolumeSize",
+        "ParameterValue": "10"
+    },
+    {
+        "ParameterKey": "VolumeType",
+        "ParameterValue": "gp2"
+    },
+    {
+        "ParameterKey": "IamInstanceProfile",
+        "ParameterValue": "AmazonSSMRoleForInstancesQuickSetup"
+    },
+    {
+        "ParameterKey": "ImageId",
+        "ParameterValue": "ami-1234567890cdf"
+    },
+    {
+        "ParameterKey": "SecurityGroup",
+        "ParameterValue": "sg-1234567890cdfgh"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "SSHLocation",
+        "ParameterValue": "192.168.1.0/24"
+    },
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "nebul4ck-keypair"
+    },
+    {
+        "ParameterKey": "Subnet",
+        "ParameterValue": "subnet-1234567890cd"
+    },
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-1234567890cdf"
+    }
+]

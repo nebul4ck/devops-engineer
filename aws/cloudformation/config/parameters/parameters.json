@@ -1,0 +1,34 @@
+[
+    {
+        "ParameterKey": "AccountName",
+        "ParameterValue": "nebul4ck-aws-account"
+    },
+    {
+        "ParameterKey": "ConfigRecorderName",
+        "ParameterValue": "ConfigRecorderVirginiaFWM"
+    },
+    {
+        "ParameterKey": "RecordingAllResources",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "RecordingGlobalResourcesToo",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "RecorderRoleARN",
+        "ParameterValue": "arn:aws:iam::1234567890:role/StackSet-nebul4ck-aws-account-config-recorder-role"
+    },
+    {
+        "ParameterKey": "DeliveryDataFrequency",
+        "ParameterValue": "TwentyFour_Hours"
+    },
+    {
+        "ParameterKey": "DeliveryChannelName",
+        "ParameterValue": "ConfigRecorderDeliveryChannel"
+    },
+    {
+        "ParameterKey": "DeliveryBucketSink",
+        "ParameterValue": "awsconfig-config-s3"
+    }
+]

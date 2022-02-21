@@ -1,0 +1,42 @@
+[
+    {
+        "Key" : "ApplicationID",
+        "Value" : "testing"
+    },
+    {
+        "Key" : "Compliance",
+        "Value" : "no"
+    },
+    {
+        "Key" : "CECO",
+        "Value" : "ef"
+    },
+    {
+        "Key" : "Confidentiality",
+        "Value" : "no"
+    },
+    {
+        "Key" : "Role",
+        "Value" : "shared"
+    },
+    {
+        "Key" : "Environment",
+        "Value" : "shared"
+    },
+    {
+        "Key" : "StartTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "EndTime",
+        "Value" : "00:00"
+    },
+    {
+        "Key" : "Operation",
+        "Value" : "ef"
+    },
+    {
+        "Key" : "SLA",
+        "Value" : "24x7"
+    }
+]

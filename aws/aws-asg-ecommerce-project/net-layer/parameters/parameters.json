@@ -1,0 +1,66 @@
+[
+    {
+        "ParameterKey": "ClientName",
+        "ParameterValue": "demo"
+    },
+    {
+        "ParameterKey": "ClientID",
+        "ParameterValue": "67"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "asg"
+    },
+    {
+        "ParameterKey": "VpcCIDR",
+        "ParameterValue": "10.10.0.0/16"
+    },
+    {
+        "ParameterKey": "DnsHostnames",
+        "ParameterValue": "True"
+    },
+    {
+        "ParameterKey": "DnsSupport",
+        "ParameterValue": "True"
+    },
+    {
+        "ParameterKey": "Tenancy",
+        "ParameterValue": "default"
+    },
+    {
+        "ParameterKey": "PublicSubnetACIDR",
+        "ParameterValue": "10.10.0.0/24"
+    },
+    {
+        "ParameterKey": "PublicSubnetBCIDR",
+        "ParameterValue": "10.10.1.0/24"
+    },
+    {
+        "ParameterKey": "PrivateSubnetACIDR",
+        "ParameterValue": "10.10.2.0/24"
+    },
+    {
+        "ParameterKey": "PrivateSubnetBCIDR",
+        "ParameterValue": "10.10.3.0/24"
+    },
+    {
+        "ParameterKey": "DDBBSubnetACIDR",
+        "ParameterValue": "10.10.4.0/24"
+    },
+    {
+        "ParameterKey": "DDBBSubnetBCIDR",
+        "ParameterValue": "10.10.5.0/24"
+    },
+    {
+        "ParameterKey": "NatGWPublicIPA",
+        "ParameterValue": "eipalloc-09ce7de478f2acb85"
+    },
+    {
+        "ParameterKey": "NatGWPublicIPB",
+        "ParameterValue": "eipalloc-068f71efdff21d66d"
+    }
+]

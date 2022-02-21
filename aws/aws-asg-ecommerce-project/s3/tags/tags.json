@@ -1,0 +1,18 @@
+[
+    {
+        "Key" : "ClientName",
+        "Value" : "demo"
+    },
+    {
+        "Key" : "ClientID",
+        "Value" : "67"
+    },
+    {
+        "Key" : "Environment",
+        "Value" : "development"
+    },
+    {
+        "Key": "ProjectName",
+        "Value": "autoscaling"
+    }
+]

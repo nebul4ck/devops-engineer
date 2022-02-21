@@ -1,0 +1,30 @@
+[
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "ecommerce"
+    },
+    {
+        "ParameterKey": "ClientID",
+        "ParameterValue": "67"
+    },
+    {
+        "ParameterKey": "ProductID",
+        "ParameterValue": "1111"
+    },
+    {
+        "ParameterKey": "ShopDomain",
+        "ParameterValue": "cloudnodown-com"
+    },
+    {
+        "ParameterKey": "ShopFQDN",
+        "ParameterValue": "cloudnodown.com"
+    },
+    {
+        "ParameterKey": "Service",
+        "ParameterValue": "as"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "development"
+    }
+]

@@ -1,0 +1,302 @@
+[
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "ecommerce"
+    },
+    {
+        "ParameterKey": "ClientID",
+        "ParameterValue": "67"
+    },
+    {
+        "ParameterKey": "ProductID",
+        "ParameterValue": "1111"
+    },
+    {
+        "ParameterKey": "ShopDomain",
+        "ParameterValue": "cloudnodown-com"
+    },
+    {
+        "ParameterKey": "ShopFQDN",
+        "ParameterValue": "cloudnodown.com"
+    },
+    {
+        "ParameterKey": "Service",
+        "ParameterValue": "as"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "Deduplication",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "DeduplicationScope",
+        "ParameterValue": "queue"
+    },
+    {
+        "ParameterKey": "DelaySeconds",
+        "ParameterValue": 0
+    },
+    {
+        "ParameterKey": "IsAFifoQueue",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "MessageRetentionPeriod",
+        "ParameterValue": 3600
+    },
+    {
+        "ParameterKey": "VisibilityTimeout",
+        "ParameterValue": 60
+    },
+    {
+        "ParameterKey": "IsFifoTopic",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "SNSEmailContact",
+        "ParameterValue": "alberto.gonzalez@lineagrafica.es"
+    },
+    {
+        "ParameterKey": "AppHTTPPort",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "AppHTTPSPort",
+        "ParameterValue": 443
+    },
+    {
+        "ParameterKey": "AppSSHPort",
+        "ParameterValue": 22
+    },
+    {
+        "ParameterKey": "ApplicationPort",
+        "ParameterValue": 8080
+    },
+    {
+        "ParameterKey": "CidrInternalNetwork",
+        "ParameterValue": "10.10.0.0/16"
+    },
+    {
+        "ParameterKey": "CidrPublicNetwork",
+        "ParameterValue": "0.0.0.0/0"
+    },
+    {
+        "ParameterKey": "HealthCheckEnabled",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "HealthCheckIntervalSeconds",
+        "ParameterValue": 30
+    },
+    {
+        "ParameterKey": "ApplicationHealthCheckPath",
+        "ParameterValue": "/"
+    },
+    {
+        "ParameterKey": "HealthCheckTimeoutSeconds",
+        "ParameterValue": 5
+    },
+    {
+        "ParameterKey": "HealthyThresholdCount",
+        "ParameterValue": 2
+    },
+    {
+        "ParameterKey": "UnhealthyThresholdCount",
+        "ParameterValue": 5
+    },
+    {
+        "ParameterKey": "IpAddressType",
+        "ParameterValue": "ipv4"
+    },
+    {
+        "ParameterKey": "StickinessDurationSeconds",
+        "ParameterValue": 86400
+    },
+    {
+        "ParameterKey": "TargetGroupProtocol",
+        "ParameterValue": "HTTP"
+    },
+    {
+        "ParameterKey": "TargetType",
+        "ParameterValue": "instance"
+    },
+    {
+        "ParameterKey": "TargetGroupDeregistrationDelay",
+        "ParameterValue": 30
+    },
+    {
+        "ParameterKey": "TargetGroupSlowStart",
+        "ParameterValue": 0
+    },
+    {
+        "ParameterKey": "ListenerPriority",
+        "ParameterValue": 10
+    },
+    {
+        "ParameterKey": "RedirectPriority:",
+        "ParameterValue": 10
+    },
+    {
+        "ParameterKey": "TargetGroupStickinessEnable",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "ForwardConfigTargetGroupWeight",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "BlockDeviceName",
+        "ParameterValue": "/dev/sda1"
+    },
+    {
+        "ParameterKey": "LaunchConfigEbsEncrypted",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "BlockDeviceSize",
+        "ParameterValue": 8
+    },
+    {
+        "ParameterKey": "BlockDeviceType",
+        "ParameterValue": "gp2"
+    },
+    {
+        "ParameterKey": "DeleteOnTermination",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "EbsOptimized",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "InstanceProfile",
+        "ParameterValue": "arn:aws:iam::125283292104:instance-profile/lg-ssm-s3-cw-sns-sqs-inspector-instance-role"
+    },
+    {
+        "ParameterKey": "GoldenAMI",
+        "ParameterValue": "ami-06d79c60d7454e2af"
+    },
+    {
+        "ParameterKey": "ShutdownBehavior",
+        "ParameterValue": "stop"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "EC2KeyPairName",
+        "ParameterValue": "lg-demo"
+    },
+    {
+        "ParameterKey": "LaunchTemplateResourceType",
+        "ParameterValue": "launch-template"
+    },
+    {
+        "ParameterKey": "RSAGitKeyName",
+        "ParameterValue": "rundeckrsakey"
+    },
+    {
+        "ParameterKey": "RepoBranch",
+        "ParameterValue": "master"
+    },
+    {
+        "ParameterKey": "GitRepository",
+        "ParameterValue": "LINEA-GRAFICA/test-deploy-docker.git"
+    },
+    {
+        "ParameterKey": "RepoBasePath",
+        "ParameterValue": "/root/git/test-deploy-docker"
+    },
+    {
+        "ParameterKey": "AnsiblePlaybook",
+        "ParameterValue": "play_dockertest.yml"
+    },
+    {
+        "ParameterKey": "AppASGCooldownSecs",
+        "ParameterValue": 300
+    },
+    {
+        "ParameterKey": "AppASGDesiredASGCapacity",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "CapacityType",
+        "ParameterValue": "units"
+    },
+    {
+        "ParameterKey": "AppASGHealthCheckGracePeriod",
+        "ParameterValue": 300
+    },
+    {
+        "ParameterKey": "AppASGHealthCheckType",
+        "ParameterValue": "EC2"
+    },
+    {
+        "ParameterKey": "LaunchTemplateVersion",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "AppMaximumASGCapacity",
+        "ParameterValue": 4
+    },
+    {
+        "ParameterKey": "AppMinimumASGCapacity",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "AppASGProtectedFromScale",
+        "ParameterValue": false
+    },
+    {
+        "ParameterKey": "AppTagPropagateAtLaunch",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "AppASGNewestTerminationPolicies",
+        "ParameterValue": "NewestInstance"
+    },
+    {
+        "ParameterKey": "AutoScalingReplacingUpdateReplace",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "AutoScalingRollingUpdateMaxBatchSize",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "MinInstancesInService",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "MinSuccessfulInstancesPercent",
+        "ParameterValue": 100
+    },
+    {
+        "ParameterKey": "AutoScalingRollingUpdatePauseTime",
+        "ParameterValue": "PT4M"
+    },
+    {
+        "ParameterKey": "AutoScalingRollingUpdateWaitSignal",
+        "ParameterValue": true
+    },
+    {
+        "ParameterKey": "InstanceWarmup",
+        "ParameterValue": 30
+    },
+    {
+        "ParameterKey": "CreationPolicyResourceSignal",
+        "ParameterValue": 1
+    },
+    {
+        "ParameterKey": "CreationPolicyTimeout",
+        "ParameterValue": "PT5M"
+    },
+    {
+        "ParameterKey": "CPUPolicyTargetValue",
+        "ParameterValue": "70.0"
+    }
+]

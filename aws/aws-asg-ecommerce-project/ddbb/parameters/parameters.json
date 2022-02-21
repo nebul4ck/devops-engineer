@@ -1,0 +1,98 @@
+[
+    {
+        "ParameterKey": "ClientName",
+        "ParameterValue": "demo"
+    },
+    {
+        "ParameterKey": "ClientID",
+        "ParameterValue": "67"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "asg"
+    },
+    {
+        "ParameterKey": "PrivateDDBBSubNetId",
+        "ParameterValue": "subnet-0d0e10d6cb8d2af5f"
+    },
+    {
+        "ParameterKey": "PrivateNetworkCidr",
+        "ParameterValue": "10.10.0.0/16"
+    },
+    {
+        "ParameterKey": "VolumeSize",
+        "ParameterValue": "8"
+    },
+    {
+        "ParameterKey": "VolumeType",
+        "ParameterValue": "gp2"
+    },
+    {
+        "ParameterKey": "InstanceProfile",
+        "ParameterValue": "lg-ssm-s3-cw-sns-sqs-inspector-instance-role"
+    },
+    {
+        "ParameterKey": "ImageId",
+        "ParameterValue": "ami-06d79c60d7454e2af"
+    },
+    {
+        "ParameterKey": "DeviceRootPath",
+        "ParameterValue": "/dev/sda1"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "lg-demo"
+    },
+    {
+        "ParameterKey": "RSAGitKeyName",
+        "ParameterValue": "rundeckrsakey"
+    },
+    {
+        "ParameterKey": "RepoBranch",
+        "ParameterValue": "master"
+    },
+    {
+        "ParameterKey": "GitRepository",
+        "ParameterValue": "git@github.com:LINEA-GRAFICA/lg-docker.git"
+    },
+    {
+        "ParameterKey": "RepoBasePath",
+        "ParameterValue": "/root/git/lg-docker"
+    },
+    {
+        "ParameterKey": "ProjectPath",
+        "ParameterValue": "docker-compose/demo-bbdd-instance"
+    },
+    {
+        "ParameterKey": "MySQLVersion",
+        "ParameterValue": "5.7"
+    },
+    {
+        "ParameterKey": "MySQLPort",
+        "ParameterValue": "3306"
+    },
+    {
+        "ParameterKey": "MySQLContainerPort",
+        "ParameterValue": "3306"
+    },
+    {
+        "ParameterKey": "MySQLRootPassword",
+        "ParameterValue": "cambiar1"
+    },
+    {
+        "ParameterKey": "AdminerPort",
+        "ParameterValue": "8081"
+    },
+    {
+        "ParameterKey": "AdminerContainerPort",
+        "ParameterValue": "8080"
+    }
+]

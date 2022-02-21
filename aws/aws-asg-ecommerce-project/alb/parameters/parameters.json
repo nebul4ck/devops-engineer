@@ -1,0 +1,70 @@
+[
+    {
+        "ParameterKey": "ClientName",
+        "ParameterValue": "demo"
+    },
+    {
+        "ParameterKey": "ClientID",
+        "ParameterValue": "67"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "development"
+    },
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "asg"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "asgLoadBalancer"
+    },
+    {
+        "ParameterKey": "CidrAllowed",
+        "ParameterValue": "0.0.0.0/0"
+    },
+    {
+        "ParameterKey": "IpAddressType",
+        "ParameterValue": "ipv4"
+    },
+    {
+        "ParameterKey": "SchemeLoadBalancingType",
+        "ParameterValue": "internet-facing"
+    },
+    {
+        "ParameterKey": "PublicSubnetsList",
+        "ParameterValue": "subnet-024a4cb8d394e911c,subnet-0a99d0b60e447091e"
+    },
+    {
+        "ParameterKey": "LoadBalancerType",
+        "ParameterValue": "application"
+    },
+    {
+        "ParameterKey": "DeletionALBProtectionEnabled",
+        "ParameterValue": "false"
+    },
+    {
+        "ParameterKey": "LoadBalancerIdleTimeout",
+        "ParameterValue": "60"
+    },
+    {
+        "ParameterKey": "RoutingHTTP2Enabled",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "AccessS3LogsEnabled",
+        "ParameterValue": "true"
+    },
+    {
+        "ParameterKey": "PrefixAccessS3Logs",
+        "ParameterValue": "albaccesslogs"
+    },
+    {
+        "ParameterKey": "CertificateId",
+        "ParameterValue": "arn:aws:acm:eu-west-3:125283292104:certificate/bf402e11-78b4-4804-8b5c-f7ecebfdd1d6"
+    },
+    {
+        "ParameterKey": "SslPolicy",
+        "ParameterValue": "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+    }
+]

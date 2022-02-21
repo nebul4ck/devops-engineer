@@ -1,0 +1,13 @@
+app/*{config} => Git (ojo con parámetros de configuración)
+
+Esto si un cliente instala algo, deja git desactualizado:
+override : git cambia en función de codigo
+theme: git
+modules: git
+
+img: no
+
+Pruebas:
+1. si un cliente tiene el stickisession apuntando a una nueva instancia, esta es eliminada por el ASG, ¿Que pasa con la cookie de presta (carrito)?
+2. Pruebas de como actualizar un presta de cualquier version a cualquier version, la idea es avisar al cliente de que NO se puede actualizar
+3. Si el cliente mete un modulo nuevo, esto va a modificar cosas en el EFS y en la base de datos y la rama del desarrollador ya no coincide. Buscar solución.

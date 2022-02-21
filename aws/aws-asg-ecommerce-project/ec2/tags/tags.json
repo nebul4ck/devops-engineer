@@ -1,0 +1,30 @@
+[
+    {
+        "Key" : "ProjectName",
+        "Value" : "ecommerce"
+    },
+    {
+        "Key" : "ClientID",
+        "Value" : "67"
+    },
+    {
+        "Key" : "ProductID",
+        "Value" : "1111"
+    },
+    {
+        "Key" : "ShopDomain",
+        "Value" : "cloudnodown-com"
+    },
+    {
+        "Key" : "ShopFQDN",
+        "Value" : "cloudnodown.com"
+    },
+    {
+        "Key" : "Service",
+        "Value" : "as"
+    },
+    {
+        "Key" : "Environment",
+        "Value" : "development"
+    }
+]

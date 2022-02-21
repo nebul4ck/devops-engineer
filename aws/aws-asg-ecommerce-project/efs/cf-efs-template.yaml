@@ -1,0 +1,450 @@
+---
+##
+# Alberto Gonzalez Mesas, <alberto.gonzalez@lineagrafica.es>
+# Thu Dec 22 12:00:00 CEST 2021
+##
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This AWS CloudFormation template creates an Elastic File System (AWS EFS),
+  a security group, a Record Set, and 2 mount targets for the AWS EFS.
+  The mount targets are created in the 2 private subnets of the VPC.
+
+# Metadata
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configure the environment.
+        Parameters:
+          - ProjectName
+          - ClientID
+          - ProductID
+          - ShopDomain
+          - ShopFQDN
+          - Service
+          - Environment
+      - Label:
+          default: Configure the VPC and CIDR IPs for the EFS Mount Targets.
+        Parameters:
+          - VPCId
+          - PrivateSubnetsCidrIp
+      - Label:
+          default: Configure the subnets for the EFS Mount Targets.
+        Parameters:
+          - EFSSubnets
+      - Label:
+          default: Configure the DNS name of the Route53 Hosted Zone
+        Parameters:
+          - HostedZoneDomain
+          - DomainHostedZoneId
+
+# Parameters
+Parameters:
+  # Stack UUID
+  StackUUID:
+    Description: Stack UUID
+    Type: String
+
+  # Environment
+  ProjectName:
+    Type: String
+    Description: The name either of the project or product. For example, ecommerce.
+    Default: ecommerce
+    AllowedValues:
+      - ecommerce
+      - hosting
+      - intranet
+  ClientID:
+    Type: Number
+    Description: The ID of the client in WHMCS.
+    Default: 67
+    MinValue: 1
+    MaxValue: 100000
+  ProductID:
+    Type: Number
+    Description: The ID of the product in WHMCS.
+    Default: 1100
+    MinValue: 1
+    MaxValue: 100000
+  ShopDomain:
+    Type: String
+    Description: The main domain of the client. For example, "muebledesign-com" of the application.
+    Default: 2-lineagrafica-es
+  ShopFQDN:
+    Type: String
+    Description: The FQDN of the shop. For example, "muebledesign.com" of the application.
+    Default: cloudnodown.com
+  Service:
+    Type: String
+    Description: The name of the offered service. For example, as (autoscaling).
+    Default: as
+    AllowedValues:
+      - as
+  Environment:
+    Type: String
+    Description: The environment where the project is deployed. For example, development.
+    Default: development
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  # Route53 Hosted Zone
+  # HostedZoneDomain:
+  #   Description: Name of the DNS Hosted Zone where the application RecordSet will be created
+  #   Type: String
+  # DomainHostedZoneId:
+  #   Description: Hosted Zone ID where the application RecordSet will be created.
+  #   Type: String
+
+Resources:
+  # 1. EFS Security Group
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue AsgVpcId
+      GroupName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-efs-sg
+      GroupDescription: Security group for the Mount Targets
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          CidrIp: !ImportValue asgPrivateSubnetA
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          CidrIp: !ImportValue asgPrivateSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sg
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 2. EFS Volumes
+  # 2.1 Images folder EFS setup
+  ImgEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-img-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Images
+
+  ImgMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ImgEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  ImgMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ImgEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+  # 2.2 Modules folder EFS setup
+  ModulesEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-mod-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Modules
+
+  ModMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ModulesEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  ModMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ModulesEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+  # 2.3 Override folder EFS setup
+  OverrideEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-over-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Override
+
+  OverrideMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref OverrideEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  OverrideMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref OverrideEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+  # 2.4 Cache folder EFS setup
+  CacheEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-cache-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Cache
+
+  CacheMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref CacheEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  CacheMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref OverrideEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+
+  # 2.5 Theme folder EFS setup
+  ThemeEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-theme-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Theme
+
+  ThemeMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ThemeEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  ThemeMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ThemeEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+
+  # 2.6 Config folder EFS setup
+  ConfigEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      BackupPolicy:
+        Status: DISABLED
+      PerformanceMode: generalPurpose
+      #ThroughputMode: bursting
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-config-efs
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Mount
+          Value: Config
+
+  ConfigMountTargetAZA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ConfigEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetA
+
+  ConfigMountTargetAZB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref ConfigEFS
+      SecurityGroups:
+        - !Ref EFSSecurityGroup
+      SubnetId: !ImportValue asgPrivateSubnetB
+
+#-----------------------------------------------------------
+  # The following resources are used to conduct periodic backups
+  # for the EFS file systems.
+  #-----------------------------------------------------------
+  # FileSystemBackupVault:
+  #   Type: AWS::Backup::BackupVault
+  #   DeletionPolicy: Retain
+  #   Properties:
+  #     BackupVaultName: !Sub
+  #       - ${StackUUID}-EFSBackupVault
+  #       - { StackUUID: !Ref 'StackUUID' }
+  #     AccessPolicy: |
+  #       {
+  #         "Version": "2012-10-17",
+  #         "Statement": [
+  #           {
+  #             "Effect": "Deny",
+  #             "Principal": "*",
+  #             "Action": "backup:DeleteBackupVault",
+  #             "Resource": "*"
+  #           }
+  #         ]
+  #       }
+
+  # FileSystemBackupPlan:
+  #   Type: AWS::Backup::BackupPlan
+  #   Properties:
+  #     BackupPlan:
+  #       BackupPlanName: Daily-Weekly-Monthly
+  #       BackupPlanRule:
+  #         - RuleName: DailyBackups
+  #           TargetBackupVault: !Ref 'FileSystemBackupVault'
+  #           ScheduleExpression: "cron(0 5 ? * * *)"
+  #           StartWindowMinutes: 480
+  #           CompletionWindowMinutes: 10080
+  #           Lifecycle:
+  #             DeleteAfterDays: 35
+  #         - RuleName: MonthlyBackups
+  #           TargetBackupVault: !Ref 'FileSystemBackupVault'
+  #           ScheduleExpression: "cron(0 5 1 * ? *)"
+  #           StartWindowMinutes: 480
+  #           CompletionWindowMinutes: 10080
+  #           Lifecycle:
+  #             DeleteAfterDays: 35
+
+  #-----------------------------------------------------------
+  # File system backup selection
+  #-----------------------------------------------------------
+  # FileSystemBackupSelection:
+  #   Type: AWS::Backup::BackupSelection
+  #   Properties:
+  #     BackupPlanId: !Ref 'FileSystemBackupPlan'
+  #     BackupSelection:
+  #       IamRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AWSBackupDefaultServiceRole
+  #       Resources:
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${ImgEFS}
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${ThemeEFS}
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${CacheEFS}
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${ConfigEFS}
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${OverrideEFS}
+  #         - !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${ModulesEFS}
+  #       SelectionName: !Sub "${AWS::StackName}-backup"
+
+Outputs:
+  EFSSecurityGroup:
+    Description: EFS Security Group
+    Value: !Ref EFSSecurityGroup
+    Export:  
+      Name: !Sub
+        - ${StackUUID}:EFSSecurityGroup
+        - { StackUUID: !Ref 'StackUUID' }
+  ImgEFS:
+    Description: Image EFS
+    Value: !Ref ImgEFS
+    Export: 
+      Name:  !Sub
+        - ${StackUUID}:ImgEFS
+        - { StackUUID: !Ref 'StackUUID' }
+  ModulesEFS:
+    Description: Module EFS
+    Value: !Ref ModulesEFS
+    Export: 
+      Name:  !Sub
+        - ${StackUUID}:ModulesEFS
+        - { StackUUID: !Ref 'StackUUID' }
+  OverrideEFS:
+    Description: Override EFS
+    Value: !Ref OverrideEFS
+    Export: 
+      Name: !Sub
+        - ${StackUUID}:OverrideEFS
+        - { StackUUID: !Ref 'StackUUID' }
+  CacheEFS:
+    Description: Cache EFS
+    Value: !Ref CacheEFS
+    Export: 
+      Name:  !Sub
+        - ${StackUUID}:CacheEFS
+        - { StackUUID: !Ref 'StackUUID' }
+  ThemeEFS:
+    Description: Theme EFS
+    Value: !Ref ThemeEFS
+    Export: 
+      Name:  !Sub
+        - ${StackUUID}:ThemeEFS
+        - { StackUUID: !Ref 'StackUUID' }
+  ConfigEFS:
+    Description: Config EFS
+    Value: !Ref ConfigEFS
+    Export: 
+      Name: !Sub
+        - ${StackUUID}:ConfigEFS
+        - { StackUUID: !Ref 'StackUUID' }

@@ -1,0 +1,386 @@
+---
+
+##
+# Alberto González Mesas, <a.gonzalezmesas@gmail.com>
+# Thu Dic 18 12:00:00 CEST 2021
+# 
+# WARNING: user-data requieres a RSAGitKeyName saved in AWS System Manager - Parameter store.
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  'Create an Amazon EC2 DDBB instance.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+      - Label:
+          default: Configure the environment. Also set as tags in tags.json.
+        Parameters:
+          - ClientName
+          - ClientID
+          - Environment
+          - ProjectName
+      - Label:
+          default: Set up the instance requirements.
+        Parameters:
+          - PrivateDDBBSubNetId
+          - PrivateNetworkCidr
+          - DeviceRootPath
+          - VolumeSize
+          - VolumeType
+          #- SnapshotId
+          - InstanceProfile
+          - ImageId
+          - InstanceType
+          #- SSHLocation
+          - KeyName
+      - Label:
+          default: Define User Data parameters.
+        Parameters:
+          - RSAGitKeyName
+          - RepoBranch
+          - GitRepository
+          - RepoBasePath
+          - ProjectPath
+        
+      - Label:
+          default: Define docker-compose .env file variables.
+        Parameters:
+          - MySQLVersion
+          - MySQLPort
+          - MySQLContainerPort
+          - MySQLRootPassword
+          - AdminerPort
+          - AdminerContainerPort
+
+Parameters:
+  # Environment
+  ClientName:
+    Type: String
+    Description: The Name of the client.
+    MinLength: 1
+  ClientID:
+    Type: String
+    Description: The ID of the client in WHMCS.
+    MinLength: 1
+  Environment:
+    Type: String
+    Description: The name of the application to tag the generated resources.
+    MinLength: 1
+    AllowedValues:
+      - development
+      - staging
+      - production
+  ProjectName:
+    Type: String
+    Description: The name of the project (product). ie, autoscaling.
+    MinLength: 1
+    AllowedValues:
+      - asg
+
+  # EC2 Requirements
+  PrivateDDBBSubNetId:
+    Description: A SubnetIds in your Virtual Private Cloud (VPC) for DataBases.
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: >-
+      must be a list of two existing subnets associated with two different
+      availability zones. They should be residing in the selected Virtual Private
+      Cloud.
+  PrivateNetworkCidr:
+    Description: 'Select the valid Private Network Segment (Cidr), ej 10.10.0.0/24'
+    Type: String
+  DeviceRootPath:
+    Description: "The root path of the block device, ej /dev/sda1"
+    Type: String
+    Default: /dev/sda1
+    AllowedValues:
+      - /dev/sda1
+      - /dev/xvda
+  VolumeSize:
+    Description: 'Select a size for the volume, ie 10 (for 10GB)'
+    Type: String
+    Default: '100'
+    MinLength: 1
+  VolumeType:
+    Description: 'Select the generation EBS volume'
+    Type: String
+    Default: 'gp2'
+    AllowedValues:
+      - 'gp2'
+      - 'io1'
+      - 'st1'
+      - 'sc1'
+  #SnapshotId:
+  #  Description: 'Select a snapshot ID, ie snap-1234567890cdfg'
+  #  Type: String
+  #  Default: 'snap-1234567890cdfg'
+  InstanceProfile:
+    Description: 'Select a valid instance Role'
+    Type: 'String'
+  ImageId:
+    Description: ImageId of your existing Amazon Machine Image (AMI)
+    Type: AWS::EC2::Image::Id
+    ConstraintDescription: must be the ImageId of an existing Amazon Machine Image.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String 
+    Default: 't2.micro'
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - g3.8xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r3.12xlarge
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  # SSHLocation:
+  #   Description: The IP address range that can be used to SSH to the EC2 instances
+  #   Type: String
+  #   MinLength: 9
+  #   MaxLength: 18
+  #   Default: 192.168.1.0/24
+  #   AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+  #   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  KeyName:
+    Description: 'Name of an existing EC2 KeyPair to enable SSH access to the instance.'
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  #AvailabilityZone:
+  #  Description: 'An Availability Zone, such as us-west-2a.'
+  #  Type: AWS::EC2::AvailabilityZone::Name
+
+  # User Data parameters
+  RSAGitKeyName:
+    Description: 'Select a valid System Manager parameter store Key.'
+    Type: String
+  RepoBranch:
+    Description: 'Select the branch of the github repository to clone.'
+    Type: String
+  GitRepository:
+    Description: 'Select the github repository.'
+    Type: String
+  RepoBasePath:
+    Description: 'Select the path where the repository is cloned.'
+    Type: String
+  ProjectPath:
+    Description: 'The relative path to the project in repository'
+    Type: String
+
+  # docker-compose .env file variables
+  MySQLVersion:
+    Description: 'Select the MySQL version'
+    Type: String
+    Default: '5.7'
+  MySQLPort:
+    Description: 'Select the host port where the MySQL is listening.'
+    Type: String
+  MySQLContainerPort:
+    Description: 'Select the container port where the MySQL is listening.'
+    Type: String
+  MySQLRootPassword:
+    Description: 'Set a MySQL root user password.'
+    Type: String
+  AdminerPort:
+    Description: 'Select the host port where de Adminer is listening.'
+    Type: String
+  AdminerContainerPort:
+    Description: 'Select the container port where the Adminer is listening.'
+    Type: String
+
+Resources:
+  DDBBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MySQL access via port 3306
+      GroupName: !Sub ${ClientName}-${ClientID}-${ProjectName}-ddbb-sg
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: !Ref MySQLPort
+        ToPort: !Ref MySQLPort
+        CidrIp: !Ref PrivateNetworkCidr
+      VpcId: !ImportValue AsgVpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-ddbb-sg
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  DDBBInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Join [",", [!Select [0, !GetAZs ]]]
+      BlockDeviceMappings:
+        - DeviceName: !Ref DeviceRootPath
+          Ebs: 
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: !Ref VolumeSize
+            VolumeType: !Ref VolumeType
+      DisableApiTermination: true
+      # This optimization isn't available with all instance types.
+      EbsOptimized: false
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref ImageId
+      InstanceInitiatedShutdownBehavior: 'stop'
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      Monitoring: true
+      # You cannot specify this option if you're launching more than one instance in the request.
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: false
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref DDBBSecurityGroup
+          SubnetId: !ImportValue asgDDBBSubnetA
+      SourceDestCheck: true
+      Tenancy: 'default'
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            echo "Upgrade System..."
+            apt update && apt dist-upgrade -y
+            
+            echo "Install Docker..."
+            apt install -y apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+            | apt-key add -
+
+            add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/ubuntu  $(lsb_release -cs)  stable"
+
+            apt update && apt install -y docker-ce
+
+            systemctl start docker && systemctl enable docker
+
+            echo "docker-compose installation..."
+            DC_DOWNLOAD_URL=https://github.com/docker/compose/releases/download
+            DESTINATION=/usr/local/bin/docker-compose
+            UP_VERSION=$(curl --silent https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*\d')
+            echo "Downloading and installing new docker-compose version..."
+            curl -L $DC_DOWNLOAD_URL/$UP_VERSION/docker-compose-$(uname -s)-$(uname -m) \
+            -o $DESTINATION && echo "docker-compose was installed!"
+
+            echo "Setting docker-compose binary permissions..."
+            chmod 755 $DESTINATION && echo "Done!"
+
+            echo "Install GitHub..."
+            apt install git -y
+
+            echo "Install awscli..."
+            apt install awscli -y
+
+            # Use AWS SSM in order to get Git Master RSA KEY and clone a repository.
+            echo "Set RSA KEY..."
+            aws ssm get-parameter \
+            --with-decryption \
+            --name ${RSAGitKeyName} \
+            --output text \
+            --region ${AWS::Region} \
+            --query Parameter.Value > ~/.ssh/id_rsa && \
+            echo "Added RSA - OK"
+
+            echo "Setting RSA permissions..."
+            chmod 400 ~/.ssh/id_rsa && \
+            echo "Permissions OK."
+
+            echo "Add github.com to known_hosts..."
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
+            echo "GitHub added to known_hosts."
+
+            echo "Clonning git repository..."
+            git clone -b ${RepoBranch} \
+              ${GitRepository} \
+              ${RepoBasePath}
+
+            echo "Removing RSA..."
+            rm -f ~/.ssh/id_rsa && \
+            echo "RSA removed."
+
+            echo "Create .env file..."
+            cat <<EOF >> ${RepoBasePath}/${ProjectPath}/.env
+            MYSQL_VERSION=${MySQLVersion}
+            MYSQL_PORT=${MySQLPort}
+            MYSQL_CONTAINER_PORT=${MySQLContainerPort}
+            MYSQL_ROOT_PASSWORD=${MySQLRootPassword}
+
+            ADMINER_PORT=${AdminerPort}
+            ADMINER_CONTAINER_PORT=${AdminerContainerPort}
+            EOF
+
+            echo "Initialize docker-compose: MySQL"
+            cd ${RepoBasePath}/${ProjectPath}
+            docker-compose -f stack.yaml up -d
+      Tags:
+        - Key: Name
+          Value: !Sub ${ClientName}-${ClientID}-${ProjectName}-ddbb-ec2
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+#   # 9. Application DNS Record Set
+#   DDBBRecordSet:
+#     Type: AWS::Route53::RecordSet
+#     Properties:
+#       #HostedZoneId: !ImportValue DomainHostedZoneId
+#       HostedZoneId: Z0436707B0WNF670UCJX
+#       Comment: !Sub DNS Record for DataBase.
+#       Name: !Sub ddbb.${HostedZoneDomain}
+#       Type: A
+#       AliasTarget:
+#         DNSName: !ImportValue ALBDNSName
+#         HostedZoneId: Z3Q77PNBQS71R4
+#         #HostedZoneId: !ImportValue ALBHostedZoneId
+
+# Outputs:
+#   DDBBRecordSet:
+#     Value: !Ref DDBBRecordSet
+#     Export:
+#       Name: DDBBAddress
+#     Description: The FQDN of the DataBase.

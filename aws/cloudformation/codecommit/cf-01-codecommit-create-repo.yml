@@ -1,0 +1,130 @@
+---
+
+##
+# Alberto González Mesas, <alberto.gonzalez@euigs.com>
+# Mon Apr 24 15:30:00 CEST 2020 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+
+##############################################################################################
+# Description                                                                                   #
+##############################################################################################
+
+Description: >
+  Create a new CodeCommit repository.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Create a CodeCommit repository.
+        Parameters:
+          - AccountName
+          - RepoName
+          - RepoDescription
+      - Label:
+           default: Configure SNS Notifications.
+        Parameters:
+           - snsProto
+           - snsEmailSubscriber
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  AccountName:
+    Description: 'The account name, ie ''euigs-dev-tlt'''
+    Type: String
+    MinLength: 1
+  RepoName:
+    Description: >-
+     'The repository name, ie ''cloudFormationTemplates'''.
+     The final name will be like the following example: euigs-dev-tlt-cloudFormationTemplates-cc
+    Type: String
+    MinLength: 1
+  RepoDescription:
+    Description: 'The repository purpose'
+    Type: String
+    MinLength: 1  
+  Owner:
+    Description: The owner of the repository, ie 'tlt', 'name.surname'...
+    Type: String
+    MinLength: 1
+    Default: 'tlt'
+  Runtime:
+    Description: The purpose of this repository, ie 'to store cloudformation templates'.
+    Type: String
+    Default: 'ansible'
+    AllowedValues:
+      - 'python'
+      - 'javascript'
+      - 'cloudformation'
+      - 'ansible'
+      - 'lambda'
+      - 'shellscript'
+  snsProto:
+    Description: The subscription's protocol.
+    Type: String
+    MinLength: 1
+    Default: 'email-json'
+  snsEmailSubscriber:
+    Description: The endpoint that receives notifications from the Amazon SNS topic.
+    Type: String
+    MinLength: 1
+    Default: 'alberto.gonzalez@euigs.com'
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  SNSTopicEventNotification:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${AccountName}-${RepoName}-cc-repo-sns-topic'
+      DisplayName: !Sub '${RepoName}'
+      Subscription:
+        - Endpoint: !Sub '${snsEmailSubscriber}'
+          Protocol: !Sub '${snsProto}'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AccountName}-${RepoName}-sns'
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties: 
+      RepositoryDescription: !Sub '${RepoDescription}'
+      RepositoryName: !Sub '${AccountName}-${RepoName}-cc-repository'
+      # Triggers:
+      #   - Name: DevelopBranchTrigger
+      #     CustomData: 'Ansible Project Hardenization'
+      #     DestinationArn:
+      #       Ref: SNSTopicEventNotification
+      #     # The branches to be included in the trigger configuration.
+      #     #If you specify an empty array, the trigger applies to all branches.
+      #     Branches:
+      #       - Develop
+      #     Events:
+      #       - all
+      #   - Name: MasterBranchTrigger
+      #     CustomData: 'Ansible Project Hardenization'
+      #     DestinationArn:
+      #       Ref: SNSTopicEventNotification
+      #     # The branches to be included in the trigger configuration.
+      #     #If you specify an empty array, the trigger applies to all branches.
+      #     Branches:
+      #       - Master
+      #     Events:
+      #       - all
+      Tags:
+        - Key: Name
+          Value: !Sub '${AccountName}-${RepoName}-cc'
+        - Key: Owner
+          Value: !Sub '${Owner}'
+        - Key: Runtime
+          Value: !Sub '${Runtime}'

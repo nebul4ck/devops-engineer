@@ -1,0 +1,265 @@
+ 
+---
+
+##
+# Alberto Gonzalez Mesas, <a.gonzalezmesas@gmail.com>
+# lun Oct 07 16:00:00 CEST 2019
+#
+# !The next resource properties is hardcoded:
+#    - Security Group (SecurityGroups)
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This AWS CloudFormation template creates an Amazon Application Load Balancer.
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Set up account configuration.
+        Parameters:
+          - AccountName
+          - ApplicationName
+          - EnvType
+          - Subnets
+      - Label:
+          default: Configure Elastic Load Balancer.
+        Parameters:
+          - ElasticLoadBalancingType
+          - ApplicationLoadBalancerType
+          - LoadBalancerIdleTimeout
+          - AccessLogsS3Enabled
+          - DeletionALBProtectionEnabled
+          #- AccessLLogsS3BucketName
+          - RoutingHTTP2Enabled
+          - TargetGroupName
+    ParameterLabels:
+      AccountName:
+        default: Account Name
+
+      ApplicationName:
+        default: Application Name
+
+      EnvType:
+        default: Deployment environment
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+Parameters:
+  AccountName:
+    Description: 'A prefix to tag the generated resources.'
+    Type: String
+    MinLength: 1
+  ApplicationName:
+    Description: 'The name of the application to tag the generated resources.'
+    Type: String
+    MinLength: 1
+  EnvType: 
+    Description: 'Environment where the App will be deployed.'
+    Type: String
+    Default: development
+    AllowedValues: 
+      - development
+      - integration
+      - production
+  ElasticLoadBalancingType:
+    Description: 'The kind of Elastic Load Balancer. ALB by default.'
+    Type: String
+    Default: application
+    AllowedValues:
+      - application
+      - network
+  ApplicationLoadBalancerType:
+    Description: 'Set up the type of Application Load Balancer.'
+    Type: String
+    Default: internal
+    AllowedValues:
+      - 'internal'
+      - 'internet-facing'
+  LoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds. The valid range is 1-4000 seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
+  AccessLogsS3Enabled:
+    Description: 'Indicates whether access logs are enabled.'
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+  AccessLLogsS3BucketName:
+    Description: 'The name of the S3 bucket for the access logs.'
+    Type: String
+    MinLength: 5
+    Default: cf-compliance-albwafaccesslog-s3
+    AllowedValues:
+      - cf-compliance-albwafaccesslog-s3
+  DeletionALBProtectionEnabled:
+    Description: 'Indicates whether deletion protection is enabled.'
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+  RoutingHTTP2Enabled:
+    Description: 'Indicates whether HTTP/2 is enabled.'
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  TargetGroupName:
+    Type: String
+    Description: 'Default TG Name'
+    MinLength: 5
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: 'The list of SubnetIds in your Virtual Private Cloud (VPC).'
+    ConstraintDescription: >-
+      must be a list of two existing subnets associated with two different
+      availability zones. They should be residing in the selected Virtual Private
+      Cloud.
+
+##############################################################################################
+# Conditions                                                                                 #
+##############################################################################################
+#Conditions:
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+Resources:
+
+#############################################################
+# Target Groups                                             #
+#############################################################
+  TargetGroupALB:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher: 
+        HttpCode: '200-399'
+      Name: !Sub ${AccountName}-${TargetGroupName}-tg
+      Port: 80
+      Protocol: HTTP
+      Tags: 
+        - Key:   Application
+          Value: !Ref AWS::StackId
+        - Key:   Name
+          Value: !Sub ${TargetGroupName}
+        - Key:   ApplicationID
+          Value: !Sub ${AccountName}-${TargetGroupName}-tg
+        - Key:   Role
+          Value: test
+        - Key:   Environmentl
+          Value: dev
+        - Key:   SLA
+          Value: 24x7
+        - Key:   StartTime
+          Value: 00:00
+        - Key:   EndTime
+          Value: 00:00
+        - Key:   CECO
+          Value: dev
+        - Key:   Operation
+          Value: nblk
+        - Key:   Compliance
+          Value: no
+        - Key:   Confidentiality
+          Value: no
+      Targets: 
+        - Id: i-01234567890cdfg
+          Port: 80
+      TargetType: instance
+      VpcId: vpc-1234567890cfgh
+
+#############################################################
+# Application Load Balancer Resources                       #
+#############################################################
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      IpAddressType: ipv4
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: !Sub ${DeletionALBProtectionEnabled}
+        - Key: idle_timeout.timeout_seconds
+          Value: !Sub ${LoadBalancerIdleTimeout}
+        - Key: routing.http2.enabled
+          Value: !Sub ${RoutingHTTP2Enabled}
+        - Key: access_logs.s3.enabled
+          Value: !Sub ${AccessLogsS3Enabled}
+        - Key: access_logs.s3.bucket
+          Value: !Sub ${AccessLLogsS3BucketName}
+        - Key: access_logs.s3.prefix
+          Value: 'logs'
+      Name: !Sub ${AccountName}-${ApplicationName}-alb
+      Scheme: !Sub ${ApplicationLoadBalancerType}
+      # The SG is hardcoded because it only is a proof.
+      SecurityGroups: 
+        - sg-1234567890cdfg
+      Subnets: !Ref Subnets
+      Tags:
+        - Key:   Application
+          Value: !Ref AWS::StackId
+        - Key:   Name
+          Value: !Sub ${AccountName}-${ApplicationName}-alb
+        - Key:   ApplicationID
+          Value: !Sub ${AccountName}-${ApplicationName}-alb
+        - Key:   Role
+          Value: test
+        - Key:   Environment
+          Value: dev
+        - Key:   SLA
+          Value: 24x7
+        - Key:   StartTime
+          Value: 00:00
+        - Key:   EndTime
+          Value: 00:00
+        - Key:   CECO
+          Value: dev
+        - Key:   Operation
+          Value: nblk
+        - Key:   Compliance
+          Value: no
+        - Key:   Confidentiality
+          Value: no
+      Type: !Sub ${ElasticLoadBalancingType}
+
+#############################################################
+# Application Load Balancer Listener                        #
+#############################################################
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupALB
+
+##############################################################################################
+# Outputs                                                                                    #
+##############################################################################################
+Outputs:
+  ApplicationLoadBalancerARN:
+    Value: !Ref ApplicationLoadBalancer
+    Description: Application Load Balancer ID.
+  ApplicationLoadBalancerDNSName:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Description: Application Load Balancer FQDN.
+  ApplicationLoadBalancerName:
+    Value: !GetAtt ApplicationLoadBalancer.LoadBalancerName
+...

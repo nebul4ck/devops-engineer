@@ -1,0 +1,101 @@
+---
+
+##
+# Alberto Gonzalez Mesas, <a.gonzalezmesas@gmail.com>
+# thu Jan 15 15:30:00 CEST 2020 
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  VPC: Publish flow logs to CloudWatch Logs
+
+##############################################################################################
+# Metadata                                                                                   #
+##############################################################################################
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Environment'
+        Parameters:
+          - VPCId
+      - Label:
+          default: 'Role and Policies'
+        Parameters:
+          - RoleName
+          - PolicyName
+      - Label:
+          default: 'Flow Logs Parameters'
+        Parameters:
+          - RetentionInDays
+          - TrafficType
+
+##############################################################################################
+# Parameters                                                                                 #
+##############################################################################################
+
+Parameters:
+  VPCId:
+    Description: 'A valid VPC id.'
+    Type: String
+  RoleName:
+    Description: 'Select a valid Role name.'
+    Type: String
+  PolicyName:
+    Description: 'Select a valid policy name.'
+    Type: String
+  RetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  TrafficType:
+    Description: 'The type of traffic to log.'
+    Type: String
+    Default: REJECT
+    AllowedValues:
+      - ACCEPT
+      - REJECT
+      - ALL
+
+##############################################################################################
+# Resources                                                                                  #
+##############################################################################################
+
+Resources:
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Ref RoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'vpc-flow-logs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: !Ref PolicyName
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogGroups'
+            - 'logs:DescribeLogStreams'
+            Resource: !GetAtt 'LogGroup.Arn'
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref RetentionInDays
+  FlowLog:
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt 'Role.Arn'
+      LogGroupName: !Ref LogGroup
+      ResourceId: !Ref VPCId
+      ResourceType: 'VPC'
+      TrafficType: !Ref TrafficType

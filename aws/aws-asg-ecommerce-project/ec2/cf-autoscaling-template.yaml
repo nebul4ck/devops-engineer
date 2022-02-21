@@ -1,0 +1,1139 @@
+---
+##
+# Alberto Gonzalez Mesas, <alberto.gonzalez@lineagrafica.es>
+# Thu Dic 21 12:00:00 CEST 2021
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Desploys the following resources:
+    - EC2 instance with a Secutity Group
+    - Auto Scaling Group
+    - User data provisioning
+
+# Metadata
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configure the environment.
+        Parameters:
+          - ProjectName
+          - ClientID
+          - ProductID
+          - ShopDomain
+          - ShopFQDN
+          - Service
+          - Environment
+      - Label:
+          default: Configure SQS queue.
+        Parameters:
+          - Deduplication
+          - DeduplicationScope
+          - DelaySeconds
+          - IsAFifoQueue
+          - MessageRetentionPeriod
+          - VisibilityTimeout
+      - Label:
+          default: Configure SNS Topics.
+        Parameters:
+          - IsFifoTopic
+          - SNSEmailContact
+      - Label:
+          default: Configure Security Group.
+        Parameters:
+          - AppHTTPPort
+          - AppHTTPSPort
+          - AppSSHPort
+          - ApplicationPort
+          - CidrInternalNetwork
+          - CidrPublicNetwork
+      - Label:
+          default: Configure the Target Group.
+        Parameters:
+          - HealthCheckEnabled
+          - HealthCheckIntervalSeconds
+          - ApplicationHealthCheckPath
+          - HealthCheckTimeoutSeconds
+          - HealthyThresholdCount
+          - UnhealthyThresholdCount
+          - IpAddressType
+          - StickinessDurationSeconds
+          - TargetGroupProtocol
+          - TargetType
+          - TargetGroupDeregistrationDelay
+          - TargetGroupSlowStart
+      - Label:
+          default: Configure Application Load Balancer
+        Parameters:
+          - ListenerPriority
+          - RedirectPriority
+          - TargetGroupStickinessEnable
+          - ForwardConfigTargetGroupWeight
+      - Label:
+          default: Configure Launch Template
+        Parameters:
+          - BlockDeviceName
+          - LaunchConfigEbsEncrypted
+          - BlockDeviceSize
+          - BlockDeviceType
+          - DeleteOnTermination
+          - DisableApiTermination
+          - EbsOptimized
+          - InstanceProfile
+          - GoldenAMI
+          - ShutdownBehavior
+          - InstanceType
+          - EC2KeyPairName
+          - LaunchTemplateResourceType
+      - Label:
+          default: Configure User Data
+        Parameters:
+          - RSAGitKeyName
+          - RepoBranch
+          - GitRepository
+          - RepoBasePath
+          - AnsiblePlaybook
+      - Label:
+          default: Configure AutoScaling Group.
+        Parameters:
+          - AppASGCooldownSecs
+          - AppASGDesiredASGCapacity
+          - CapacityType
+          - AppASGHealthCheckGracePeriod
+          - AppASGHealthCheckType
+          - LaunchTemplateVersion
+          - AppMaximumASGCapacity
+          - AppMinimumASGCapacity
+          - AppASGProtectedFromScale
+          - AppTagPropagateAtLaunch
+          - AppASGNewestTerminationPolicies
+      - Label:
+          default: Configure UpdatePolicy
+        Parameters:
+          - AutoScalingReplacingUpdateReplace
+          - AutoScalingRollingUpdateMaxBatchSize
+          - MinInstancesInService
+          - MinSuccessfulInstancesPercent
+          - AutoScalingRollingUpdatePauseTime
+          - AutoScalingRollingUpdateWaitSignal
+          - InstanceWarmup
+      - Label:
+          default: Configure Creation Policy
+        Parameters:
+          - CreationPolicyResourceSignal
+          - CreationPolicyTimeout
+      - Label:
+          default: Configure AutoScaling Group
+        Parameters:
+          - CPUPolicyTargetValue
+
+Parameters:
+  # Environment
+  ProjectName:
+    Type: String
+    Description: The name either of the project or product. For example, ecommerce.
+    Default: ecommerce
+    AllowedValues:
+      - ecommerce
+      - hosting
+      - intranet
+  ClientID:
+    Type: Number
+    Description: The ID of the client in WHMCS.
+    Default: 67
+    MinValue: 1
+    MaxValue: 100000
+  ProductID:
+    Type: Number
+    Description: The ID of the product in WHMCS.
+    Default: 1100
+    MinValue: 1
+    MaxValue: 100000
+  ShopDomain:
+    Type: String
+    Description: The main domain of the client. For example, "muebledesign-com" of the application.
+    Default: 2-lineagrafica-es
+  ShopFQDN:
+    Type: String
+    Description: The FQDN of the shop. For example, "muebledesign.com" of the application.
+    Default: cloudnodown.com
+  Service:
+    Type: String
+    Description: The name of the offered service. For example, as (autoscaling).
+    Default: as
+    AllowedValues:
+      - as
+  Environment:
+    Type: String
+    Description: The environment where the project is deployed. For example, development.
+    Default: development
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  # SQS
+  Deduplication:
+    Type: String
+    Description: Specifies whether to enable content-based deduplication.
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  # DeduplicationScope:
+  #   Type: String
+  #   Description: Specifies whether message deduplication occurs at the message group or queue level.
+  #   Default: queue
+  #   AllowedValues:
+  #     - messageGroup
+  #     - queue
+  # DelaySeconds:
+  #   Type: Number
+  #   Description: The time in seconds for which the delivery of all messages in the queue is delayed.
+  #   Default: 0
+  #   MinValue: 0
+  #   MaxValue: 9900
+  # IsAFifoQueue:
+  #   Type: String
+  #   Description: If set to true, creates a FIFO queue. If you don't specify this property, Amazon SQS creates a standard queue.
+  #   Default: true
+  #   AllowedValues:
+  #     - true
+  #     - false
+  # MessageRetentionPeriod:
+  #   Type: Number
+  #   Description: The number of seconds that Amazon SQS retains a message.
+  #   Default: 3600
+  #   MinValue: 60
+  #   MaxValue: 1209600
+  # VisibilityTimeout:
+  #   Type: Number
+  #   Description: The length of time during which a message will be unavailable after a message is delivered from the queue.
+  #   Default: 60
+  #   MinValue: 0
+  #   MaxValue: 43200
+
+  # SNS
+  IsFifoTopic:
+    Type: String
+    Description: If set to true, creates a FIFO topic.
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  SNSEmailContact:
+    Type: String
+    Description: The subscriber email account.
+    Default: alberto.gonzalez@lineagrafica.es
+
+  # SecurityGroup
+  AppHTTPPort:
+    Description: HTTP port to access to the instance from internal Network. 
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 65535
+    ConstraintDescription: Must be a valid port number
+  AppHTTPSPort:
+    Description: HTTPS port to access to the instance from internal Network. 
+    Type: Number
+    Default: 443
+    MinValue: 1
+    MaxValue: 65535
+    ConstraintDescription: Must be a valid port number
+  AppSSHPort:
+    Description: SSH port to access to the instance from internal Network. 
+    Type: Number
+    Default: 22
+    MinValue: 1
+    MaxValue: 65535
+    ConstraintDescription: Must be a valid port number
+  ApplicationPort:
+    Description: The port where the application listen to. 
+    Type: Number
+    Default: 8080
+    MinValue: 1
+    MaxValue: 65535
+    ConstraintDescription: Must be a valid port number.
+  CidrInternalNetwork:
+    Description: The IP address range allowed to access to the instance
+    Type: String
+    Default: 10.10.0.0/16
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x
+  CidrPublicNetwork:
+    Description: The IP address range allowed to access to the instance
+    Type: String
+    Default: 0.0.0.0/0
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x
+
+  # TargetGroup
+  HealthCheckEnabled:
+    Type: String
+    Description: Indicates whether health checks are enabled.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  HealthCheckIntervalSeconds:
+    Description: The approximate amount of time, in seconds, between health checks of an individual target.
+    Type: Number
+    Default: 30
+    MinValue: 5
+    MaxValue: 300
+  ApplicationHealthCheckPath:
+    Description: The destination for health checks on the targets.
+    Type: String
+    Default: '/'
+  HealthCheckTimeoutSeconds:
+    Description: The amount of time, in seconds, during which no response from a target means a failed health check.
+    Type: Number
+    Default: 5
+    MinValue: 2
+    MaxValue: 120
+  HealthyThresholdCount:
+    Description: The number of consecutive health checks successes required before considering an unhealthy target healthy.
+    Type: Number
+    Default: 2
+    MinValue: 2
+    MaxValue: 10
+  UnhealthyThresholdCount:
+    Type: Number
+    Description: The number of consecutive health check failures required before considering a target unhealthy.
+    Default: 5
+    MinValue: 2
+    MaxValue: 10
+  IpAddressType:
+    Type: String
+    Description: The type of IP address used for this target group.
+    Default: ipv4
+    AllowedValues:
+      - ipv4
+      - ipv6
+  StickinessDurationSeconds:
+    Type: Number
+    Description: The time period, in seconds, during which requests from a client should be routed to the same target group/instance.
+    Default: 86400
+    MinValue: 1
+    MaxValue: 604800
+  TargetGroupProtocol:
+    Description: The protocol to use for routing traffic to the targets. 
+    Type: String
+    Default: HTTP
+    AllowedValues:
+      - HTTP
+      - HTTPS
+  TargetType:
+    Type: String
+    Description: The type of target that you must specify when registering targets with this target group.
+    Default: instance
+    AllowedValues:
+      - alb
+      - instance
+      - ip
+      - lambda
+  TargetGroupDeregistrationDelay:
+    Type: Number
+    Description: The amount of time, in seconds, for Elastic Load Balancing to wait before changing the state of a deregistering target from draining to unused.
+    Default: 30
+    MinValue: 0
+    MaxValue: 3600
+  TargetGroupSlowStart:
+    Type: Number
+    Description: The time period, in seconds, during which a newly registered target receives an increasing share of the traffic to the target group.
+    Default: 0
+    MinValue: 0
+    MaxValue: 900
+
+  # ALB - Listener Rule for new target group
+  ListenerPriority:
+    Type: Number
+    Description: The rule priority. A listener can't have multiple rules with the same priority.
+    Default: 10
+    MinValue: 1
+    MaxValue: 50000
+  RedirectPriority:
+    Type: Number
+    Description: The rule priority. A listener can't have multiple rules with the same priority.
+    Default: 10
+    MinValue: 1
+    MaxValue: 50000
+  TargetGroupStickinessEnable:
+    Type: String
+    Description: Indicates whether target group stickiness is enabled.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  ForwardConfigTargetGroupWeight:
+    Type: Number
+    Description: The weight used when one request is forwarded to the target group.
+    Default: 1
+    MinValue: 0
+    MaxValue: 999
+
+  # EC2 Launch Template
+  BlockDeviceName:
+    Type: String
+    Description: The device name exposed to the EC2 instance
+    Default: /dev/sda1
+  LaunchConfigEbsEncrypted:
+    Description: Specifies whether the EBS volume is encrypted. 
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  BlockDeviceSize:
+    Type: Number
+    Description: The volume size, in Gibibytes (GiB)
+    ConstraintDescription: This can be a number from 1-1,024 for standard, 4-16,384 for io1,
+      1-16,384 for gp2, and 500-16,384 for st1 and sc1
+    Default: 8
+  BlockDeviceType:
+    Type: String
+    Description: The volume type
+    ConstraintDescription: It can be standard for Magnetic, io1 for Provisioned IOPS SSD,
+      gp2 for General Purpose SSD, st1 for Throughput Optimized HDD, or sc1 for Cold HDD
+    Default: "gp2"
+    AllowedValues:
+      - standard
+      - io1
+      - gp2
+      - st1
+      - sc1
+  DeleteOnTermination:
+    Type: String
+    Description: Indicates whether the EBS volume is deleted on instance termination.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  DisableApiTermination:
+    Type: String
+    Description: If you set this parameter to true, you can't terminate the instance using the Amazon EC2 console, CLI, or API; otherwise, you can.
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  EbsOptimized:
+    Type: String
+    Description: Indicates whether the instance is optimized for Amazon EBS I/O.
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  InstanceProfile:
+    Type: String
+    Description: The name or Amazon Resource Name (ARN) of an IAM instance profile.
+    Default: "arn:aws:iam::125283292104:instance-profile/lg-ssm-s3-cw-sns-sqs-inspector-instance-role"
+  GoldenAMI:
+    Type: AWS::EC2::Image::Id
+    Description: The ID of the Golden AMI. Eg, Ubuntu Server 21.04.
+    Default: ami-06d79c60d7454e2af
+    AllowedValues:
+      - ami-06d79c60d7454e2af
+  ShutdownBehavior:
+    Type: String
+    Description: Indicates whether an instance stops or terminates when you initiate shutdown from the instance.
+    Default: stop
+    AllowedValues:
+      - stop
+      - terminate
+  InstanceType:
+    Type: String
+    Description: The instance type.
+    Default: t2.micro
+  EC2KeyPairName:
+    Type: String
+    Description: KeyPair to connect to the EC2 instance/s.
+    Default: lg-demo
+  LaunchTemplateResourceType:
+    Type: String
+    Description: The type of resource. To tag the launch template, ResourceType must be launch-template.
+    Default: launch-template
+    AllowedValues:
+      - launch-template
+
+  # UserData
+  RSAGitKeyName:
+    Type: String
+    Description: Select a valid name for a parameter store key. Use a encrypted RSA Key in order to clone a git repository.
+    Default: rundeckrsakey
+  RepoBranch:
+    Type: String
+    Description: The branch of the repository to clone.
+    Default: master
+    AllowedValues:
+      - main
+      - master
+      - development
+  GitRepository:
+    Type: String
+    Description: The repository to be cloned.
+    Default: "LINEA-GRAFICA/test-deploy-docker.git"
+  RepoBasePath:
+    Type: String
+    Description: The path where the git repository will be cloned.
+    Default: /root/git/test-deploy-docker
+  AnsiblePlaybook:
+    Type: String
+    Description: The playbook to be played.
+    Default: play_dockertest.yml
+
+  # Application Autoscaling Group
+  AppASGCooldownSecs:
+    Description: >
+      The amount of time, in seconds, after a scaling activity 
+      completes before another scaling activity can start.
+    Type: String
+    Default: 300
+  AppASGDesiredASGCapacity:
+    Type: Number
+    Description: The desired capacity is the initial capacity of the Auto Scaling group at the time of its creation and the capacity it attempts to maintain.
+    ConstraintDescription: must be between 1 and 10 EC2 instances
+    Default: 1
+    MinValue: 1
+    MaxValue: 10
+  CapacityType:
+    Type: String
+    Description: The unit of measurement for the value specified for desired capacity.
+    Default: units
+    AllowedValues:
+      - units
+      - vcpu
+      - memory-mib
+  AppASGHealthCheckGracePeriod:
+    Description: >
+      The amount of time, in seconds, that Amazon EC2 Auto Scaling waits before checking 
+      the health status of an EC2 instance that has come into service.
+    Type: String
+    Default: 300
+  AppASGHealthCheckType:
+    Description: The service to use for the health checks. 
+    Type: String
+    Default: EC2
+    AllowedValues:
+      - EC2
+      - ELB
+  # LaunchTemplateVersion:
+  #   Type: Number
+  #   Description: The version number of the launch templated.
+  #   Default: 1
+  AppMaximumASGCapacity:
+    Type: Number
+    Description: The maximum number of instances
+    ConstraintDescription: must be at least 1 EC2 instance
+    Default: 4
+    MinValue: 1
+    MaxValue: 10
+  AppMinimumASGCapacity:
+    Type: Number
+    Description: The minimum number of instance/s
+    ConstraintDescription: must be at least 1 EC2 instance
+    Default: 1
+    MinValue: 1
+    MaxValue: 1
+  AppASGProtectedFromScale:
+    Type: String
+    Description: >
+      Indicates whether newly launched instances are protected from termination by 
+      Amazon EC2 Auto Scaling when scaling in.
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  AppTagPropagateAtLaunch:
+    Type: String
+    Description: >
+      Set to true if you want CloudFormation to copy the tag to EC2 instances that are launched as 
+      part of the Auto Scaling group.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  AppASGNewestTerminationPolicies:
+    Type: String
+    Description: A policy or a list of policies that are used to select the instances to terminate.
+    Default: NewestInstance
+    AllowedValues:
+      - OldestInstance
+      - OldestLaunchConfiguration
+      - NewestInstance
+      - ClosestToNextInstanceHour
+      - Default
+      - OldestLaunchTemplate
+      - AllocationStrategy
+  # PrivateSubnetIdList:
+  #   Type: List<AWS::EC2::Subnet::Id>
+  #   Description: The IDs of the subnets. You can specify only one subnet per Availability Zone
+  #   Default: ""
+  #   ConstraintDescription: You must specify either subnets or subnet mappings. You must specify
+  #     subnets from at least two Availability Zones
+
+  # UpdatePolicy:
+  AutoScalingReplacingUpdateReplace:
+    Type: String
+    Description: Specifies whether an Auto Scaling group and the instances it contains are replaced during an update.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  AutoScalingRollingUpdateMaxBatchSize:
+    Type: Number
+    Description: Specifies the maximum number of instances that CloudFormation updates.
+    Default: 1
+    MinValue: 1
+    MaxValue: 100
+  MinInstancesInService:
+    Type: Number
+    Description: >
+      Specifies the minimum number of instances that must be in service within the Auto Scaling group while CloudFormation 
+      updates old instances. This value must be less than the MaxSize of the Auto Scaling group.
+    Default: 1
+    MinValue: 1
+    MaxValue: 100
+  MinSuccessfulInstancesPercent:
+    Type: Number
+    Description: >
+      Specifies the percentage of instances in an Auto Scaling rolling update that must signal success for an update to succeed.
+    Default: 100
+    MinValue: 0
+    MaxValue: 100
+  AutoScalingRollingUpdatePauseTime:
+    Type: String
+    Description: >
+      The amount of time that CloudFormation pauses after making a change to a batch of instances to give those instances 
+      time to start software applications.
+    Default: PT4M
+  AutoScalingRollingUpdateWaitSignal:
+    Type: String
+    Description: Specifies whether the Auto Scaling group waits on signals from new instances during an update.
+    Default: true
+    AllowedValues:
+      - true
+      - false
+  InstanceWarmup:
+    Type: Number
+    Description: >
+      The estimated time, in seconds, until a newly launched 
+      instance can contribute to the CloudWatch metrics. If not provided, 
+      the default is to use the value from the default cooldown period for 
+      the Auto Scaling group.
+    Default: 30
+    MinValue: 10
+    MaxValue: 1200
+
+  # CreationPolicy:
+  CreationPolicyResourceSignal:
+    Type: Number
+    Description: >
+      The number of success signals CloudFormation must receive before it sets the resource status as CREATE_COMPLETE.
+    Default: 1
+  CreationPolicyTimeout:
+    Type: String
+    Description: >
+      The length of time that CloudFormation waits for the number of signals that was specified in the Count property.
+    Default: PT5M
+
+  # AutoScaling Policy
+  CPUPolicyTargetValue:
+    Type: String
+    Description: The cpu percent that trigger a Cloud Watch Alarm in order to scale out a new instance.
+    Default: "70.0"
+    AllowedValues:
+      - "60.0"
+      - "60.5"
+      - "70.0"
+      - "75.0"
+      - "80.0"
+      - "80.5"
+      - "90.0"
+
+Resources:
+  # 1. SQS queue
+  # SQSQueueNotification:
+  #   Type: AWS::SQS::Queue
+  #   Properties: 
+  #     ContentBasedDeduplication: !Ref Deduplication
+  #     DeduplicationScope: !Ref DeduplicationScope
+  #     DelaySeconds: !Ref DelaySeconds
+  #     FifoQueue: !Ref IsAFifoQueue
+  #     MessageRetentionPeriod: !Ref MessageRetentionPeriod
+  #     QueueName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sqs.fifo
+  #     Tags: 
+  #       - Key: Name
+  #         Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sqs.fifo
+  #       - Key: Project
+  #         Value: !Ref ProjectName
+  #       - Key: Environment
+  #         Value: !Ref Environment
+  #     VisibilityTimeout: !Ref VisibilityTimeout
+
+  # 2. SNS Topic
+  SNSTopicNotification:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sns-topic
+      # Only for FIFO topics
+      #ContentBasedDeduplication: !Ref Deduplication
+      DisplayName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sns-topic
+      FifoTopic: !Ref IsFifoTopic
+      #KmsMasterKeyId: String
+      Subscription: 
+        - Endpoint: !Sub ${SNSEmailContact}
+          Protocol: email-json
+        # - Endpoint: !GetAtt SQSQueueNotification.Arn
+        #   Protocol: sqs
+      Tags: 
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sns-topic
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 3. Application SecurityGroup
+  ApplicationEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sg
+      GroupDescription: Enable HTTP/S access.
+      SecurityGroupIngress:
+        - Description: Allow HTTP access from internal Network.
+          IpProtocol: tcp
+          FromPort: !Ref AppHTTPPort
+          ToPort: !Ref AppHTTPPort
+          CidrIp: !Ref CidrInternalNetwork
+        - Description: Allow HTTPS access from internal Network.
+          IpProtocol: tcp
+          FromPort: !Ref AppHTTPSPort
+          ToPort: !Ref AppHTTPSPort
+          CidrIp: !Ref CidrInternalNetwork
+        - Description: "Allow SSH from internal Network"
+          IpProtocol: tcp
+          FromPort: !Ref AppSSHPort
+          ToPort: !Ref AppSSHPort
+          CidrIp: !Ref CidrInternalNetwork
+        - Description: Allow access from the ALB to the TargetGroup ApplicationPort
+          IpProtocol: tcp
+          FromPort: !Ref ApplicationPort
+          ToPort: !Ref ApplicationPort
+          SourceSecurityGroupId: !ImportValue ALBSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: !Ref CidrPublicNetwork
+          Description: Allow ALL outbound traffic.
+      VpcId: !ImportValue AsgVpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-sg
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 4. Application Target Group
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: !Ref HealthCheckEnabled
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
+      HealthCheckPath: !Ref ApplicationHealthCheckPath
+      HealthCheckTimeoutSeconds: !Ref HealthCheckTimeoutSeconds
+      HealthyThresholdCount: !Ref HealthyThresholdCount
+      UnhealthyThresholdCount: !Ref UnhealthyThresholdCount
+      IpAddressType: !Ref IpAddressType
+      Name: !Sub ${Service}-${ShopDomain}-tg
+      Port: !Ref ApplicationPort
+      Protocol: !Ref TargetGroupProtocol
+      VpcId: !ImportValue AsgVpcId
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref TargetGroupDeregistrationDelay
+        - Key: stickiness.enabled 
+          Value: !Ref TargetGroupStickinessEnable
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: slow_start.duration_seconds
+          Value: !Ref TargetGroupSlowStart
+        - Key: load_balancing.algorithm.type
+          Value: least_outstanding_requests
+        - Key: stickiness.app_cookie.duration_seconds
+          Value: !Ref StickinessDurationSeconds
+      TargetType: !Ref TargetType
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-tg
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # 5. Application Load Balancer Redirect Listener Rule (HTTP -> HTTPS)
+  ALBRedirectHTTPToHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties: 
+      Actions: 
+        - Type: redirect
+          RedirectConfig:
+            Host: "#{host}"
+            Path: "/#{path}"
+            Port: 443
+            Protocol: "HTTPS"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Sub ${ShopFQDN}
+      ListenerArn: !ImportValue ALBListenerHTTP
+      Priority: !Ref RedirectPriority
+
+  # 6. Application HTTPS Listener Rule
+  ApplicationListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref ALBTargetGroup
+                Weight: !Ref ForwardConfigTargetGroupWeight
+            TargetGroupStickinessConfig:
+              DurationSeconds: !Ref StickinessDurationSeconds
+              Enabled: !Ref TargetGroupStickinessEnable
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Sub ${ShopFQDN}
+      ListenerArn: !ImportValue ALBListenerHTTPS
+      Priority: !Ref ListenerPriority
+
+  # 7. Application Launch Template
+  EC2ApplicationLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-lt
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: !Ref BlockDeviceName
+            Ebs:
+              Encrypted: !Ref LaunchConfigEbsEncrypted
+              VolumeSize: !Ref BlockDeviceSize
+              VolumeType: !Ref BlockDeviceType
+              DeleteOnTermination: !Ref DeleteOnTermination
+        DisableApiTermination: !Ref DisableApiTermination
+        EbsOptimized: !Ref EbsOptimized
+        IamInstanceProfile:
+          Arn: !Ref InstanceProfile
+        ImageId: !Ref GoldenAMI
+        InstanceInitiatedShutdownBehavior: !Ref ShutdownBehavior
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref EC2KeyPairName
+        Monitoring:
+          Enabled: true
+        SecurityGroupIds:
+          - !Ref ApplicationEC2SecurityGroup
+        # TagSpecifications:
+        #   - ResourceType: !Ref LaunchTemplateResourceType
+        #     Tags: 
+        #       - Key: Name
+        #         Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-ec2
+        #       - Key: Project
+        #         Value: !Ref ProjectName
+        #       - Key: Environment
+        #         Value: !Ref Environment
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+
+            # Commons
+            # Install Ansible
+            apt update
+            echo "Ensure Ansible is installed."
+            apt install ansible -y
+
+            # Install aws-cli
+            echo "Ensure awscli is installed."
+            apt install awscli -y
+
+            # Install git-cli
+            echo "Ensure git is installed."
+            apt install git -y
+
+            # Use AWS SSM in order to get Git Master RSA KEY and clone a repository.
+            echo "Set RSA KEY..."
+            aws ssm get-parameter \
+            --with-decryption \
+            --name ${RSAGitKeyName} \
+            --output text \
+            --region ${AWS::Region} \
+            --query Parameter.Value > ~/.ssh/id_rsa && \
+            echo "Added RSA - OK"
+
+            echo "Setting RSA permissions..."
+            chmod 400 ~/.ssh/id_rsa && \
+            echo "Permissions OK."
+
+            echo "Add github.com to known_hosts..."
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
+            echo "GitHub added to known_hosts."
+
+            echo "Clonning git repository..."
+            #git clone -b ${RepoBranch} git@github.com:${GitRepository} ${RepoBasePath}
+
+            # Play Bastion-HAProxy provisioner role
+            #echo "Running Ansible playbook..."
+            #ansible-playbook ${RepoBasePath}/ansible/${AnsiblePlaybook}
+
+            echo "Install Docker"
+            apt install docker.io -y
+            usermod -aG docker ubuntu
+            su ubuntu -c "docker container run -v ~/publiv --name nginx-1 -d -p 8080:80 prestashop_muebledesig:latest"
+
+            echo "Removing RSA..."
+            rm -f ~/.ssh/id_rsa && \
+            echo "RSA removed."
+
+            # Install aws-cfn-signal script
+            apt install -y python-setuptools
+            mkdir -p /opt/aws/bin
+            apt install -y wget
+            wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+            python3 -m easy_install --script-dir /opt/aws/bin aws-cfn-bootstrap-py3-latest.tar.gz
+
+            # cat ~/.bash_history > /root/history
+
+            #/opt/aws/bin/cfn-init --verbose --stack ${AWS::StackName} --region ${AWS::Region} --resource EC2ApplicationLaunchTemplate 
+            # Signal the status from cfn-init
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource ApplicationASG
+
+      TagSpecifications:
+        - ResourceType: !Ref LaunchTemplateResourceType
+          Tags: 
+            - Key: Name
+              Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-ec2
+              #PropagateAtLaunch: "true"
+            - Key: Project
+              Value: !Ref ProjectName
+            - Key: Environment
+              Value: !Ref Environment
+
+  # 8. Application Autoscaling Group
+  ApplicationASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-asg
+      AvailabilityZones: 
+        - !Select [ 0, !GetAZs  '' ]
+        - !Select [ 1, !GetAZs  '' ]
+      # Valid only if the policy type is SimpleScaling
+      Cooldown: !Ref AppASGCooldownSecs
+      DesiredCapacity: !Ref AppASGDesiredASGCapacity
+      DesiredCapacityType: !Ref CapacityType
+      # 0 by default, with ALB deployment the parameter must be set.
+      HealthCheckGracePeriod: !Ref AppASGHealthCheckGracePeriod
+      # The valid values are EC2 (default) and ELB
+      HealthCheckType: !Ref AppASGHealthCheckType
+      LaunchTemplate:
+        LaunchTemplateId: !Ref EC2ApplicationLaunchTemplate
+        #LaunchTemplateName: !Sub ${ClientName}-${ClientID}-${ProjectName}-${Service}-lt
+        Version: !GetAtt EC2ApplicationLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref AppMaximumASGCapacity
+      MetricsCollection:
+        - Granularity: "1Minute"
+          Metrics:
+            - "GroupMinSize"
+            - "GroupMaxSize"
+            - "GroupDesiredCapacity"
+            - "GroupInServiceInstances"
+            - "GroupTerminatingInstances"
+            - "GroupTotalInstances"
+            - "GroupTotalCapacity"
+      MinSize: !Ref AppMinimumASGCapacity
+      NewInstancesProtectedFromScaleIn: !Ref AppASGProtectedFromScale
+      NotificationConfigurations:
+        - TopicARN: !Ref SNSTopicNotification
+          NotificationTypes:
+            - autoscaling:EC2_INSTANCE_LAUNCH
+            - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+            - autoscaling:EC2_INSTANCE_TERMINATE
+            - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      TerminationPolicies:
+        - !Ref AppASGNewestTerminationPolicies
+      VPCZoneIdentifier:
+        - !ImportValue asgPrivateSubnetA
+        - !ImportValue asgPrivateSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${ClientID}-${ProductID}-${Service}-${ShopDomain}-ec2
+          PropagateAtLaunch: !Ref AppTagPropagateAtLaunch
+        - Key: Project
+          Value: !Ref ProjectName
+          PropagateAtLaunch: !Ref AppTagPropagateAtLaunch
+        - Key: Environment
+          Value: !Ref Environment
+          PropagateAtLaunch: !Ref AppTagPropagateAtLaunch
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: !Ref AutoScalingReplacingUpdateReplace
+      AutoScalingRollingUpdate:
+        MaxBatchSize: !Ref AutoScalingRollingUpdateMaxBatchSize
+        MinInstancesInService: !Ref MinInstancesInService
+        MinSuccessfulInstancesPercent: !Ref MinSuccessfulInstancesPercent
+        PauseTime: !Ref AutoScalingRollingUpdatePauseTime
+        WaitOnResourceSignals: !Ref AutoScalingRollingUpdateWaitSignal
+        SuspendProcesses:
+          - ScheduledActions
+          - HealthCheck
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+    CreationPolicy:
+      ResourceSignal:
+        Count: !Ref CreationPolicyResourceSignal
+        Timeout: !Ref CreationPolicyTimeout
+      AutoScalingCreationPolicy:
+      # If the minimum number of instances don't signal success within the Timeout period, the replacement update fails and AWS CloudFormation 
+      #rolls back to the old Auto Scaling group.
+        MinSuccessfulInstancesPercent: !Ref MinSuccessfulInstancesPercent
+
+  # 9. AutoScaling Out Policy
+  ASGCPUScalingOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      # Valid only for StepScaling or SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref ApplicationASG
+      # Valid only if the policy type is SimpleScaling
+      # it overrides the default cooldown period defined for the Auto Scaling group.
+      Cooldown: !Ref AppASGCooldownSecs
+      # Valid only if the policy type is TargetTrackingScaling or StepScaling.
+      #EstimatedInstanceWarmup: !Ref InstanceWarmup
+      # Valid only if the policy type is StepScaling.
+      # The valid values are Minimum, Maximum, and Average.
+      #MetricAggregationType: Average
+      # Valid only if the policy type is StepScaling or SimpleScaling.
+      #MinAdjustmentMagnitude: Integer
+      PolicyType: SimpleScaling #StepScaling #TargetTrackingScaling
+      #PredictiveScalingConfiguration: 
+      #  PredictiveScalingConfiguration
+      # Required if the policy type is SimpleScaling. (Not used with any other policy type.)
+      ScalingAdjustment: 1
+      # Required if the policy type is StepScaling. (Not used with any other policy type.)
+      #StepAdjustments:
+      #   # The lower bound for the difference between the alarm threshold and the CloudWatch metric. 
+      #  - MetricIntervalLowerBound: 70
+      #    ScalingAdjustment: 1
+        # - MetricIntervalLowerBound: 21
+        #   MetricIntervalUpperBound: 0
+        #   ScalingAdjustment: -1
+
+  # 10. CW Alarm (Scale Out)
+  CPUAlarmHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '70'
+      AlarmDescription: Alarm if CPU too high or metric disappears indicating instance
+        is down
+      Period: '60'
+      AlarmActions:
+        - !Ref ASGCPUScalingOutPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value:
+            Ref: ApplicationASG
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
+
+  # 11. AutoScaling In Policy
+  ASGCPUScalingInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      # Valid only for StepScaling or SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref ApplicationASG
+      # Valid only if the policy type is SimpleScaling
+      # it overrides the default cooldown period defined for the Auto Scaling group.
+      Cooldown: !Ref AppASGCooldownSecs
+      # Valid only if the policy type is TargetTrackingScaling or StepScaling.
+      #EstimatedInstanceWarmup: !Ref InstanceWarmup
+      # Valid only if the policy type is StepScaling.
+      # The valid values are Minimum, Maximum, and Average.
+      #MetricAggregationType: Average
+      # Valid only if the policy type is StepScaling or SimpleScaling.
+      #MinAdjustmentMagnitude: Integer
+      PolicyType: SimpleScaling #StepScaling #TargetTrackingScaling
+      #PredictiveScalingConfiguration: 
+      #  PredictiveScalingConfiguration
+      # Required if the policy type is SimpleScaling. (Not used with any other policy type.)
+      ScalingAdjustment: -1
+      # Required if the policy type is StepScaling. (Not used with any other policy type.)
+      #StepAdjustments:
+      #   # The lower bound for the difference between the alarm threshold and the CloudWatch metric. 
+      #  - MetricIntervalLowerBound: 70
+      #    ScalingAdjustment: 1
+        # - MetricIntervalLowerBound: 21
+        #   MetricIntervalUpperBound: 0
+        #   ScalingAdjustment: -1
+
+      # TargetTrackingConfiguration:
+      #   PredefinedMetricSpecification:
+      #     PredefinedMetricType: ASGAverageCPUUtilization
+      #   DisableScaleIn: false
+      #   TargetValue: !Ref CPUPolicyTargetValue
+
+  # 12. CW Alarm (Scale In)
+  CPUAlarmLow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '49'
+      AlarmDescription: Alarm if CPU is low.
+      Period: '60'
+      AlarmActions:
+        - !Ref ASGCPUScalingInPolicy
+      Namespace: AWS/EC2
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value:
+            Ref: ApplicationASG
+      ComparisonOperator: LessThanThreshold
+      MetricName: CPUUtilization
+
+Outputs:
+  # SQSQueueNotification:
+  #   Description: The Endpoint URL of the SQS queue.
+  #   Value: !Ref SQSQueueNotification
+  #   Export:
+  #     Name: SQSEndpointUrl
+
+  SNSTopicNotification:
+    Description: The ARN of the SQS queue.
+    Value: !Ref SNSTopicNotification
+    Export:
+      Name: SNSTopicArn
+
+  ALBTargetGroup:
+    Description: The ARN of the Target Group.
+    Value: !Ref ALBTargetGroup
+    Export:
+      Name: ALBTargetGroupArn

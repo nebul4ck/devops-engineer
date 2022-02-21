@@ -1,0 +1,112 @@
+---
+##
+# Alberto Gonzalez Mesas, <alberto.gonzalez@lineagrafica.es>
+# Wed Dec 22 12:00:00 CEST 2021
+##
+
+AWSTemplateFormatVersion: 2010-09-09
+Description:  > 
+  This AWS CloudFormation template creates a Route53 Public Hosted Zone and a
+  ALB type A (Alias) record.
+
+# Metadata
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Configure the environment.
+        Parameters:
+          - ProjectName
+          - ClientID
+          - ProductID
+          - ShopDomain
+          - ShopFQDN
+          - Service
+          - Environment
+
+Parameters:
+  # Environment
+  ProjectName:
+    Type: String
+    Description: The name either of the project or product. For example, ecommerce.
+    Default: ecommerce
+    AllowedValues:
+      - ecommerce
+      - hosting
+      - intranet
+  ClientID:
+    Type: Number
+    Description: The ID of the client in WHMCS.
+    Default: 67
+    MinValue: 1
+    MaxValue: 100000
+  ProductID:
+    Type: Number
+    Description: The ID of the product in WHMCS.
+    Default: 1100
+    MinValue: 1
+    MaxValue: 100000
+  ShopDomain:
+    Type: String
+    Description: The main domain of the client. For example, "muebledesign-com" of the application.
+    Default: 2-lineagrafica-es
+  ShopFQDN:
+    Type: String
+    Description: The FQDN of the shop. For example, "muebledesign.com" of the application.
+    Default: cloudnodown.com
+  Service:
+    Type: String
+    Description: The name of the offered service. For example, as (autoscaling).
+    Default: as
+    AllowedValues:
+      - as
+  Environment:
+    Type: String
+    Description: The environment where the project is deployed. For example, development.
+    Default: development
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+# Resources
+Resources:
+  # Route53 Public Hostez Zone.
+  PublicHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties: 
+      HostedZoneConfig: 
+          Comment: !Sub "Public Hosted Zone for hosting-${ClientID}-${ProductID}-${ProjectName}-${ShopDomain}"
+      HostedZoneTags: 
+        - Key: Name
+          Value: !Sub hosting-${ClientID}-${ProductID}-${ProjectName}-${ShopDomain}-hz
+        - Key: Project
+          Value: !Sub ${ProjectName}
+        - Key: Environment
+          Value: !Sub ${Environment}
+      Name: !Sub ${ShopFQDN}
+
+  ALBRecordSet:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !GetAtt PublicHostedZone.Id
+      Comment: Zone apex alias targeted to Application Load Balancer.
+      RecordSets:
+        - Name: !Sub ${ShopFQDN}
+          Type: A
+          AliasTarget:
+            HostedZoneId: !ImportValue ALBHostedZoneId
+            DNSName: !Sub ['dualstack.${DNSName}', DNSName: !ImportValue ALBDNSName]
+        - Name: !Sub www.${ShopFQDN}
+          Type: A
+          AliasTarget:
+            HostedZoneId: !ImportValue ALBHostedZoneId
+            DNSName: !Sub ['dualstack.${DNSName}', DNSName: !ImportValue ALBDNSName]
+
+# Outputs
+Outputs:
+  PublicHostedZoneId:
+    Description: The ID of the Route53 Public Hosted Zone.
+    Value: !GetAtt PublicHostedZone.Id
+    Export:
+      Name: PublicHostedZoneId
