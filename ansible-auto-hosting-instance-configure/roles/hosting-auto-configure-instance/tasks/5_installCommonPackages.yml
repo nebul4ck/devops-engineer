@@ -1,0 +1,84 @@
+---
+
+- name: "5.1 Upgrade the version of all packages: dist-upgrade."
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+    upgrade: dist
+
+- name: "5.2 Install htop."
+  apt:
+    name: htop
+    update_cache: yes
+    cache_valid_time: 3600
+    state: latest
+    install_recommends: no
+
+- name: "5.3 Install the latest Python version."
+  apt:
+    name: python3
+    state: latest
+    install_recommends: no
+
+- name: "5.4 Install Python3-pip."
+  apt:
+    name: python3-pip
+    state: latest
+    install_recommends: no
+
+- name: "5.5 Install awscli-plugin-endpoint."
+  pip:
+    name: awscli-plugin-endpoint
+
+- name: "5.6 Install AWS CLI: OVH Horizon purpose."
+  apt:
+    name: awscli
+    state: latest
+    install_recommends: yes
+
+- name: "5.7 Ensure {{ awscli_basedir }} folder exists."
+  file:
+    path: "{{ awscli_basedir }}"
+    state: directory
+    mode: '0755'
+  ignore_errors: true
+
+- name: "5.8 Configure AWS CLI Credentials for AWS/S3."
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  loop:
+    - { src: 'awscli_config.j2', dest: "{{ awscli_basedir }}/config" }
+    - { src: 'awscli_credentials.j2', dest: "{{ awscli_basedir }}/credentials" }
+
+- name: "5.9 Install GIT."
+  apt:
+    name: git
+    state: latest
+    install_recommends: no
+
+- name: "5.10 Install ntp & ntpdate."
+  apt:
+    name:
+      - ntp
+      - ntpdate
+    state: latest
+    install_recommends: no
+
+- name: "5.11 Install psmem for HEAP memmory monitoring."
+  template:
+    src: psmem.bin.j2
+    dest: /usr/bin/psmem
+    mode: 0755
+    owner: 'root'
+    group: 'root'
+
+- name: "5.12 Install Gzip library"
+  apt:
+    name:
+      - gzip
+    update_cache: yes
+    state: latest
+    install_recommends: no
+  when: ansible_facts['distribution'] == "Ubuntu" or
+        ansible_facts['distribution'] == "Debian"

@@ -1,0 +1,201 @@
+---
+---
+# DirectAdmin install and configure.
+
+# Parameters and/or vars required:
+#   The name of the email account (without domain): info
+#   The main domain of the client: ej, ferrys.es
+
+#- name: "10.1 Calling DirectAdmin License module: ordering a new license..."
+#  uri:
+
+- name: "11.1 Install DirectAdmin requirements..."
+  apt:
+    name:
+      - flex
+      - bison
+      - perl-modules-5.32
+      - libperl-dev
+      - libperl4-corelibs-perl
+      - libwww-perl
+      - libaio-dev
+      - zlib1g-dev
+      - libcap-dev
+      - zip
+      - unzip
+      - automake
+      - autoconf
+      - libtool
+      - cmake
+      - pkg-config
+      - python-is-python2
+      - libdb-dev
+      - libsasl2-dev
+      - libncurses5
+      - libncurses5-dev
+      - libsystemd-dev
+      - bind9
+      - dnsutils
+      - quota
+      - libexpat1-dev
+      - libcrypt-openssl-rsa-perl
+      - libnuma-dev
+      - libwebp-dev
+      - webp
+      - libxpm-dev
+      - build-essential
+      - re2c
+      - libxml2-dev
+      - libsqlite3-dev
+      - libipset13
+      - ipset
+      - libssl-dev
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+    install_recommends: no
+
+- name: "11.2 Ensure {{ da_custombuild_folder }} exists"
+  file:
+    path: "{{ da_custombuild_folder }}"
+    state: directory
+    mode: 0755
+    owner: "root"
+    group: "root"
+
+- name: "11.3 Configure options.conf"
+  template:
+    src: da_options.conf.j2
+    dest: "{{ da_custombuild_folder }}/options.conf"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "11.4 Configure php_extensions.conf"
+  template:
+    src: da_php_extensions.conf.j2
+    dest: "{{ da_custombuild_folder }}/php_extensions.conf"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "Workaround: Skip license. Order buy DirectAdmin license after the server is provisioned."
+  command: echo 1 > /root/.skip_get_license
+
+- name: "11.5 Set the main email account for notification purpose."
+  command: echo "{{ da_client_short_mail_account }}@{{ da_client_main_domain }}" > /root/.email.txt
+
+- name: "11.6 Set the first nameserver for name resolution."
+  command: echo  ns1sd{{ productID }}.dnslineagrafica.net > /root/.ns1.txt
+
+- name: "11.7 Set the second one nameserver for name resolution."
+  command: echo  ns2sd{{ productID }}.dnslineagrafica.net > /root/.ns2.txt
+
+- name: "11.8 Set the version of the DirectAdmin Custombuild..."
+  command: echo 2.0 > /root/.custombuild
+
+- name: "11.9 Set the hostname to use for the DA Server name."
+  command: echo host.name.com > /root/.use_hostname
+
+# - name: "11.9 Install DirectAdmin: setup.sh"
+#   script: ./files/da_setup.sh {{ da_clientId }} {{ da_licenseId }} {{ serverFQDN }} {{ ansible_default_ipv4.interface }} {{ ipFailover }}
+
+- name: "11.9 Install DirectAdmin: setup.sh"
+  script: ./files/da_setup.sh auto
+
+# Para garantizar que se sincroniza la licencia: ejecutamos getLicense.sh
+# - name: "11.10 Sync DirectAdmin License"
+#   command: /usr/local/directadmin/scripts/getLicense.sh {{ da_clientId }} {{ da_licenseId }} {{ ipFailover }}
+
+- name: "11.11 Install csf"
+  script: ./files/da_install_csf.sh
+
+- name: "11.12 Install Maldetect"
+  script: ./files/da_install_maldet.sh
+
+- name: "11.13 Create a DirectAdmin user package"
+  command: echo "newpackage" > /usr/local/directadmin/data/users/admin/packages.list
+
+- name: "11.14 Download default DirectAdmin package."
+  command: wget -O /usr/local/directadmin/data/users/admin/packages/newpackage.pkg http://almacenator.net/files/directadmin/newpackage.pkg
+
+- name: "11.15 Configure DirectAdmin Virtual Limit"
+  command: echo "2000" > /etc/virtual/limit
+
+- name: "11.16 Configure DirectAdmin User Virtual Limit"
+  command: echo "2000" > /etc/virtual/user_limit
+
+- name: "11.17 Configure directadmin.conf"
+  template:
+    src: da_directadmin.conf.j2
+    dest: "{{ da_config_folder }}/directadmin.conf"
+    owner: "{{ da_admin_user }}"
+    group: "{{ da_admin_user }}"
+    mode: 0755 
+    backup: yes
+
+- name: "11.18 Download DirectAdmin Skin Evolution Spanish Language pack and uncompress it"
+  unarchive:
+    src: https://orientehosting.com/evolution/lang/es.zip
+    dest: "{{ da_skin_folder }}"
+    remote_src: yes
+    owner: diradmin
+    group: diradmin
+
+#- name: "10.22" Settings the correct date format to 
+# sed -i 's#"format:date"#"format:dd-MM-yyyy"#g' /usr/local/directadmin/data/skins/evolution/lang/es.json
+# sed -i 's#"formato: fecha"#"formato: dd-MM-yyyy"#g' /usr/local/directadmin/data/skins/evolution/lang/es.json
+# sed -i 's#"format:date"#"format:dd-MM-yyyy"#g' /usr/local/directadmin/data/skins/evolution/lang/es.po
+# sed -i 's#"formato: fecha"#"format: dd-MM-yyyy"#g' /usr/local/directadmin/data/skins/evolution/lang/es.po
+# echo "action=directadmin&value=restart" >> /usr/local/directadmin/data/task.queue; /usr/local/directadmin/dataskq d2000
+
+# - name: "10.20 Restarting DirectAdmin service"
+#   systemd:
+#     name: directadmin
+#     state: restarted
+
+- name: "11.19 Auto create  let's encrypt certificate for {{ serverFQDN }}"
+  command: /usr/local/directadmin/scripts/letsencrypt.sh request {{ serverFQDN }} 2048
+  
+- name: "11.5 Set the main email account for notification purpose."
+  command: echo "{{ da_client_short_mail_account }}@{{ da_client_main_domain }}" > /root/.email.txt
+
+- name: "11.6 Set the first nameserver for name resolution."
+  command: echo  "ns1sd{{ productID }}.dnslineagrafica.net" > /root/.ns1.txt
+
+- name: "11.7 Set the second one nameserver for name resolution."
+  command: echo  "ns2sd{{ productID }}.dnslineagrafica.net" > /root/.ns2.txt
+
+- name: "11.9 Set the hostname to use for the DA Server name."
+  command: echo "{{ serverFQDN }}" > /root/.use_hostname
+
+# Tras la instalación con "auto" me ha pillado bien la FAILOVER.
+# - name: "11.9 Swap from IP hosted to FAILOVER IP"
+#   command: /usr/local/directadmin/scripts/ipswap.sh {{ ansible_default_ipv4.address }} {{ ipFailover }}
+
+# Para garantizar que se sincroniza la licencia: ejecutamos getLicense.sh
+- name: "11.10 Sync DirectAdmin License"
+  command: /usr/local/directadmin/scripts/getLicense.sh <SSH_HASH>
+
+- name: "5.3 Configure options.conf (with server customization)"
+  template:
+    src: da_options.conf.j2
+    dest: "{{ da_custombuild_folder }}/options.conf"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: "11.17 Configure directadmin.conf (with server personalization)"
+  template:
+    src: da_directadmin.conf.j2
+    dest: "{{ da_config_folder }}/directadmin.conf"
+    owner: "{{ da_admin_user }}"
+    group: "{{ da_admin_user }}"
+    mode: 0755 
+    backup: yes
+
+- name: "DirectAdmin build all."
+  command: "{{ da_custombuild_folder }}"/build all d
+
+- name: "11.19 Auto create  let's encrypt certificate for {{ serverFQDN }}"
+  command: /usr/local/directadmin/scripts/letsencrypt.sh request {{ serverFQDN }} 2048

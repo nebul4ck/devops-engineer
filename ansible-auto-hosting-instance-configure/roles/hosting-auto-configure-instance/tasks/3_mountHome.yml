@@ -1,0 +1,97 @@
+---
+
+- name: "3.1 Check if new volume exists."
+  shell: fdisk -l {{ block_device }}
+  args:
+    executable: /bin/bash
+  ignore_errors: true
+  register: volumeExists
+
+- name: "3.2 Check if {{ new_partition }} exists."
+  shell: fdisk -l {{ new_partition }}
+  args:
+    executable: /bin/bash
+  ignore_errors: true
+  register: newPartitionExists
+  # 'rc == 0' => volume exists
+  when: volumeExists.rc == 0
+
+- name: "3.3 Create {{ new_partition }} partition if {{ block_device }} exists and {{ new_partition }} is not found."
+  shell: echo -e "n\np\n1\n\n\nw" | fdisk {{ block_device }}
+  args:
+    executable: /bin/bash
+  when:
+  # 'rc == 1' => partition does not exist
+    - newPartitionExists
+    - volumeExists.rc == 0
+    - newPartitionExists.rc == 1
+  register: partition_is_created
+
+- name: "3.4 Format the {{ new_partition }} partition using ext4."
+  shell: mkfs.ext4 -L home -m1 {{ new_partition }}
+  args:
+    executable: /bin/bash
+  when: partition_is_created is changed
+  register: formatted
+
+# - name: Create a ext4 filesystem on /dev/sdb1 and check disk blocks
+#   filesystem:
+#     fstype: ext4
+#     dev: /dev/sdb1
+
+# - name: Create a new ext4 primary partition
+#   parted:
+#     device: /dev/sdb
+#     number: 1
+#     state: present
+#     fs_type: ext4
+
+- name: "3.5 Check if /etc/fstab mount partition exists."
+  command: grep {{ new_partition }} /etc/fstab
+  ignore_errors: true
+  register: is_in_fstab
+
+- name: "3.6 Add line into /etc/fstab for automounting."
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ new_partition }}        /home   ext4    defaults        0       0"
+  # 'is_in_fstab.rc == 1' line does not exist.
+  when: is_in_fstab.rc == 1
+
+- name: "3.7 Create temp path to mount volume before sync home directory."
+  file:
+    path: "{{ temp_mount_folder }}"
+    state: directory
+    mode: 0755
+    owner: "root"
+    group: "root"
+  ignore_errors: true
+  when: formatted is changed
+
+- name: "3.8 Mount new volume in temp path."
+  command: mount {{ new_partition }} {{ temp_mount_folder }}
+  when: formatted is changed
+  register: volume_mnt_mounted
+
+- name: "3.9 Sync /home directory against {{ temp_mount_folder }}."
+  command: rsync -aW --partial /home/ {{ temp_mount_folder }}/
+  when: formatted is changed
+
+- name: "3.10 Umount temp path."
+  mount:
+    path: "{{ temp_mount_folder }}"
+    state: unmounted
+  when:
+    - formatted is changed
+
+- name: "3.11 Check if {{ new_partition }} is mounted over /home."
+  shell: mount | grep {{ new_partition }}
+  args:
+    executable: /bin/bash
+  ignore_errors: true
+  register: volume_home_mounted
+
+- name: "3.12 Finally, mount the device in his real path."
+  command: mount {{ new_partition }} /home
+  when: volume_home_mounted.rc != 0
+

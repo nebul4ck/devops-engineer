@@ -1,0 +1,8 @@
+---
+- name: "Configure the system: kernel, packages, environment, rsa..."
+  hosts: all
+  remote_user: root
+  gather_facts: yes
+  become: false
+  roles:
+    - hosting-auto-configure-instance

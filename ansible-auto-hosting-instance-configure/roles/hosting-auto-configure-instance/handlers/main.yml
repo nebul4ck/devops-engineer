@@ -1,0 +1,9 @@
+---
+# Common: module systemConfiguration
+- name: disable thp
+  shell: "{{ disable_thp }}"
+
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted

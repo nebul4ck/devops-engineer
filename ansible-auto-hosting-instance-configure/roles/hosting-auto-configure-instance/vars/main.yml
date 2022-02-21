@@ -1,0 +1,55 @@
+---
+# 1_systemConfiguration.yml
+disable_thp: update-rc.d disable-transparent-hugepages defaults
+swappiness: 1
+file_max: 65536
+overcommit_memory: 1
+max_map_count: 262144
+
+# 3_mountHome.yml
+block_device: '/dev/sdb'
+new_partition: '/dev/sdb1'
+temp_mount_folder: '/mnt/disk'
+
+# 4_addRSA.yml
+authorized_keys_file: '/root/.ssh/authorized_keys'
+
+# 5_confEnvironment.yml
+root_bashrc: '/root/.bashrc'
+custom_env: '/etc/profile.d/custom-env.sh'
+localtime_file: '/usr/share/zoneinfo/Europe/Madrid'
+sshd_config_file: '/etc/ssh/sshd_config'
+client_alias: ''
+serverFQDN: ''
+ntp_server: 'es.pool.ntp.org'
+
+# 6_installCommonPackages.yml
+awscli_basedir: '/root/.aws'
+
+# 7_addPuppetFile.yml
+puppet_agent_repository: "https://apt.puppetlabs.com/puppet6-release-focal.deb"
+puppet_repo_pkg: 'puppet6-release-focal.deb'
+puppetConfigFile: '/etc/puppetlabs/puppet/puppet.conf'
+puppet_master_node: 'puppet.lineagrafica.es'
+
+# 8_enableMonitoring.yml
+nagiosLibexecFolder: '/usr/local/nagios/libexec/'
+almacenatorURLPlugins: 'https://almacenator.net/files/nagios/libexec/'
+nagiosBaseDir: '/var/lib/nagios'
+mysqlConfig: '/usr/local/directadmin/conf/my.cnf'
+nagiosConfigFile: '/etc/nagios/nrpe.cfg'
+
+# 9_configureKeepsafe.yml
+rundeckConfigureKeepsafeJobID: 'f39556fe-86e5-4ee4-b486-b82728476591'
+rundeckServer: 'rundeck.lineagrafica.es'
+rundeckApiVersion: '40'
+rundeck_admin_token: 'lB6mRCg6XnQXsFNyP8elzdQjN3UjvRIP'
+
+# disabled_directAdminInstallation.yml
+# da_custombuild_folder: '/usr/local/directadmin/custombuild'
+# da_config_folder: '/usr/local/directadmin/conf'
+# da_default_admin_passwd: 'GA9fLEK4MzNfKw=='
+# da_admin_user: 'diradmin'
+# da_client_short_mail_account: ''
+# da_client_main_domain: ''
+# da_skin_folder: '/usr/local/directadmin/data/skins/evolution/lang'

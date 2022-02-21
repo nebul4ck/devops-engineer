@@ -1,0 +1,36 @@
+---
+# Create a xxxx.pp file in order to inventory the server on rundeck
+
+- name: "7.1 Download Puppet Agent repository file."
+  get_url:
+    url: "{{ puppet_agent_repository }}"
+    dest: /root/{{ puppet_repo_pkg }}
+    mode: 0644
+
+- name: "7.2 Install Puppet Agent repository."
+  apt:
+    deb: /root/{{ puppet_repo_pkg }}
+
+- name: "7.3 Ensure puppet agent is installed."
+  apt:
+    name: puppet-agent
+    update_cache: yes
+    state: latest
+    install_recommends: no
+
+- name: "7.4 Ensure puppet-agent is configured."
+  template:
+    src: puppet-agent.conf.j2
+    dest: "{{ puppetConfigFile }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "7.5 Ensure puppet agent is executed."
+  command: /opt/puppetlabs/bin/puppet agent --test
+  ignore_errors: true
+
+- name: "7.6 Iniciar servicio puppet."
+  systemd:
+    name: puppet
+    state: started

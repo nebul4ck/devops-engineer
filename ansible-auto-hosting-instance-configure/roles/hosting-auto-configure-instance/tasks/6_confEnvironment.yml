@@ -1,0 +1,129 @@
+---
+
+- name: "6.1 Rename the instance."
+  shell: hostnamectl set-hostname {{ serverFQDN }}
+  args:
+    executable: /bin/bash
+
+- name: "6.2 Check if date in {{ root_bashrc }} is enabled."
+  shell: grep -c "^HISTTIMEFORMAT=" {{ root_bashrc }} || true
+  args:
+    executable: /bin/bash
+  register: date_history_is_enabled
+
+- name: "6.3 Enable date in {{ root_bashrc }}."
+  lineinfile:
+    path: "{{ root_bashrc }}"
+    line: 'HISTTIMEFORMAT="%d/%m/%y %T "'
+  when: date_history_is_enabled.stdout == "0"
+
+- name: "6.4 Create {{ custom_env }} file."
+  template:
+    src: profile_d_custom_env.j2
+    dest: "{{ custom_env }}"
+    owner: root
+    group: root
+    mode: 0644
+
+# - name: "Check if en_US.utf8 in {{ custom_env }} is enabled."
+#   shell: grep -c "^LANG" {{ custom_env }} || true
+#   args:
+#     executable: /bin/bash
+#   register: custom_env_is_enabled
+
+# - name: "Enable custom environment: set locale"
+#   blockinfile:
+#     path: "{{ custom_env }}"
+#     marker: "# {mark} ANSIBLE MANAGED BLOCK"
+#     block: |
+#       LC_ALL="en_US.utf8"
+#       export LC_ALL
+#       LANGUAGE="en_US.utf8"
+#       export LANGUAGE
+#       LANG="en_US.utf8"
+#       export LANG
+#     create: true
+#   when: custom_env_is_enabled.stdout == ""
+
+- name: "6.5 Delete /etc/localtime link..."
+  file:
+    path: "/etc/localtime"
+    state: absent
+  ignore_errors: true
+
+- name: "6.6 Set the Europe/Madrid timezone."
+  file:
+    src: "{{ localtime_file }}"
+    dest: "/etc/localtime"
+    state: link
+
+- name: "6.7 Check if SSH Password authentication is enabled."
+  shell: grep -c -E '^#?.?PasswordAuthentication.?(no|yes)' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: ssh_passwd_auth_is_enabled
+
+- name: "6.8 Delete older configuration on PasswordAuthentication SSH configuration."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?PasswordAuthentication.?(no|yes)'
+    state: absent
+  when: ssh_passwd_auth_is_enabled.stdout == "1"
+
+- name: "6.9 Ensure SSH Password Authentication is disabled."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: PasswordAuthentication no
+
+- name: "6.10 Check if SSH ClientAliveInterval is Set."
+  shell: grep -c -E '^#?.?ClientAliveInterval' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: client_alive_internal_is_set
+
+- name: "6.11 Delete older configuration of ClientAliveInterval in SSH."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?ClientAliveInterval'
+    state: absent
+  when: client_alive_internal_is_set.stdout == "1"
+
+- name: "6.12 Ensure SSH Client Alive Internal is Set."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: ClientAliveInterval 60
+
+- name: "6.13 Check if SSH ClientAliveCountMax is Set."
+  shell: grep -c -E '^#?.?ClientAliveCountMax' {{ sshd_config_file }} || true
+  args:
+    executable: /bin/bash
+  register: client_alive_countmax_is_set
+
+- name: "6.14 Delete older configuration of ClientAliveCountMax in SSH."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    regexp: '^#?.?ClientAliveCountMax'
+    state: absent
+  when: client_alive_countmax_is_set.stdout == "1"
+
+- name: "6.15 Ensure SSH ClientAliveCountMax is Set."
+  lineinfile:
+    path: "{{ sshd_config_file }}"
+    line: ClientAliveCountMax 100
+  notify: restart sshd
+
+- name: "6.16 Update the local time: {{ ntp_server }}."
+  command: ntpdate -u {{ ntp_server }}
+
+- name: "6.17 Source the environment files."
+  shell: source {{ item }}
+  args:
+    executable: /bin/bash
+  loop:
+    - "{{ root_bashrc }}"
+    - "{{ custom_env }}"
+
+- name: "6.18 Set Message of today with a client identification name."
+  lineinfile:
+    path: /etc/update-motd.d/10-help-text
+    line: "* Servername (Alias): {{ client_alias }}"

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+USER="$1"
+UNIT=1024
+
+helpUse() {
+	echo -e "\nUse: $ psmem <user/service>"
+	echo -e "ie: $ psmem dbmanager"
+	exit 1	
+}
+
+show_proc() {
+	ps f axo user:20,rss,cmd |\
+	grep ^"$1" |\
+	numfmt --to=iec --from-unit="$2" --field 2
+}
+
+if test "$#" -ne 1; then
+    helpUse
+    exit 1
+fi
+
+show_proc $USER $UNIT

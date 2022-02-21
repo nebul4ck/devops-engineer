@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#Export all custom env vars
+
+get_ip() {
+
+	SERVER_IP=`ping -c1 ${HOSTNAME} |grep -Eo '(\([0-9]+.[0-9]+.[0-9]+.[0-9]+\))'|tr -d \(\)|head -1`
+
+	if [ -z ${SERVER_IP} ];
+	then
+		SERVER_IP=`hostname -I`
+	fi
+}
+
+get_os_values() {
+	# Get OS and OS Version
+	SERVER_OS_AND_VERSION=`cat /etc/*release |grep -Ew "ID=.*|VERSION_ID=.*"`
+
+	if [[ -z ${SERVER_OS_AND_VERSION} ]];
+	then
+		SERVER_OS_AND_VERSION=`cat /etc/*release |grep "release" |head -n1|cut -d" " -f1,3`
+		SERVER_OS=`echo ${SERVER_OS_AND_VERSION} | \
+			cut -d" " -f1| \
+			tr [:upper:] [:lower:]`
+		SERVER_OS_VERSION=`echo ${SERVER_OS_AND_VERSION} | \
+			cut -d" " -f2 | \
+			cut -d. -f1`
+	else
+		SERVER_OS=`echo ${SERVER_OS_AND_VERSION} | \
+			grep -Eow ID=.* | \
+			cut -d= -f2 | \
+			tr [:upper:] [:lower:] | \
+			cut -d" " -f1 | \
+			sed s/\"//g`
+		SERVER_OS_VERSION=`echo ${SERVER_OS_AND_VERSION} | \
+			grep -Eow VERSION_ID=.* | \
+			cut -d= -f2 | \
+			cut -d" " -f1 | \
+			cut -d. -f1 | \
+			sed s/\"//g`
+	fi
+
+	if [[ ${SERVER_OS} = 'cloudlinux' ]] && [[ ${SERVER_OS_VERSION} = 'release' ]];
+	then
+		# Workaround
+		SERVER_OS_VERSION='6'
+	fi
+
+	VENDOR='linux'
+}
+
+get_panel() {
+	PANEL=`ps -ef | grep -v grep |grep -Ewo "plesk|cpanel|directadmin" |head -n1`
+
+	if [[ -z ${PANEL} ]];
+	then
+		PANEL="nopanel"
+	fi
+}
+
+# Set SERVER IP
+get_ip
+export SERVER_IP
+
+# Set OS and OS Version
+get_os_values
+export SERVER_OS
+export SERVER_OS_VERSION
+
+# Set Panel Vendor
+get_panel
+export PANEL
+
+# Set Provider
+PROVIDER="{{ cloud_provider }}"
+export PROVIDER
+
+# Set Language
+LC_ALL="en_US.utf8"
+export LC_ALL
+LANGUAGE="en_US.utf8"
+export LANGUAGE
+LANG="en_US.utf8"
+export LANG

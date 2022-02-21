@@ -1,0 +1,22 @@
+---
+
+- name: "2.1 Ensure IP Failover is configured."
+  template:
+    src: 99-disable-network-config.cfg.j2
+    dest: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "2.2 Add IP failover into 50-cloud-init.yaml file."
+  blockinfile:
+    path: /etc/netplan/50-cloud-init.yaml
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    insertafter: "set-name*"
+    block: |
+      # Workaround for tab addressess:
+                  addresses:
+                      - {{ ipFailover }}/32
+
+- name: "2.3 Apply netplan changes."
+  command: netplan apply

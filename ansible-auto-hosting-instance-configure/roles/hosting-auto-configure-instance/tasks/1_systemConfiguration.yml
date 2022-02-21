@@ -1,0 +1,66 @@
+---
+
+# System configuration
+
+- name: "1.0 Updating /usr/bin/python symlink: from python2.7 to /usr/bin/python3"
+  raw: |
+    if [ -f /usr/bin/python3 ];then
+      if [ -f /usr/bin/python ]; then
+        rm -f /usr/bin/python
+      fi
+      ln --symbolic /usr/bin/python3 /usr/bin/python
+    fi
+  ignore_errors: true
+  when: ansible_facts['distribution'] == "Ubuntu" or
+        ansible_facts['distribution'] == "Debian" or
+        (ansible_facts['distribution'] == "CentOS"
+         and ansible_facts['distribution_major_version'] == "8")
+
+- name: "1.1 Disable Transparent Huge Pages in current session."
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
+  ignore_errors: true
+
+- name: "1.2 Disable Transparent Huge Pages during bootstrap."
+  template:
+    src: disable-transparent-hugepages.j2
+    dest: /etc/init.d/disable-transparent-hugepages
+    owner: root
+    group: root
+    mode: 0755
+  notify: disable thp
+
+- name: "1.3 Configure vim colour."
+  lineinfile:
+    path: '~/.vimrc'
+    state: present
+    create: yes
+    line: ':color desert'
+
+- name: "1.4 Setting up Swappiness OFF."
+  sysctl:
+    name: vm.swappiness
+    value: "{{ swappiness }}"
+    state: present
+    sysctl_set: yes
+
+- name: "1.5 Setting up max Files handles."
+  sysctl:
+    name: fs.file-max
+    value: "{{ file_max }}"
+    state: present
+    sysctl_set: yes
+
+- name: "1.6 Setting up Virtual Memory (Overcommit)."
+  sysctl:
+    name: vm.overcommit_memory
+    value: "{{ overcommit_memory }}"
+    state: present
+    sysctl_set: yes
+
+- name: "1.7 Setting up Virtual Memory (MMAP)."
+  sysctl:
+    name: vm.max_map_count
+    value: "{{ max_map_count }}"
+    state: present
+    sysctl_set: yes
+    reload: yes

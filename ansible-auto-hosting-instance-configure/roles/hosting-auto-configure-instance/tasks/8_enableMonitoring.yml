@@ -1,0 +1,86 @@
+---
+
+- name: "8.1 Install nagios plugin monitor."
+  apt:
+    name: nagios-nrpe-server
+    install_recommends: no
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: "8.2 Configurar nagios: /etc/nagios/nrpe.cfg"
+  template:
+    src: nrpe.cfg.j2
+    dest: "{{ nagiosConfigFile }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "8.3 Ensure the folder {{ nagiosLibexecFolder }} exists."
+  file:
+    path: "{{ nagiosLibexecFolder }}"
+    state: directory
+    mode: '0755'
+    owner: 'nagios'
+    group: 'nagios'
+    recurse: yes
+  ignore_errors: true
+
+- name: "8.4 Download all nagios plugins."
+  get_url:
+    url: "{{ almacenatorURLPlugins }}/{{ item }}"
+    dest: "{{ nagiosLibexecFolder }}/{{item}}"
+  loop:
+    - check_ssh
+    - check_users
+    - check_load
+    - check_disco
+    - check_queue
+    - check_cron
+    - check_lfd
+    - check_puppet
+    - check_susp
+    - check_syslog
+    - check_mysql
+    - check_spamc
+    - check_clamd
+    - check_smart.pl
+    - check_procs
+    - repair_cron
+    - repair_spamd
+    - check_ftp_df
+    - check_backups
+    - check_rbl_route
+    - check_cpu_process
+    - check_md_raid
+    - check_duracion_back
+    - check_google_phishing
+    - get_ips
+    - check_keepsafe
+
+- name: "8.5 Set the correct permissiones over all nagios plugins."
+  file:
+    path: "{{ nagiosLibexecFolder }}"
+    state: directory
+    mode: '0755'
+    owner: 'nagios'
+    group: 'nagios'
+    recurse: yes
+
+- name: "8.6 Ensure the folder {{ nagiosBaseDir }} exists."
+  file:
+    path: "{{ nagiosBaseDir }}"
+    state: directory
+    mode: '0755'
+    owner: 'nagios'
+    group: 'nagios'
+  ignore_errors: true
+
+# Esto debería de ir en la instalación de directAdmin
+#- name: "8.6 Copy the my.cnf file inside {{ nagiosBaseDir }}."
+#  command: cp {{ mysqlConfig }} {{ nagiosBaseDir }}/.my.cnf
+
+- name: "8.7 Restarting nrpe service..."
+  systemd:
+    name: nagios-nrpe-server
+    state: restarted

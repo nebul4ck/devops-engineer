@@ -1,0 +1,81 @@
+---
+- name: "1. Include Kernel/OS configuration parameters"
+  include_tasks:
+    file: 1_systemConfiguration.yml
+    apply:
+      tags:
+        - system
+  tags:
+    - system
+
+- name: "2. Include Network Interface configuration: netplan"
+  include_tasks:
+    file: 2_networkInterfaceConf.yml
+    apply:
+      tags:
+        - network
+  tags:
+    - network
+
+- name: "3. Include mount /home partition"
+  include_tasks:
+    file: 3_mountHome.yml
+    apply:
+      tags:
+        - mount
+  tags:
+    - mount
+
+- name: "4. Include RSA insertion"
+  include_tasks:
+    file: 4_addRSA.yml
+    apply:
+      tags:
+        - rsa
+  tags:
+    - rsa
+
+- name: "5. Include the installation of the common packages"
+  include_tasks:
+    file: 5_installCommonPackages.yml
+    apply:
+      tags:
+        - packages
+  tags:
+    - packages
+
+- name: "6. Include Environment configuration"
+  include_tasks:
+    file: 6_confEnvironment.yml
+    apply:
+      tags:
+        - environment
+  tags:
+    - environment
+
+- name: "7. Include Puppet node Inventory: {{ productID }}.pp"
+  include_tasks:
+    file: 7_addPuppetFile.yml
+    apply:
+      tags:
+        - inventory
+  tags:
+    - inventory
+
+- name: "8. Enable Nagios Monitoring"
+  include_tasks:
+    file: 8_enableMonitoring.yml
+    apply:
+      tags:
+        - monitoring
+  tags:
+    - monitoring
+
+- name: "9. Configure Keepsafe"
+  include_tasks:
+    file: 9_configureKeepsafe.yml
+    apply:
+      tags:
+        - keepsafe
+  tags:
+    - keepsafe
