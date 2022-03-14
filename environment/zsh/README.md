@@ -30,3 +30,7 @@ $ ansible-playbook zsh-tunning.yaml \
   -K \
   --tags install_packages,configure,optional
 ```
+
+# Troubleshooting
+
+Fix vscode fonts problem https://github.com/romkatv/powerlevel10k/issues/671
