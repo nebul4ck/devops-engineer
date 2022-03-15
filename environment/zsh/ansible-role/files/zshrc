@@ -2,7 +2,7 @@
 export DEFAULT_USER=$(whoami)
 
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/bin:/home/${DEFAULT_USER}/.local/bin:$PATH
+export PATH=$HOME/bin:/home/${DEFAULT_USER}/.local/bin:$HOME/.tgenv/bin:$HOME/.tfenv/bin:$PATH
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
@@ -83,6 +83,7 @@ HIST_STAMPS="dd.mm.yyyy"
 # Add wisely, as too many plugins slow down shell startup.
 # More plugins: https://github.com/robbyrussell/oh-my-zsh/wiki/Plugins
 # git-extras kubectl pip python vagrant
+# Requirements: zsh-autosuggestions github.com/zsh-users/zsh-autosuggestions
 plugins=(
   ansible
   aws
@@ -91,7 +92,7 @@ plugins=(
   docker
   pip
   sudo
-  zsh_reload
+  zsh-autosuggestions
 )
 
 # Doc
@@ -109,6 +110,10 @@ plugins=(
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
+# BEGIN ANSIBLE MANAGED BLOCK
+alias pbcopy="xclip -selection clipboard"
+alias pbpaste="xclip -selection clipboard -o"
+# END ANSIBLE MANAGED BLOCK
 alias zshconfig="vi ~/.zshrc"
 alias startzsh="source ~/.zshrc"
 alias ohmyzshconfig="vi ~/.oh-my-zsh"
@@ -133,6 +138,76 @@ function killer() {
 }
 
 alias mata="killer $1"
+
+# Connect EC2 instances using target ID and Profile
+function ssm () {
+  if [ $# -lt 2 ];
+  then
+    echo "usage: ssm <profile> <ec2-id>"
+  else
+    aws --profile $1 ssm start-session --target $2
+  fi
+}
+
+
+function ssm-instance-list () {
+  if [ "$#" -lt 1 ]
+  then
+    echo "Usage: ssm-instance-list <profile> <region>"
+  else
+    PROFILE=$1 
+    REGION=${2:-"eu-west-1"} 
+    echo "[$PROFILE - $REGION] List instances"
+    output=$(aws --profile $PROFILE \
+      --region $REGION \
+      ec2 describe-instances \
+      --query "Reservations[*].Instances[*].{ID:InstanceId,Type:InstanceType,AZ:Placement.AvailabilityZone,IP:PrivateIpAddress,Name:Tags[?Key=='Name']|[0].Value,State:State.Name}" \
+      --output table) 
+    echo $output
+  fi
+}
+
+function chuleta() {
+  echo "Loguearse con mfa en awscli:"
+  echo "    awslogin --profile obes-master"
+  echo "--"
+  echo "Usar contextos de k8s (vpn):"
+  echo "    kubectl config use-context dev.proyecto-sol.es"
+  echo "--"
+  echo "Listar todas las EC2 de un Entorno (cuenta):"
+  echo "    ssm-instance-list <profile> <region>"
+  echo "--"
+  echo "Conectar por SSH con una EC2"
+  echo "    ssm <profile> <ec2-id>"
+  echo "--"
+  echo "Crear pull request desde CLI:"
+  echo '    curl -X POST -H "Content-Type: application/json" -u <user>:<password> \'
+  echo '       https://bitbucket.org/api/2.0/repositories/<org/proj>/<reponame>/pullrequests \'
+  echo "       -d '{" 
+  echo '             "title": "Merge some branches",' 
+  echo '             "description": "stackoverflow example",'
+  echo '             "source": {'
+  echo '               "branch": { '
+  echo '                 "name": "choose branch to merge with" '
+  echo '               },'
+  echo '               "repository": { '
+  echo '                 "full_name": "user-project/reponame"'
+  echo '               }'
+  echo '             },'
+  echo '             "destination": {'
+  echo '               "branch": {'
+  echo '                 "name": "choose branch that is getting changes"'
+  echo '               }'
+  echo '             },'
+  echo '             "reviewers": ['
+  echo '               {'
+  echo '                 "username": "some other user needed to review changes"'
+  echo '               }'
+  echo '             ],'
+  echo '            "close_source_branch": false'
+  echo "          }'"
+  echo "--"
+}
 
 # #################################### #
 # Powerlevel9k ZSH Theme Customization #
@@ -216,4 +291,5 @@ source $ZSH/oh-my-zsh.sh
 #source /home/$DEFAULT_USER/.local/bin/aws_zsh_completer.sh
 #/usr/local/bin/aws_completer
 
+# Requirementes: fuzzy
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
