@@ -1,5 +1,12 @@
 # Install and configure ZSH with plugins and fonts
 
+## Requirements
+(todo add to ansible zsh role)
+
+* Install zsh-autosuggestions => github.com/zsh-users/zsh-autosuggestions
+* Install fuzzy-finder git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install
+
 ## Overview
 
 The following packages will be downloaded/cloned, installed and configured.
