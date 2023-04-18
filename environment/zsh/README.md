@@ -6,6 +6,7 @@
 * Install zsh-autosuggestions => github.com/zsh-users/zsh-autosuggestions
 * Install fuzzy-finder git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
 ~/.fzf/install
+* Install aws-iam-authenticator => https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html
 
 ## Overview
 
