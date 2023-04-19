@@ -7,7 +7,8 @@
 * Install fuzzy-finder git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
 ~/.fzf/install
 * Install aws-iam-authenticator => https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html
-* (private) see private files into mediaCenter
+* (private) see private files into mediaCenter for kubeconfig, zshrc, zsh_history configuration
+* Install aws session manager plugin: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html#install-plugin-linux
 
 ## Overview
 
