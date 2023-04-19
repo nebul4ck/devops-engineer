@@ -10,6 +10,7 @@
 * (private) see private files into mediaCenter for kubeconfig, zshrc, zsh_history configuration
 * Install aws session manager plugin: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html#install-plugin-linux
 
+
 ## Overview
 
 The following packages will be downloaded/cloned, installed and configured.
