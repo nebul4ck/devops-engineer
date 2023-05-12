@@ -9,6 +9,8 @@
 * Install aws-iam-authenticator => https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html
 * (private) see private files into mediaCenter for kubeconfig, zshrc, zsh_history configuration
 * Install aws session manager plugin: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html#install-plugin-linux
+* Install brew: ```/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"```
+* Install k9s: ```https://k9scli.io/topics/install/```
 
 
 ## Overview
